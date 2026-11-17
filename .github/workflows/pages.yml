@@ -18,6 +18,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Validate scripts and 2027 curriculum
+        run: |
+          node --check learning/auth.js
+          node --check learning/hub-v2.js
+          node --check learning/theory-v2.js
+          node --check learning/workshop-v2.js
+          node --check learning/python-worker.js
+          node --check learning/python-runner.js
+          node scripts/qa.mjs
       - uses: actions/configure-pages@v5
         with:
           enablement: true
