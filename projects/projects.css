@@ -44,3 +44,21 @@
 @media(max-width:850px){.cad-lessons-grid{grid-template-columns:1fr}.cad-source-panel{grid-template-columns:1fr}}
 @media(max-width:540px){.cad-operation{padding:15px;grid-template-rows:auto 180px auto}.cad-course{margin-top:28px;padding-top:27px}}
 @media(prefers-reduced-motion:reduce){.cad-operation *{animation:none!important;transition:none!important}}
+
+/* Source-backed original ManimCE video library, same IJR monochrome visual language */
+.cad-video-library{padding:22px 24px;border:1px solid var(--line);border-radius:18px;margin:20px 0 25px;background:var(--soft)}
+.cad-video-library h4{font-size:clamp(20px,2.3vw,30px);line-height:1.2;letter-spacing:-.035em;margin:8px 0}
+.cad-video-library-heading p:last-child{font-size:13px;line-height:1.65;color:var(--muted)}
+.cad-video-index{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-top:19px}
+.cad-video-index a{display:flex;gap:10px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:12px;background:#fff;font-size:12px;line-height:1.4;font-weight:750;text-decoration:none}
+.cad-video-index a:hover{border-color:#111}
+.cad-video-index .cad-video-play{display:inline-grid;place-items:center;border:1px solid #111;border-radius:9px;width:28px;height:28px;min-width:28px;font-size:12px}
+.cad-video-lesson{border:1px solid var(--line);background:#fff;border-radius:13px;padding:12px;margin-top:14px}
+.cad-video-title{font-size:14px;line-height:1.35;letter-spacing:-.02em;margin:8px 0;font-weight:850}
+.cad-video-description{font-size:12px;line-height:1.55;color:#565656;margin:0 0 12px}
+.cad-video-lesson .cad-video{max-height:300px;min-height:170px;background:#111;display:block;width:100%}
+.cad-video-status{display:block;margin:8px 0;color:#606060;line-height:1.55;font-size:11px}
+.cad-video-link{margin:10px 0 7px}
+.cad-video-error{color:#8d1c1c;font-weight:800}
+@media(max-width:1000px){.cad-video-index{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:550px){.cad-video-library{padding:16px}.cad-video-index{grid-template-columns:1fr}.cad-video-lesson{padding:9px}}
