@@ -32,6 +32,33 @@ The visual system and source content are adapted from the actual Statistics 11 r
 
 The original terminology, white/black card styling, animation conventions, explanatory sequence and accessible text labels are retained. Changes adapt selectors, links and datasets to the 2027 application without using the old Statistics 11 accounts.
 
+## CAD / 3D Design — modelado por operaciones y recursos ManimCE
+
+[Projects → 3D Design](https://ijr-jd.github.io/Seminario-2027/projects/?project=3d-design) contiene un laboratorio adicional con **12 lecciones de operaciones** agrupadas en cuatro fases, cada una con definición, ejemplo, pasos de construcción, verificaciones dimensionales y esquema conceptual SVG (no video):
+
+1. Croquis y restricciones
+2. Extrusión positiva / aditiva
+3. Extrusión negativa / sustractiva
+4. Revolución aditiva y por corte
+5. Barrido sobre trayectoria
+6. Solevación (loft)
+7. Agujeros
+8. Bobina, hélice y rosca
+9. Redondeo y chaflán
+10. Patrones y simetría
+11. Nervios y repujado
+12. Árbol de operaciones, planos y entrega
+
+Las cuatro etapas del proyecto están sincronizadas con estas operaciones. Las rutas Data Analyst, Video Game Design y AI Agent Design permanecen sin cambios.
+
+### Evidencia y estado de los videos originales
+
+Se revisó la rama principal pública de [ITM-JOB/CAD](https://github.com/ITM-JOB/CAD), incluyendo el árbol Git y [scripts/lessons.py](https://github.com/ITM-JOB/CAD/blob/main/scripts/lessons.py). **Sí existe fuente ManimCE real** de las escenas `Hydraulic`, `Automotive` y `Transmission`, relacionadas con mecanismos y secciones CAD; **no son demostraciones de extrusión/revolución/barrido**. El README describe exportaciones `outputs/{A,B,C}/lesson.mp4`, pero los archivos MP4 no están presentes en la rama principal revisada. Tampoco se localizaron los MP4 originales por operación.
+
+Por integridad de fuente, **no se insertaron enlaces ni videos inventados**. `projects/cad-curriculum.js` contiene el inventario de fuentes y `verifiedOperationVideos: []`. `projects/cad-lessons.js` mostrará un reproductor nativo solamente cuando exista una URL HTTPS real y verificada asociada a `operationId`. Los diagramas SVG actuales son nuevos esquemas conceptuales de la página 2027, no ManimCE y no sustituyen los videos originales.
+
+Cuando se publiquen o adjunten los MP4 correspondientes, deben añadirse a una ruta real servida por GitHub Pages (por ejemplo `/projects/media/extrude-add.mp4`) y registrarse en el catálogo por `operationId` tras probar que reproducen. Evitar enlaces a artefactos temporales de Actions o a archivos de salida inexistentes.
+
 ## 2027 Projects library
 
 The projects in `projects/data.js` contain **16 guided stages (4 tracks × 4)**. Data Analyst and 3D Design reuse and refine the prior source guides. Video Game Design and AI Agent Design provide additional step-by-step construction, testing, evidence and acceptance criteria. The site exposes only the four routes defined for the 2027 seminar. Every project gives explicit build tasks, test cases, required evidence and an acceptance gate. Project selection is exploratory until approved by the teacher.
