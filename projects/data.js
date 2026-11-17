@@ -1,94 +1,10 @@
-/* Source: Statistics 11/Seminar 11 original guided project routes, adapted for 2027; no student-specific assignments. */
-window.SEMINAR_2027_PROJECTS=[
+/* Seminario 2027 · Exact four project routes approved as topics by the instructor. Pedagogical guides are preliminary and do not assign students. */
+window.SEMINAR_2027_PROJECTS = [
   {
-    "slug": "web",
-    "title": "Web Development · application prototype",
-    "track": "Web Development",
-    "summary": "Construye una aplicación web útil, con interfaz accesible, entrada validada, estado y pruebas verificables.",
-    "stages": [
-      {
-        "title": "01 · Definir problema y diseñar interfaz",
-        "theory": [
-          "Historia de usuario: Como [persona], quiero [función] para [beneficio].",
-          "HTML organiza contenido, CSS define presentación y JavaScript implementa interacciones."
-        ],
-        "build": [
-          "Escribe tres historias de usuario y sus criterios de aceptación.",
-          "Dibuja una interfaz móvil y crea index.html y styles.css con navegación funcional.",
-          "Incluye un formulario con etiquetas, errores visibles y estructura semántica."
-        ],
-        "test": [
-          "Revisa el diseño a 360 y 1280 px.",
-          "Navega con Tab y comprueba el orden del foco."
-        ],
-        "evidence": "Historias, wireframe, código inicial y capturas responsivas.",
-        "gate": "La interfaz permite completar el recorrido principal sin enlaces simulados.",
-        "code": "<!doctype html>\n<html lang=\"es\"><meta charset=\"utf-8\"><title>Mi proyecto</title>\n<h1>Mi primera aplicación</h1>\n<p>Describe el problema que resolverá.</p>"
-      },
-      {
-        "title": "02 · Eventos y almacenamiento local",
-        "theory": [
-          "El DOM representa cada elemento de la página.",
-          "Una aplicación puede validar datos antes de almacenarlos; localStorage persiste información solo en ese navegador."
-        ],
-        "build": [
-          "Implementa alta y consulta de registros ficticios.",
-          "Añade una función de validación, un mensaje de error y un botón para limpiar.",
-          "Separa datos, representación e interacción en funciones distintas."
-        ],
-        "test": [
-          "Prueba un registro vacío, válido, duplicado y caracteres especiales.",
-          "Comprueba que los datos persisten al recargar y que se pueden borrar."
-        ],
-        "evidence": "Repositorio con commits, matriz de pruebas y capturas de casos exitosos y fallidos.",
-        "gate": "La función principal responde a entradas válidas e inválidas de forma predecible.",
-        "code": "const items = [];\nfunction addItem(name) {\n  if (!name.trim()) throw new Error('Name required');\n  items.push({ id: crypto.randomUUID(), name });\n}\naddItem('Ejemplo');\nconsole.log(items);"
-      },
-      {
-        "title": "03 · Arquitectura y calidad",
-        "theory": [
-          "Separar interfaz, lógica y datos facilita mantenimiento.",
-          "Una prueba indica resultado esperado, resultado obtenido y estado PASS/FAIL."
-        ],
-        "build": [
-          "Crea módulos de validación y almacenamiento reutilizables.",
-          "Añade búsqueda o filtrado y un estado de vista vacío.",
-          "Incorpora mensajes accesibles para éxito y error."
-        ],
-        "test": [
-          "Ejecuta una batería de al menos ocho casos incluyendo navegación con teclado.",
-          "Corrige una falla detectada y documenta la causa."
-        ],
-        "evidence": "Árbol de componentes, pruebas reales, antes/después y evidencia de accesibilidad.",
-        "gate": "Todas las funciones del alcance mínimo tienen pruebas reproducibles.",
-        "code": "function matches(query, label){\n  return label.toLowerCase().includes(query.toLowerCase());\n}\nconsole.assert(matches('ana','Ana'), 'Búsqueda incorrecta');"
-      },
-      {
-        "title": "04 · Publicar y defender",
-        "theory": [
-          "Un MVP demuestra una solución mínima completa.",
-          "La documentación debe permitir reproducir instalación, uso y pruebas."
-        ],
-        "build": [
-          "Publica una versión funcional en GitHub Pages.",
-          "Incluye README, restricciones, capturas y instrucciones.",
-          "Prepara demostración del problema, solución y pruebas."
-        ],
-        "test": [
-          "Abre el enlace publicado desde otro dispositivo y navegador.",
-          "Prueba el flujo completo después del último despliegue."
-        ],
-        "evidence": "URL real, código, README, bitácora de pruebas y defensa individual.",
-        "gate": "El proyecto es usable en su URL y cada criterio de aceptación se demuestra.",
-        "code": "// Checklist de entrega: URL, README, funcionalidades, pruebas, limitaciones."
-      }
-    ]
-  },
-  {
-    "slug": "data",
-    "title": "Data Science · reproducible analysis",
-    "track": "Data Science",
-    "summary": "Carga un conjunto de datos anonimizado, valida su calidad y genera conclusiones y figuras con Python.",
+    "slug": "data-analyst",
+    "title": "Data Analyst",
+    "track": "Data Analyst",
+    "summary": "Analiza datos con Python, Pandas y Matplotlib: define una pregunta, limpia un dataset, construye visualizaciones y presenta conclusiones reproducibles.",
     "stages": [
       {
         "title": "01 · Definir pregunta y dataset",
@@ -169,184 +85,10 @@ window.SEMINAR_2027_PROJECTS=[
     ]
   },
   {
-    "slug": "robotics",
-    "title": "Robotics & Automation · controller simulator",
-    "track": "Robotics",
-    "summary": "Diseña un controlador de estados, simula sensores y actuadores y verifica la lógica sin hardware obligatorio.",
-    "stages": [
-      {
-        "title": "01 · Requisitos y diagrama de bloques",
-        "theory": [
-          "Sensor → controlador → actuador es un lazo básico de automatización.",
-          "El sistema debe definir estados, entradas, salidas y condiciones de seguridad."
-        ],
-        "build": [
-          "Define un problema concreto y tabla entrada/acción.",
-          "Dibuja un diagrama de bloques y estados.",
-          "Identifica comportamiento seguro ante fallas de lectura."
-        ],
-        "test": [
-          "Prueba tres escenarios con entradas sintéticas.",
-          "Registra respuesta esperada para cada transición."
-        ],
-        "evidence": "Historias de usuario, diagrama, tabla de estados.",
-        "gate": "Cada estado tiene entradas y salidas definidas.",
-        "code": "# Estado del controlador\nstate = 'IDLE'\nsensor = True\nif sensor: state = 'ACTIVE'\nprint(state)"
-      },
-      {
-        "title": "02 · Prototipo de controlador",
-        "theory": [
-          "Separar lectura, transición de estado y salida mejora depuración.",
-          "Las pruebas pueden ejecutarse con datos sintéticos."
-        ],
-        "build": [
-          "Implementa el controlador en Python o entorno de simulación.",
-          "Agrega temporización no bloqueante cuando sea pertinente.",
-          "Incluye un modo de parada segura."
-        ],
-        "test": [
-          "Prueba activación, desactivación y error.",
-          "Verifica que nunca se activen salidas incompatibles."
-        ],
-        "evidence": "Código fuente, tabla de pruebas y demostración simulada.",
-        "gate": "El controlador es determinista y tiene estado seguro.",
-        "code": "def controller(temperature,enabled):\n    if not enabled: return 'OFF'\n    if temperature is None: return 'SAFE'\n    return 'COOL' if temperature>28 else 'IDLE'\nfor t in [25,30,None]: print(controller(t,True))"
-      },
-      {
-        "title": "03 · Integración y QA",
-        "theory": [
-          "Los límites y fallas deben probarse, no suponerse.",
-          "La trazabilidad une requisito, prueba y evidencia."
-        ],
-        "build": [
-          "Integra la simulación completa.",
-          "Implementa registro de estados y anomalías.",
-          "Crea al menos seis pruebas con valores límite."
-        ],
-        "test": [
-          "Inyecta una falla de sensor y confirma salida segura.",
-          "Comprueba que los logs describan estados reales."
-        ],
-        "evidence": "Matriz de pruebas, logs y grabación de simulación.",
-        "gate": "El prototipo responde correctamente en límites y fallas previstas.",
-        "code": "def safe_read(value):\n    return 'SAFE' if value is None else 'OK'\nassert safe_read(None)=='SAFE'"
-      },
-      {
-        "title": "04 · Demostración técnica",
-        "theory": [
-          "Los resultados deben poder reproducirse y explicarse.",
-          "La defensa muestra el motivo de cada decisión de control."
-        ],
-        "build": [
-          "Documenta hardware opcional, diagrama eléctrico y simulación.",
-          "Prepara una demostración de caso nominal y caso de falla.",
-          "Entrega código e instrucciones de ejecución."
-        ],
-        "test": [
-          "Reinicia la simulación y demuestra ambos casos.",
-          "Confirma coincidencia entre diagrama, lógica y código."
-        ],
-        "evidence": "Repositorio, demo, documentación, pruebas y defensa individual.",
-        "gate": "El docente reproduce el funcionamiento previsto y el modo seguro.",
-        "code": "# Entrega: esquema + fuente + pruebas + demostración."
-      }
-    ]
-  },
-  {
-    "slug": "cyber",
-    "title": "Defensive Cybersecurity · safe lab",
-    "track": "Defensive Cybersecurity",
-    "summary": "Cuatro clases para reproducir un caso en un entorno local autorizado, implementar una defensa y demostrar su efecto con pruebas comparables. Conserva el alcance individual: resiliencia web para Arango; el activo de los proyectos por definir requiere confirmación.",
-    "stages": [
-      {
-        "title": "01 · Alcance y línea base",
-        "theory": [
-          "Activo, amenaza, control y evidencia forman un modelo de defensa. Define éxito para peticiones legítimas y para el escenario de abuso.",
-          "Trabaja con el laboratorio local provisto. Los casos disponibles son resiliencia HTTP, abuso de autenticación, control de acceso y XSS almacenado."
-        ],
-        "build": [
-          "Elige el caso que corresponde al proyecto y documenta activo, amenaza y criterio de éxito.",
-          "Descarga el laboratorio, lee README.md y revisa docker-compose.yml para identificar puertos y servicios.",
-          "Inicia el entorno y conserva configuración y línea base."
-        ],
-        "test": [
-          "Verifica que los servicios arrancan y una petición legítima funciona.",
-          "Registra código HTTP, latencia, fecha y condición de prueba; elimina secretos de las evidencias."
-        ],
-        "evidence": "Diagrama del entorno, alcance autorizado, configuración y registro de línea base.",
-        "gate": "El entorno local funciona y la condición de prueba es reproducible.",
-        "code": "docker compose config\ndocker compose up -d\ndocker compose ps"
-      },
-      {
-        "title": "02 · Reproducir y explicar el caso",
-        "theory": [
-          "Un hallazgo debe enlazar entrada, comportamiento observado y causa. Un error aislado no demuestra una vulnerabilidad.",
-          "Para resiliencia, mide también disponibilidad del tráfico legítimo; para autorización, prueba acceso permitido y denegado."
-        ],
-        "build": [
-          "Sigue el caso correspondiente de la biblioteca, usando exclusivamente el entorno local.",
-          "Inspecciona la petición, HTML, código del servicio y logs para localizar el control ausente.",
-          "Fija entrada, duración y condiciones; registra una ejecución previa a la defensa."
-        ],
-        "test": [
-          "Comprueba que el caso produce el comportamiento descrito y que puedes repetirlo.",
-          "Añade una prueba legítima de control con la misma configuración."
-        ],
-        "evidence": "Petición o fixture, logs saneados, resultado previo y explicación de la causa.",
-        "gate": "La evidencia distingue el caso de abuso de una petición legítima y permite reproducirlo.",
-        "code": "docker compose logs --tail=100"
-      },
-      {
-        "title": "03 · Implementar la defensa",
-        "theory": [
-          "El control se aplica en la capa que decide: límites en proxy/servicio, autorización por recurso, validación de entrada y salida segura según el caso.",
-          "La defensa debe reducir el abuso conservando el comportamiento legítimo. Cambia una condición a la vez para atribuir el resultado."
-        ],
-        "build": [
-          "Implementa el control del caso elegido y documenta el archivo y la decisión técnica.",
-          "Reinicia o reconstruye los servicios afectados siguiendo el README.",
-          "Repite exactamente el escenario anterior y una petición legítima."
-        ],
-        "test": [
-          "Compara los mismos indicadores antes y después.",
-          "Prueba un caso límite y comprueba que no se bloquea el usuario legítimo."
-        ],
-        "evidence": "Diff/commit, configuración y tabla antes/después con las mismas condiciones.",
-        "gate": "La defensa controla el caso y las pruebas legítimas siguen pasando.",
-        "code": ""
-      },
-      {
-        "title": "04 · Regresión y defensa técnica",
-        "theory": [
-          "Una defensa se evalúa por resultados y límites, no por instalar una herramienta. Los logs sustentan cada conclusión.",
-          "La regresión incluye permitido, bloqueado, límite, reinicio y errores de configuración."
-        ],
-        "build": [
-          "Crea una matriz de pruebas con esperado/obtenido y referencia a evidencia.",
-          "Reproduce un fallo de la defensa, corrige y vuelve a probar.",
-          "Entrega README para reconstruir el laboratorio, commits, reporte de causa/control y limitaciones."
-        ],
-        "test": [
-          "Arranca desde una configuración limpia y repite la matriz.",
-          "Demuestra en vivo el caso antes/después y explica qué protege y qué queda fuera del alcance."
-        ],
-        "evidence": "Matriz, logs, corrección verificable y demostración técnica.",
-        "gate": "El docente puede reproducir los resultados; los límites y las pruebas pendientes están explícitos.",
-        "code": ""
-      }
-    ],
-    "resources": [
-      [
-        "Laboratorio local y código",
-        "https://github.com/juanperez238421-cpu/IJR---Seminario/tree/main/t3/tracks/cybersecurity/lab"
-      ]
-    ]
-  },
-  {
-    "slug": "cad",
-    "title": "Parametric CAD & 3D Printing",
-    "track": "3D Programming / CAD",
-    "summary": "Cuatro clases para convertir una necesidad en una pieza funcional, editable, fabricable y validada. El objeto y sus medidas deben confirmarse con el docente.",
+    "slug": "3d-design",
+    "title": "3D Design",
+    "track": "3D Design",
+    "summary": "Diseña un objeto 3D paramétrico y editable: medidas, bocetos, operaciones, validación dimensional y preparación para fabricación o simulación.",
     "stages": [
       {
         "title": "01 · Necesidad, medidas y primer modelo",
@@ -357,7 +99,7 @@ window.SEMINAR_2027_PROJECTS=[
         "build": [
           "Define usuario, función, carga de uso y restricciones de espacio. Mide el objeto que debe encajar.",
           "Crea una tabla de parámetros en milímetros: ancho, alto, espesor y holgura.",
-          "En Fusion, crea un boceto restringido y extruye el volumen inicial."
+          "En FreeCAD, Fusion u otra herramienta autorizada, crea un boceto restringido y extruye el volumen inicial."
         ],
         "test": [
           "Verifica unidades y cotas contra las mediciones.",
@@ -428,93 +170,171 @@ window.SEMINAR_2027_PROJECTS=[
     "resources": []
   },
   {
-    "slug": "animation",
-    "title": "Animation with Python",
-    "track": "Creative Python",
-    "summary": "Cuatro clases para construir un mensaje animado en Python. La forma visual es configurable; el motor, las pruebas y la entrega son parte del mismo producto.",
+    "slug": "video-game-design",
+    "title": "Video Game Design",
+    "track": "Video Game Design",
+    "summary": "Crea un videojuego 2D original y jugable, con personajes, controles, colisiones, niveles, pruebas de usuarios y publicación web.",
     "stages": [
       {
-        "title": "01 · Inicio funcional y contrato",
+        "title": "01 · Game Design Document y primer prototipo",
         "theory": [
-          "Un storyboard define qué aparece, en qué orden y con qué duración. Los criterios deben ser observables: ventana abierta, fondo visible, mensaje legible y cierre controlado.",
-          "Separa configuración, escena y renderizado. La primera entrega es una animación mínima ejecutable."
+          "Un videojuego combina objetivos, reglas, mecánicas, estados y retroalimentación para el jugador.",
+          "El game loop separa entrada, actualización del estado y renderizado; usa delta time para evitar velocidades dependientes de FPS."
         ],
         "build": [
-          "Dibuja un storyboard de fondo → corazón → flores → texto. Fija duración, resolución, colores y texto.",
-          "Descarga el ejemplo de mensaje animado, lee su README y ejecuta run.py con las dependencias de requirements.txt.",
-          "Crea un commit con la primera escena y un diagrama de responsabilidades."
+          "Redacta un documento de diseño de una página: historia, objetivo, mecánica, controles y condición de victoria.",
+          "Construye una página HTML con Canvas 2D y un personaje representado por figuras propias.",
+          "Implementa movimiento de teclado, límites del escenario y un objetivo visible."
         ],
         "test": [
-          "Ejecuta desde cero; verifica inicio, primer cuadro y cierre.",
-          "Comprueba que el texto cabe en pantalla y registra el resultado esperado y obtenido."
+          "Prueba movimientos en cuatro direcciones, límites y entrada simultánea.",
+          "Comprueba movimiento uniforme a tasas de refresco diferentes."
         ],
-        "evidence": "Storyboard, criterios de aceptación, UML y captura de la primera ejecución.",
-        "gate": "La escena mínima inicia y termina; cada criterio tiene una prueba.",
-        "code": "python -m pip install -r requirements.txt\npython run.py"
+        "evidence": "Game Design Document, boceto de pantalla, fuente HTML/JS y vídeo del prototipo en ejecución.",
+        "gate": "El prototipo abre en navegador y responde correctamente a los controles.",
+        "code": "const canvas = document.querySelector(\"canvas\");\nconst ctx = canvas.getContext(\"2d\");\nlet player = {x: 30, y: 30, size: 24};\nctx.fillRect(player.x, player.y, player.size, player.size);"
       },
       {
-        "title": "02 · Motor y efectos reutilizables",
+        "title": "02 · Colisiones, puntuación y estados",
         "theory": [
-          "El tiempo de animación depende de segundos transcurridos, no del número de cuadros. update(dt) cambia el estado; draw() lo representa.",
-          "Flor, corazón y texto tienen responsabilidades distintas. Los parámetros controlan tamaño, color, posición y duración; una seed permite repetir la escena."
+          "La colisión detecta solapamiento de regiones y dispara eventos de juego.",
+          "Los estados MENU, PLAYING, PAUSED y GAME_OVER delimitan las acciones permitidas."
         ],
         "build": [
-          "Implementa al menos tres efectos reutilizables: corazón pulsante, flores y aparición de texto.",
-          "Integra el fondo sin bloquear el bucle de eventos. Expón parámetros en configuración.",
-          "Cambia un parámetro sin reescribir el motor."
+          "Añade obstáculos y coleccionables, cada uno con una representación visual diferenciada.",
+          "Crea funciones para colisiones y un marcador de puntuación sin duplicar puntos.",
+          "Implementa inicio, pausa, victoria/derrota y reinicio de partida."
         ],
         "test": [
-          "Compara la duración de la misma escena a 30 y 120 FPS con una tolerancia declarada antes de medir.",
-          "Prueba texto largo, número mínimo de flores y la misma seed dos veces."
+          "Prueba contacto, no contacto, bordes, puntuación una sola vez y reinicio sin datos residuales.",
+          "Registra esperado/obtenido para al menos seis casos."
         ],
-        "evidence": "Código, configuración, comparación temporal y video de la escena completa.",
-        "gate": "Los tres efectos funcionan juntos y un cambio de parámetro produce un resultado predecible.",
+        "evidence": "Diagrama de estados, tabla de pruebas, código funcional y capturas de marcador.",
+        "gate": "Existe un ciclo completo de partida con condición de victoria o derrota verificable.",
+        "code": "function collides(a,b){\n return a.x < b.x+b.w && a.x+a.w > b.x &&\n        a.y < b.y+b.h && a.y+a.h > b.y;\n}\nconsole.assert(collides({x:0,y:0,w:20,h:20},{x:10,y:10,w:5,h:5}));"
+      },
+      {
+        "title": "03 · Diseño de niveles e interfaz",
+        "theory": [
+          "La curva de dificultad progresa mediante obstáculos y decisiones, no solo aumentando números sin justificación.",
+          "Las instrucciones, el contraste y la respuesta a las acciones mejoran la experiencia de juego."
+        ],
+        "build": [
+          "Diseña dos niveles de dificultad creciente y define su condición de finalización.",
+          "Integra pantalla inicial, controles, mensajes de pausa y pantalla de resultados.",
+          "Usa únicamente recursos propios o con licencias compatibles con el proyecto."
+        ],
+        "test": [
+          "Observa a tres compañeros usando el juego sin instrucciones adicionales y registra confusiones.",
+          "Verifica que el objetivo y la puntuación sean legibles en móvil y computador."
+        ],
+        "evidence": "Mapas de niveles, versión jugable, observaciones de usuarios y cambios documentados.",
+        "gate": "Una persona nueva comprende cómo jugar, completar un nivel y reiniciar.",
+        "code": "const levels=[{id:1,goal:3,hazards:1},{id:2,goal:5,hazards:2}];\nconsole.assert(levels[1].goal > levels[0].goal);"
+      },
+      {
+        "title": "04 · QA, publicación y defensa",
+        "theory": [
+          "Las pruebas de regresión detectan fallas introducidas por cambios posteriores.",
+          "Un MVP debe ser instalable o publicable de forma reproducible, no depender de archivos personales."
+        ],
+        "build": [
+          "Publica el juego estático en GitHub Pages y escribe un README con instrucciones y créditos.",
+          "Implementa una partida completa y documenta al menos una corrección antes/después.",
+          "Prepara una defensa donde expliques bucle de juego, colisiones, diseño y pruebas."
+        ],
+        "test": [
+          "Prueba la URL en ventana privada y completa una partida desde el inicio hasta su final.",
+          "Ejecuta al menos ocho casos de QA, incluyendo reinicio y uso con teclado."
+        ],
+        "evidence": "URL pública verificable, repositorio, README, GDD final, matriz QA y demostración.",
+        "gate": "El juego es funcional desde la URL, admite victoria o derrota y puede reiniciarse correctamente.",
         "code": ""
-      },
-      {
-        "title": "03 · Portabilidad y entrega USB",
-        "theory": [
-          "Las rutas se resuelven desde el proyecto o paquete, no desde una carpeta absoluta del equipo del autor.",
-          "La entrega incluye recursos, configuración, instrucciones y un launcher manual visible. El usuario inicia la animación."
-        ],
-        "build": [
-          "Aplica la guía usb/ del ejemplo para crear el paquete de Windows.",
-          "Incluye README, recursos y configuración en una carpeta portable.",
-          "Copia la entrega a USB o a otra carpeta y ejecútala desde allí."
-        ],
-        "test": [
-          "Desconecta la red y ejecuta en el equipo de destino. Registra sistema y dependencias necesarias.",
-          "Mueve la carpeta; verifica espacios en la ruta y el comportamiento ante un recurso ausente."
-        ],
-        "evidence": "Carpeta de entrega, instrucciones y registro de prueba offline en el destino.",
-        "gate": "La animación se inicia desde el launcher y no depende de la ubicación original.",
-        "code": ""
-      },
-      {
-        "title": "04 · QA y defensa en vivo",
-        "theory": [
-          "Una prueba de regresión repite el escenario que falló después de corregirlo. El video por sí solo no demuestra portabilidad ni calidad.",
-          "La defensa conecta contrato, diseño, implementación y resultados."
-        ],
-        "build": [
-          "Construye una matriz: inicio, cierre, texto largo, recurso ausente, configuración inválida, carpeta movida y ejecución offline.",
-          "Reproduce un fallo, corrígelo y repite la misma prueba.",
-          "Entrega README, UML final, repositorio y build; cambia color o mensaje durante la defensa."
-        ],
-        "test": [
-          "Ejecuta la matriz en la versión final e identifica los casos que no pudiste comprobar.",
-          "Repite los tests del ejemplo desde su carpeta raíz."
-        ],
-        "evidence": "Matriz con esperado/obtenido, evidencia del fallo y corrección, commit final y demostración.",
-        "gate": "Todos los criterios del contrato están verificados o sus limitaciones están documentadas.",
-        "code": "python -m unittest discover -s tests"
       }
-    ],
-    "resources": [
-      [
-        "Ejemplo ejecutable y notebook",
-        "https://github.com/juanperez238421-cpu/IJR---Seminario/tree/main/t3/projects/python-message-animation"
-      ]
+    ]
+  },
+  {
+    "slug": "ai-agent-design",
+    "title": "AI Agent Design",
+    "track": "AI Agent Design",
+    "summary": "Diseña un agente con objetivo definido, fuentes verificables, herramientas limitadas, evaluación de respuestas y supervisión humana; integra un modelo local autorizado cuando esté disponible.",
+    "stages": [
+      {
+        "title": "01 · Caso de uso y contrato del agente",
+        "theory": [
+          "Un agente reúne una interfaz, instrucciones, estado y herramientas para completar una tarea concreta; un chatbot genérico no basta.",
+          "El contrato delimita usuarios, entradas, salidas, fuentes, restricciones y cuándo debe abstenerse."
+        ],
+        "build": [
+          "Define un caso educativo de bajo riesgo, como orientación sobre material público de estudio.",
+          "Escribe tres historias de usuario y el contrato de entrada/salida del agente.",
+          "Crea una interfaz simple con respuestas de prueba basadas en reglas y datos sintéticos."
+        ],
+        "test": [
+          "Prueba una consulta válida, una ambigua y una fuera del alcance.",
+          "Verifica que el prototipo no solicite contraseñas ni datos de estudiantes."
+        ],
+        "evidence": "Ficha de producto, historias de usuario, diagrama de flujo y prototipo inicial.",
+        "gate": "El agente demuestra una tarea delimitada y responde 'sin evidencia suficiente' cuando corresponde.",
+        "code": "const kb={variables:\"Una variable referencia un valor.\"};\nfunction answer(question){\n const hit=Object.keys(kb).find(k=>question.toLowerCase().includes(k));\n return hit?kb[hit]:\"No tengo evidencia suficiente.\";\n}\nconsole.log(answer(\"Explica variables\"));"
+      },
+      {
+        "title": "02 · Recuperación de fuentes y herramientas",
+        "theory": [
+          "La recuperación de información debe preservar procedencia: documento, fragmento y versión.",
+          "Las herramientas operan con permisos mínimos; ninguna escritura, correo o acción externa se ejecuta sin autorización explícita."
+        ],
+        "build": [
+          "Prepara un pequeño conjunto de documentos públicos o sintéticos con identificador y título.",
+          "Implementa una función de búsqueda de solo lectura y muestra la fuente junto a cada respuesta.",
+          "Dibuja la arquitectura: frontend, orquestación, recuperación, modelo opcional y manejo de fallas."
+        ],
+        "test": [
+          "Comprueba que cada afirmación basada en documentos esté sustentada por su fuente.",
+          "Inserta una instrucción maliciosa en un documento ficticio y verifica que sea tratada como texto, no como una orden."
+        ],
+        "evidence": "Diagrama de arquitectura, documentos de muestra, contratos de herramientas y consultas con fuentes.",
+        "gate": "El agente proporciona evidencia verificable y no ejecuta acciones fuera de permiso.",
+        "code": "const docs=[\n {id:\"D01\",text:\"Un algoritmo es finito.\"},\n {id:\"D02\",text:\"Una variable referencia un valor.\"}\n];\nconst found=docs.filter(d=>d.text.includes(\"finito\"));\nconsole.log(found.map(d=>d.id));"
+      },
+      {
+        "title": "03 · Evaluación de calidad y seguridad",
+        "theory": [
+          "La evaluación debe diferenciar respuesta correcta, respuesta sin fuentes y abstención justificada.",
+          "La inyección de instrucciones y la divulgación de datos son riesgos que deben probarse con casos controlados."
+        ],
+        "build": [
+          "Construye un conjunto de al menos diez preguntas con resultados esperados.",
+          "Registra para cada caso respuesta real, validez de cita, abstención y decisión PASS/FAIL.",
+          "Corrige fallas observadas y guarda evidencias de antes y después."
+        ],
+        "test": [
+          "Repite los diez casos tras un cambio e inspecciona posibles regresiones.",
+          "Verifica que no se expongan secretos, archivos privados ni instrucciones del sistema."
+        ],
+        "evidence": "Matriz de evaluación, métricas, capturas de fallas y correcciones.",
+        "gate": "El agente supera los criterios definidos, reconoce límites y nunca realiza acciones no autorizadas.",
+        "code": "const cases=[{question:\"Definir variable\",ok:true},{question:\"Dame un secreto\",ok:false}];\nconst predicted=[true,false];\nconsole.log(\"Passed:\",cases.filter((c,i)=>c.ok===predicted[i]).length);"
+      },
+      {
+        "title": "04 · Integración opcional de IA y entrega",
+        "theory": [
+          "El frontend de GitHub Pages no ejecuta un modelo de lenguaje por sí solo; requiere un backend o conexión autorizada.",
+          "Los modelos locales pueden generar respuestas incorrectas y deben acompañarse de recuperación, pruebas y supervisión humana."
+        ],
+        "build": [
+          "Si está autorizado, conecta mediante un backend propio un modelo local (por ejemplo, Ollama); nunca incrustes claves en el código público.",
+          "Documenta dependencias, endpoints, fuentes permitidas y límites de privacidad.",
+          "Prepara una demo de respuesta correcta, falta de evidencia, error de conexión y rechazo de una acción sin permiso."
+        ],
+        "test": [
+          "Repite la batería de diez casos en una instalación limpia.",
+          "Desconecta el backend y comprueba que aparece un error recuperable sin inventar información."
+        ],
+        "evidence": "Repositorio, README, arquitectura, conjunto de evaluación y defensa con pruebas reales.",
+        "gate": "La solución ejecuta su tarea delimitada y documenta fuentes, permisos, métricas y limitaciones.",
+        "code": "# Arquitectura conceptual\n# Frontend -> Backend autorizado -> Recuperación -> Modelo local -> Respuesta citada\n# No publicar API keys, contraseñas ni datos de estudiantes."
+      }
     ]
   }
 ];
