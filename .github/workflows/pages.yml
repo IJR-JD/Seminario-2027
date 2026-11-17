@@ -28,6 +28,11 @@ jobs:
           node --check learning/python-runner.js
           node --check learning/sandbox-v39.js
           node --check learning/sandbox-workspace-v40.js
+          node --check learning/operations-visual-v9.js
+          node --check learning/arrays-consolidated-v34.js
+          node --check learning/libraries-pandas-theory-v60.js
+          node --check projects/data.js
+          node --check projects/projects.js
           node scripts/qa.mjs
       - uses: actions/configure-pages@v5
         with:
