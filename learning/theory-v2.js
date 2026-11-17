@@ -7,15 +7,15 @@ const topic=course[idx];if(!topic){document.querySelector("main").textContent="N
 const $=id=>document.getElementById(id);
 const esc=v=>String(v??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
 function set(id,v){if($(id))$(id).textContent=String(v??"")}
-const home="./",goWorkshop="workshop.html?topic="+encodeURIComponent(topic.slug);
+const home="./",goWorkshop="#practice";
 document.title="Theory · "+topic.title+" · Seminario 2027";
 set("crumb",topic.title);set("theoryEyebrow","THEORY · TOPIC "+String(topic.order).padStart(2,"0")+" · PROGRAMMING 2027");
 set("theoryTitle",topic.title);set("theoryIntro",topic.lead);set("theoryDefinition",topic.definition);
-set("theoryNumber",String(topic.order).padStart(2,"0")+" / 16");
+set("theoryNumber",String(idx+1).padStart(2,"0")+" / 17");
 set("theoryDuration",topic.sections.length+" concepts · "+topic.diagrams.length+" diagrams");
 set("theoryStatus","12 guided problems follow the theory");
 set("workshopIntro",topic.workshopIntro||"Aplica lo aprendido en 12 problemas desde una celda vacía.");
-["theoryWorkshopLink","theoryBottomWorkshop","workshopHeader"].forEach(id=>{$(id).href=goWorkshop;});
+["theoryWorkshopLink","workshopHeader"].forEach(id=>{if($(id))$(id).href=goWorkshop;});
 $("theoryProgress").style.width=Math.round((idx+1)*100/course.length)+"%";
 const concepts=$("conceptGrid");
 (topic.sections||[]).forEach((part,i)=>{
