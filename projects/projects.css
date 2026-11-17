@@ -14,3 +14,33 @@
 .project-resources{display:flex;gap:10px;flex-wrap:wrap;margin:22px 0}.project-resources a{border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:13px}.projects-shell .section-head{margin:52px 0 25px}
 @media(max-width:1100px){.projects-grid{grid-template-columns:repeat(2,1fr)}.project-hero{grid-template-columns:1fr}.project-hero-aside{border:0;border-top:1px solid var(--line);padding:15px 0 0}}@media(max-width:720px){.projects-shell{padding:20px 16px 45px}.project-hero{padding:22px}.projects-grid,.project-stage-content{grid-template-columns:1fr}.project-foundation{grid-template-columns:repeat(2,1fr)}.project-foundation>div:nth-child(2){border-right:0}.project-foundation>div:nth-child(-n+2){border-bottom:1px solid var(--line)}.project-detail-header{display:block}.project-detail-header>.button{margin-top:16px}.project-stage-footer,.project-code{grid-column:1}.project-card{min-height:290px}}
 @media(prefers-reduced-motion:reduce){.project-stage *, .project-card *{animation:none!important;transition:none!important}}
+/* CAD 2027 Operation Studio · monochrome educational layer */
+.cad-course{border-top:1px solid var(--line);margin:42px 0 36px;padding-top:44px;scroll-margin-top:100px}
+.cad-course[hidden]{display:none}
+.cad-heading{max-width:1040px;margin-bottom:23px}.cad-heading h3{font-size:clamp(32px,4.2vw,53px);line-height:1.04;letter-spacing:-.05em;margin:10px 0 14px}
+.cad-heading p{color:var(--muted);font-size:16px;line-height:1.65;margin-bottom:16px}.cad-heading-tags{display:flex;gap:8px;flex-wrap:wrap}.cad-heading-tags>span{font-size:11px;font-weight:700;border-radius:20px;border:1px solid var(--line);background:var(--soft);padding:8px 12px}
+.cad-lessons-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.cad-operation{display:grid;grid-template-columns:39px minmax(0,1fr);grid-template-rows:auto 210px auto;gap:8px 16px;border:1px solid var(--line);border-radius:20px;padding:24px;background:white;min-width:0}
+.cad-operation-number{width:36px;height:36px;border:1px solid #111;border-radius:10px;display:grid;place-items:center;font-size:12px;font-weight:800}
+.cad-operation-body{grid-column:2;grid-row:1;min-width:0}.cad-operation-category{font-size:10px;letter-spacing:.1em;color:var(--muted);font-weight:900}
+.cad-operation-body h3{font-size:clamp(19px,2.1vw,29px);letter-spacing:-.035em;margin:6px 0 9px;line-height:1.17}
+.cad-definition{color:#515151;font-size:14px;line-height:1.7;margin:0 0 16px}
+.cad-operation-visual{grid-column:1/3;grid-row:2;border:1px solid var(--line);border-radius:13px;overflow:hidden;background:#fafaf9;display:grid;place-items:center}
+.cad-operation-visual svg{width:100%;height:100%;display:block}
+.cad-diagram-caption{grid-column:1/3;color:#777;font-size:11px;margin:0;line-height:1.55}
+.cad-exercise{background:#f9f9f8;border:1px solid var(--line);border-radius:12px;margin-bottom:9px}
+.cad-exercise summary{cursor:pointer;padding:12px 13px;font-size:13px;font-weight:800;line-height:1.35}
+.cad-exercise[open] summary{border-bottom:1px solid var(--line)}
+.cad-exercise-content{padding:14px;font-size:13px}.cad-exercise-content>strong{font-size:11px;display:block;margin:13px 0 7px;color:#555;text-transform:uppercase;letter-spacing:.06em}
+.cad-exercise-content>strong:first-child{margin-top:0}.cad-exercise-content p{margin:0;line-height:1.6}
+.cad-step-list{padding-left:20px;margin:4px 0 12px;line-height:1.64}.cad-step-list li+li{margin-top:5px}
+.cad-operation-media{font-size:10px;color:var(--muted);font-weight:750;line-height:1.5}.cad-source-label{color:var(--muted);font-weight:850;letter-spacing:.04em}
+.cad-video{display:block;width:100%;border-radius:12px;background:black;margin:10px 0}
+.cad-source-panel{margin-top:28px;padding:25px;border:1px solid var(--line);border-radius:17px;background:var(--soft);display:grid;grid-template-columns:1.4fr 1fr;gap:25px}
+.cad-source-panel h4{font-size:23px;margin:6px 0 12px;letter-spacing:-.03em}.cad-source-panel p{font-size:13px;color:#555;line-height:1.75}
+.cad-source-links{display:grid;align-content:center;gap:9px}
+.cad-source-link{display:block;padding:12px;border:1px solid #bbb;border-radius:11px;background:#fff;font-size:12px;font-weight:800;overflow-wrap:anywhere}
+.cad-source-link:focus-visible,.cad-exercise summary:focus-visible{outline:3px solid #111;outline-offset:3px}
+@media(max-width:850px){.cad-lessons-grid{grid-template-columns:1fr}.cad-source-panel{grid-template-columns:1fr}}
+@media(max-width:540px){.cad-operation{padding:15px;grid-template-rows:auto 180px auto}.cad-course{margin-top:28px;padding-top:27px}}
+@media(prefers-reduced-motion:reduce){.cad-operation *{animation:none!important;transition:none!important}}
