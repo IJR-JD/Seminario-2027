@@ -67,12 +67,37 @@
     renderList(inner,op.checks);
     details.appendChild(inner);work.append(details);
     const media=elem("div","cad-operation-media");
-    const mapped=(cad.source.verifiedOperationVideos||[]).find(v=>v.operationId===op.id);
-    if(mapped&&mapped.src&&/^https:\/\//.test(mapped.src)){
-      const video=elem("video","cad-video");video.controls=true;video.preload="metadata";video.src=mapped.src;
-      media.append(elem("small","cad-source-label","MANIMCE · VIDEO PUBLICADO"),video);
+    const clips=(cad.source.verifiedOperationVideos||[]).filter(v=>
+      (v.operationIds||[v.operationId]).includes(op.id) && /^https:\/\//.test(v.src||""));
+    if(clips.length){
+      clips.forEach(clip=>{
+        const area=elem("section","cad-video-lesson");
+        area.append(elem("small","cad-source-label","ORIGINAL MANIMCE · RECOVERED MP4"));
+        area.append(elem("h4","cad-video-title",clip.title));
+        area.append(elem("p","cad-video-description",clip.description));
+        const player=elem("video","cad-video");
+        player.controls=true;
+        player.preload="none";
+        player.playsInline=true;
+        player.setAttribute("aria-label","Video original ManimCE: "+clip.title);
+        const source=elem("source");
+        source.src=clip.src;
+        source.type="video/mp4";
+        player.append(source);
+        const state=elem("small","cad-video-status","Reproductor del MP4 original alojado en GitHub. Pulsa Play para cargarlo.");
+        player.addEventListener("error",()=>{
+          state.textContent="No se pudo cargar el MP4 desde GitHub en este navegador. Abre el archivo original con el enlace siguiente.";
+          state.classList.add("cad-video-error");
+        },true);
+        const origin=elem("a","cad-source-link cad-video-link","Abrir MP4 original en GitHub ↗");
+        origin.href=clip.sourceUrl;
+        origin.target="_blank";origin.rel="noopener noreferrer";
+        const metadata=elem("small","cad-video-status","Archivo verificado en commit "+clip.commit.slice(0,10)+" · "+(clip.bytes/1048576).toFixed(1)+" MiB");
+        area.append(player,state,origin,metadata);
+        media.append(area);
+      });
     } else {
-      media.append(elem("small","cad-source-label","VIDEO MANIMCE · PENDIENTE DE LOCALIZAR EL MP4 ORIGINAL"));
+      media.append(elem("small","cad-source-label","MANIMCE · MP4 NO LOCALIZADO EN HISTORIAL DISPONIBLE"));
     }
     body.append(details,media);
     card.append(number,body,vis,caption);
@@ -84,13 +109,13 @@
     if(project.slug!=="3d-design")return;
     const list=$("cadLessonGrid");list.replaceChildren();
     operations.forEach((op,i)=>list.append(lessonCard(op,i)));
-    $("cadCourseCount").textContent=operations.length+" operaciones · 4 etapas · guías paso a paso";
+    $("cadCourseCount").textContent=operations.length+" operaciones · "+cad.source.verifiedOperationVideos.length+" videos originales · 4 etapas guiadas";
     const resources=$("cadSourceLinks");resources.replaceChildren();
     const src=cad.source;
-    for(const [label,url] of [["Repositorio técnico CAD",src.repository],["Fuente real ManimCE · scripts/lessons.py",src.sourceCode],["Procedencia y render de lecciones",src.readme]]){
+    for(const [label,url] of [["Repositorio original de videos ManimCE",src.videosRepository],["Repositorio técnico CAD",src.repository],["Fuente real ManimCE de mecanismos · scripts/lessons.py",src.sourceCode],["Procedencia de las lecciones de mecanismos",src.readme]]){
       if(!/^https:\/\//.test(url))continue;
       const a=elem("a","cad-source-link",label+" ↗");a.href=url;a.target="_blank";a.rel="noopener noreferrer";resources.append(a);
     }
-    $("cadVideoNote").textContent="Se identificó y verificó el código ManimCE de tres lecciones de mecanismos (Hydraulic, Automotive, Transmission) en ITM-JOB/CAD. Los archivos MP4 no están publicados en la rama consultada, y tampoco se encontraron las exportaciones originales de extrusión, revolución y barrido. Por eso no se muestran reproductores falsos. Las lecciones de operaciones incluyen diagramas independientes y quedan preparadas para vincular cada MP4 verificado cuando esté disponible.";
+    $("cadVideoNote").textContent="Se recuperaron "+src.verifiedOperationVideos.length+" MP4 originales en commits históricos de Manim-Scientific-Visualize: extrusión positiva/negativa, Hole/Agujero, Mirror/Simetría, Emboss/Repujado y dos lecciones de perfiles de rosca. Cada reproductor incluye el enlace al archivo original y su commit. Para Revolución, Barrido y Solevación existen fuentes y registros de render anteriores, pero no se encontró un MP4 accesible en los commits o artefactos consultados. Los diagramas SVG de esta página son ilustraciones nuevas, no fotogramas ManimCE.";
   };
 })();
