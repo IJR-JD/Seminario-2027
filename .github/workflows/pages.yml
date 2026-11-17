@@ -26,6 +26,8 @@ jobs:
           node --check learning/workshop-v2.js
           node --check learning/python-worker.js
           node --check learning/python-runner.js
+          node --check learning/sandbox-v39.js
+          node --check learning/sandbox-workspace-v40.js
           node scripts/qa.mjs
       - uses: actions/configure-pages@v5
         with:
