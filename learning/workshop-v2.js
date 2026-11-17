@@ -14,7 +14,7 @@ function storePreview(){try{sessionStorage.setItem("ijr2027_preview_"+lesson.slu
 const sidebar=$("stageList");const editor=$("codeEditor");
 const runButton=$("runButton"),gutter=$("runGutter"),validation=$("validateButton");
 const feedback=$("feedback"),output=$("outputText");
-document.title="Workshop · "+lesson.title+" · Seminario 2027";
+if(!document.getElementById("theoryTitle"))document.title="Workshop · "+lesson.title+" · Seminario 2027";
 $("theoryReturn").href="theory.html?topic="+encodeURIComponent(lesson.slug);
 function set(id,s){const e=$(id);if(e)e.textContent=String(s??"")}
 function repaintProgress(){
@@ -64,7 +64,7 @@ function displayStage(){
  }
  editor.value=activeCode[task.key]||"";
  $("previousStage").disabled=stage===0;$("nextStage").disabled=stage===tasks.length-1;
- set("runtimeStatus"," · Run → inspect → validate");
+ set("workshopRuntimeStatus"," · Run → inspect → validate");
  repaintProgress();
 }
 async function execute(){
@@ -73,14 +73,14 @@ async function execute(){
  const code=editor.value;
  if(!code.trim()){status("Escribe una solución antes de ejecutar la celda.");return;}
  if(!window.IJR_RUNNER){status("El intérprete de Python no está disponible. Recarga la página.");return;}
- setBusy(true);set("runtimeStatus"," · Starting Python…");set("outputText","Loading Python runtime…");
+ setBusy(true);set("workshopRuntimeStatus"," · Starting Python…");set("outputText","Loading Python runtime…");
  try{
   const result=await window.IJR_RUNNER.run(code,{timeoutMs:90000});
   runResult=result.ok?{key:task.key,code,output:result.output}:null;
   set("outputText",result.output||(result.ok?"(No output generated)":"Python execution error"));
-  set("runtimeStatus",result.ok?" · Python executed":" · Fix Python error");
+  set("workshopRuntimeStatus",result.ok?" · Python executed":" · Fix Python error");
   status(result.ok?"El código se ejecutó. Comprueba la salida y pulsa Validate.":"La ejecución falló. Lee el error, corrige y vuelve a ejecutar.",result.ok);
- }catch(err){runResult=null;set("outputText",err.message||String(err));set("runtimeStatus"," · Python unavailable");status("No se completó la ejecución: "+err.message);}
+ }catch(err){runResult=null;set("outputText",err.message||String(err));set("workshopRuntimeStatus"," · Python unavailable");status("No se completó la ejecución: "+err.message);}
  finally{setBusy(false)}
 }
 function norm(s){return String(s??"").replace(/\r/g,"").trim().replace(/[ \t]+$/gm,"")}
@@ -121,7 +121,7 @@ async function validate(){
   await complete();
  }
 }
-function navigate(i){if(loading||i<0||i>=tasks.length)return;activeCode[tasks[stage].key]=editor.value;stage=i;displayStage();scrollTo({top:0,behavior:"smooth"});}
+function navigate(i){if(loading||i<0||i>=tasks.length)return;activeCode[tasks[stage].key]=editor.value;stage=i;displayStage();(document.getElementById("practice")||document.documentElement).scrollIntoView({block:"start",behavior:"smooth"});}
 tasks.forEach((task,i)=>{
  const btn=document.createElement("button");btn.type="button";btn.className="stage";
  btn.innerHTML='<span class="stage-index">'+String(i+1).padStart(2,"0")+'</span><span>'+esc(task.title)+'</span><span class="stage-check">○</span>';
