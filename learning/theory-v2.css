@@ -37,3 +37,17 @@
 @media(max-width:1150px){.diagram-grid-v2{grid-template-columns:1fr}.syntax-grid-v2,.pitfall-grid-v2{grid-template-columns:repeat(2,minmax(0,1fr))}.theory-hero-v2{grid-template-columns:1fr}.hero-side-v2{border:0;border-top:1px solid var(--line);padding:20px 0 0}}
 @media(max-width:780px){.theory-container{padding:18px 16px 45px}.theory-hero-v2{padding:23px}.theory-section-v2{margin-top:50px}.concept-card-grid,.syntax-grid-v2,.pitfall-grid-v2,.learning-goals-v2,.live-lab-v2{grid-template-columns:1fr}.live-copy{border-right:0;border-bottom:1px solid var(--line)}.diagram-stage{padding:10px}.diagram-card-v2{padding:15px}.diagram-flow>span{min-width:60px;padding:10px;font-size:11px}.operator-map{grid-template-columns:repeat(3,1fr)}.concept-card-v2{padding:21px}.section-heading-v2 p:last-child{font-size:16px}}
 @media(prefers-reduced-motion:reduce){.theory-container *{animation:none!important;transition:none!important}}
+
+/* Embedded Statistics 11-compatible guided notebook: theory and practice in one URL. */
+.integrated-practice{scroll-margin-top:95px;margin-top:76px}
+.integrated-practice .notebook-shell{min-height:auto;border:1px solid var(--line);border-radius:22px;overflow:hidden;background:#fff}
+.integrated-practice .stage-sidebar{position:relative;top:auto;height:auto;max-height:none;overflow:visible;padding:24px 16px}
+.integrated-practice .stage-list{grid-template-columns:1fr;max-height:700px;overflow-y:auto}
+.integrated-practice .notebook-main{padding:25px 22px 40px;margin:0;max-width:none;width:100%}
+.integrated-practice .notebook-banner h1{font-size:clamp(28px,3vw,39px)}
+.integrated-practice .notebook-banner p{font-size:14px}
+.integrated-practice .stage.active{background:#111;color:white}
+.integrated-practice .cell-toolbar{gap:10px;flex-wrap:wrap}
+.integrated-practice .workshop-nav{margin-top:17px}
+@media(max-width:1000px){.integrated-practice .notebook-shell{grid-template-columns:1fr}.integrated-practice .stage-sidebar{border-right:0;border-bottom:1px solid var(--line)}.integrated-practice .stage-list{grid-template-columns:repeat(3,minmax(0,1fr));max-height:none}.integrated-practice .notebook-main{padding:22px 16px 38px}}
+@media(max-width:600px){.integrated-practice .stage-list{grid-template-columns:repeat(2,minmax(0,1fr))}.integrated-practice .stage{font-size:11px;padding:7px}.integrated-practice .notebook-main{padding:17px 12px 30px}}
