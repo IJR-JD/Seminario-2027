@@ -11,7 +11,30 @@ Se tomó el código fuente vigente de:
 - [Statistics 11 · Python Learning Hub](https://juanperez238421-cpu.github.io/ijr-estadistica-11-2026/python/)
 - [Seminar 11 · Main Learning Hub](https://juanperez238421-cpu.github.io/ijr-estadistica-11-2026/seminario/)
 
-La plataforma conserva la identidad gráfica original (blanco, negro, tarjetas, tipografía de sistema, barra institucional, notebooks y separación Theory/Workshop) e incorpora la **estructura y los contenidos de los 16 temas originales de Statistics 11**, más una unidad inicial de Algoritmos.
+La plataforma conserva la identidad gráfica original (blanco, negro, tarjetas, tipografía de sistema, barra institucional, notebooks y dos rutas de navegación: Theory + Practice y Projects) e incorpora la **estructura y los contenidos de los 16 temas originales de Statistics 11**, más una unidad inicial de Algoritmos.
+
+## Main Learning Hub — exactly two options
+
+The homepage, [Seminario 2027](https://ijr-jd.github.io/Seminario-2027/), displays **exactly two primary pathway cards**. Python Sandbox is still accessible as a utility in the header, not as an additional course pathway:
+
+1. **Visual Theory:** [17 topics](https://ijr-jd.github.io/Seminario-2027/learning/) with a consolidated conceptual lesson, source-backed visuals, live Python code, and 12 guided practice stages **embedded directly on the same theory URL**. There is no separate Workshop card in the main hub or topic catalogue.
+2. **Guided Projects:** [Six project routes](https://ijr-jd.github.io/Seminario-2027/projects/) covering Web Development, Data Science, Robotics, Defensive Cybersecurity, CAD/3D, and creative Python animation. Each route has four stages: theory, build/workshop, test/QA, evidence and acceptance gate. These are possible routes, not official 2027 individual assignments.
+
+The standalone `learning/workshop.html` is retained as a backwards-compatible deep link, but students access the same functionality in `learning/theory.html?topic=<slug>#practice`. No extra page navigation is required to solve the 12 problems.
+
+## Consolidated Statistics 11 theory and diagrams
+
+The visual system and source content are adapted from the actual Statistics 11 repository:
+
+- **Operations V9:** the eight illustrated sequences (Python → Colab → runtime, calculator/notebook comparison, Colab anatomy, execution cycle, operators, top-down execution, diagnostic errors, statistics bridge). Files: `learning/operations-visual-v9.js`, `learning/operations-visual-v9.css`, `learning/operations-visual-v9-refine.css`.
+- **Arrays V34:** full consolidated arrays lesson with six visual diagrams (anatomy, zero-indexing, append, summary, mean, DataFrame bridge). Files: `learning/arrays-consolidated-v34.js`, `learning/arrays-consolidated-v34.css`.
+- **Libraries / XLSX / Pandas V60:** consolidated conceptual two-class guide and **eight practical application examples** (these are examples, not eight separate diagrams). Files: `learning/libraries-pandas-theory-v60.js`, `learning/libraries-pandas-theory-v60.css`.
+
+The original terminology, white/black card styling, animation conventions, explanatory sequence and accessible text labels are retained. Changes adapt selectors, links and datasets to the 2027 application without using the old Statistics 11 accounts.
+
+## 2027 Projects library
+
+The projects in `projects/data.js` contain 24 guided stages (6 tracks × 4). The original Seminar project structures are reused for animation, CAD and defensive cybersecurity; Web, data analysis and robotics tracks are additional 2027 learning routes. Every project gives explicit build tasks, test cases, required evidence and an acceptance gate. Project selection is exploratory until approved by the teacher.
 
 ## Programa: 17 unidades y 204 retos
 
@@ -44,7 +67,7 @@ Cada unidad incluye 12 ejercicios (17 × 12 = 204). El catálogo y los textos es
 - Diagramas procedimentales originales adaptados
 - Referencia de sintaxis, ejemplos y errores comunes
 - Ejecutor Python editable: Run / Reset / Output
-- Enlaces a Workshop y a las unidades anterior/siguiente
+- Acceso anclado a los 12 ejercicios integrados en la misma página y navegación entre unidades
 
 ## Standalone Python Sandbox (ported from Statistics 11)
 
@@ -62,9 +85,9 @@ The sandbox retains the original Colab-style UI, real Pyodide 0.27.7 runtime, mu
 
 2027-specific adaptations: branding/year, a beginner algorithms-and-variables example, own `ijr-seminario-2027-python-sandbox-v39` browser storage key and `seminario2027_sandbox.py` export name. It does not use the Statistics 11 Supabase project or copy identities/progress/grades. This is an intentionally **ungraded independent workspace**, and notebook code stays on the current browser unless exported.
 
-## Workshop
+## Integrated workshop
 
-`learning/workshop.html?topic=<slug>` presenta:
+The workshop is rendered as the `#practice` section within `learning/theory.html?topic=<slug>` and uses the same engine as the compatible `learning/workshop.html?topic=<slug>` route. It includes:
 
 - 12 etapas navegables, cada problema con instrucciones y pista
 - Celdas de código desde cero, preguntas conceptuales y consola de Python 3
@@ -94,9 +117,9 @@ La portada presenta un formulario con correo institucional. Su arquitectura util
 
 - `scripts/qa.mjs` verifica 17 temas, 204 etapas, identificadores únicos, secciones curriculares, registro por email y dependencias.
 - La acción GitHub Pages ejecuta `node --check` y `node scripts/qa.mjs` antes de desplegar.
-- **GitHub Actions 44105788761:** SUCCESS, incluyendo etapa de QA y despliegue Pages.
-- **QA de navegador real:** 17 tarjetas, contenido de las dos primeras teorías, selección de etapa 1 y ejecución + validación de Python en etapa 7: PASS.
-- **Pendiente:** inicio de sesión real por correo y carga/consulta en Supabase 2027; pruebas en todos los 204 problemas y todas las librerías avanzadas.
+- **GitHub Actions 44112626898:** SUCCESS, incluyendo comprobaciones de JavaScript, integridad curricular, dos rutas de navegación y despliegue Pages.
+- **QA de navegador real (noviembre 2026):** dos tarjetas en la portada, 17 temas con un solo enlace Theory + Practice, seis proyectos, cuatro etapas en Web, ocho figuras Operations V9, seis figuras Arrays V34, material ampliado V60 y 12 etapas integradas: PASS. La ejecución de Python `25` se comprobó en el Live Lab de teoría, no se repitió la validación del workshop integrado.
+- **Pendiente:** inicio de sesión real por correo y carga/consulta en Supabase 2027; pruebas completas de Run/Validate en el workshop integrado, todos los 204 problemas y todas las librerías avanzadas.
 
 ## Seguridad
 
