@@ -110,3 +110,35 @@ for(const p of pctx.window.SEMINAR_2027_PROJECTS){
 assert.ok(projectPage.includes('id="projectCards"')&&projectPage.includes('id="stageCards"'),'Project gallery/detail elements missing');
 assert.ok(projectsApp.includes('Copy code')&&projectsApp.includes('projectDetail'),'Project interactions missing');
 console.log('PASS 2 learning spaces / integrated 12-stage notebooks / consolidated Stats 11 diagrams / 4 guided project routes');
+
+
+// CAD Modeling + Original ManimCE integration contracts.
+const cadCtx={window:{}};
+vm.runInNewContext(read('projects/cad-curriculum.js'),cadCtx,{timeout:1000});
+const cadCourse=cadCtx.window.SEMINAR_2027_CAD;
+assert.equal(cadCourse.operations.length,12,'CAD must include 12 detailed operation lessons');
+assert.equal(new Set(cadCourse.operations.map(x=>x.id)).size,12,'Duplicate CAD operation IDs');
+for(const id of ['sketch','extrude-add','extrude-cut','revolve','sweep','loft','hole','coil','fillet','pattern','rib','deliver']){
+  const operation=cadCourse.operations.find(x=>x.id===id);
+  assert.ok(operation,'Missing CAD lesson '+id);
+  assert.ok(operation.definition.length>30&&operation.example.length>20,'Missing CAD conceptual details '+id);
+  assert.ok(operation.steps.length>=3&&operation.checks.length>=2,'Incomplete CAD workshop '+id);
+}
+assert.ok(cadCourse.source.repository.includes('ITM-JOB/CAD'),'Original CAD reference must be explicit');
+assert.ok(cadCourse.source.sourceCode.endsWith('/scripts/lessons.py'),'ManimCE provenance must cite actual original source');
+for(const video of cadCourse.source.verifiedOperationVideos){
+ assert.ok(/^https:\/\//.test(video.src),'Unverified or local MP4 link in public video manifest');
+ assert.ok(cadCourse.operations.some(o=>o.id===video.operationId),'Video references unknown CAD operation');
+}
+assert.ok(projectPage.includes('id="cadOperations"')&&projectPage.includes('id="cadLessonGrid"'),'CAD operation studio not inserted');
+assert.ok(projectPage.includes('cad-curriculum.js')&&projectPage.includes('cad-lessons.js'),'CAD script loading missing');
+const renderer=read('projects/cad-lessons.js');
+assert.ok(renderer.includes('verifiedOperationVideos'),'CAD video registry not consulted');
+assert.ok(renderer.includes('VIDEO MANIMCE · PENDIENTE'),'Unpublished video must be transparently identified');
+assert.ok(projectsApp.includes('window.IJR_2027_RENDER_CAD(p)'),'CAD studio not activated by route');
+const cadProject=pctx.window.SEMINAR_2027_PROJECTS.find(p=>p.slug==='3d-design');
+assert.ok(cadProject.stages[0].title.includes('positiva y negativa'));
+assert.ok(cadProject.stages[1].title.includes('Revolución'));
+assert.ok(cadProject.stages[2].title.includes('Agujeros'));
+assert.ok(cadProject.stages[3].title.includes('Nervios'));
+console.log('PASS CAD 12 lessons / source-backed ManimCE manifest / route-specific visuals / four aligned workshops');
