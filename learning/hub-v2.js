@@ -9,8 +9,7 @@ for(const [i,t] of course.entries()){
  el.innerHTML='<div class="topline"><span>TOPIC '+String(t.order).padStart(2,"0")+' · '+safe(t.nav.toUpperCase())+'</span><span class="topic-count">0 / 12</span></div>'+
  '<h3>'+safe(t.title)+'</h3><p>'+safe(t.lead)+'</p>'+
  '<div class="bar"><span style="width:0%"></span></div>'+
- '<div class="links"><a class="button" href="theory.html?topic='+encodeURIComponent(t.slug)+'">01 · Theory</a>'+
- '<a class="button button-dark" href="workshop.html?topic='+encodeURIComponent(t.slug)+'">02 · Workshop</a></div>';
+ '<div class="links"><a class="button button-dark" href="theory.html?topic='+encodeURIComponent(t.slug)+'">Open Theory + 12 guided exercises →</a></div>';
  cards.set(t.slug,el);target.appendChild(el);
 }
 const count=document.getElementById("globalCount"), percent=document.getElementById("globalPercent"),bar=document.getElementById("globalBar");
