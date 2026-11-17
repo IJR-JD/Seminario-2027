@@ -46,6 +46,8 @@ function render(p){
  if(!links.childNodes.length)links.append(make("span",null,"Referencia: guía del docente + Python Sandbox + repositorio propio."));
  panel.scrollIntoView({block:"start",behavior:"instant"});
 }
-const selected=new URLSearchParams(location.search).get("project");
+const aliases={"data":"data-analyst","cad":"3d-design"};
+const rawSelected=new URLSearchParams(location.search).get("project");
+const selected=aliases[rawSelected]||rawSelected;
 if(selected){const p=projects.find(x=>x.slug===selected);if(p)render(p);}
 })();
