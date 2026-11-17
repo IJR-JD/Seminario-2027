@@ -18,7 +18,7 @@ La plataforma conserva la identidad gráfica original (blanco, negro, tarjetas, 
 The homepage, [Seminario 2027](https://ijr-jd.github.io/Seminario-2027/), displays **exactly two primary pathway cards**. Python Sandbox is still accessible as a utility in the header, not as an additional course pathway:
 
 1. **Visual Theory:** [17 topics](https://ijr-jd.github.io/Seminario-2027/learning/) with a consolidated conceptual lesson, source-backed visuals, live Python code, and 12 guided practice stages **embedded directly on the same theory URL**. There is no separate Workshop card in the main hub or topic catalogue.
-2. **Guided Projects:** [Six project routes](https://ijr-jd.github.io/Seminario-2027/projects/) covering Web Development, Data Science, Robotics, Defensive Cybersecurity, CAD/3D, and creative Python animation. Each route has four stages: theory, build/workshop, test/QA, evidence and acceptance gate. These are possible routes, not official 2027 individual assignments.
+2. **Guided Projects:** [Four project routes](https://ijr-jd.github.io/Seminario-2027/projects/) covering **Data Analyst**, **3D Design**, **Video Game Design**, and **AI Agent Design**. Each route has four stages: theory, build/workshop, test/QA, evidence and acceptance gate. These are possible routes, not official 2027 individual assignments.
 
 The standalone `learning/workshop.html` is retained as a backwards-compatible deep link, but students access the same functionality in `learning/theory.html?topic=<slug>#practice`. No extra page navigation is required to solve the 12 problems.
 
@@ -34,7 +34,7 @@ The original terminology, white/black card styling, animation conventions, expla
 
 ## 2027 Projects library
 
-The projects in `projects/data.js` contain 24 guided stages (6 tracks × 4). The original Seminar project structures are reused for animation, CAD and defensive cybersecurity; Web, data analysis and robotics tracks are additional 2027 learning routes. Every project gives explicit build tasks, test cases, required evidence and an acceptance gate. Project selection is exploratory until approved by the teacher.
+The projects in `projects/data.js` contain **16 guided stages (4 tracks × 4)**. Data Analyst and 3D Design reuse and refine the prior source guides. Video Game Design and AI Agent Design provide additional step-by-step construction, testing, evidence and acceptance criteria. The site exposes only the four routes defined for the 2027 seminar. Every project gives explicit build tasks, test cases, required evidence and an acceptance gate. Project selection is exploratory until approved by the teacher.
 
 ## Programa: 17 unidades y 204 retos
 
@@ -118,7 +118,7 @@ La portada presenta un formulario con correo institucional. Su arquitectura util
 - `scripts/qa.mjs` verifica 17 temas, 204 etapas, identificadores únicos, secciones curriculares, registro por email y dependencias.
 - La acción GitHub Pages ejecuta `node --check` y `node scripts/qa.mjs` antes de desplegar.
 - **GitHub Actions 44112626898:** SUCCESS, incluyendo comprobaciones de JavaScript, integridad curricular, dos rutas de navegación y despliegue Pages.
-- **QA de navegador real (noviembre 2026):** dos tarjetas en la portada, 17 temas con un solo enlace Theory + Practice, seis proyectos, cuatro etapas en Web, ocho figuras Operations V9, seis figuras Arrays V34, material ampliado V60 y 12 etapas integradas: PASS. La ejecución de Python `25` se comprobó en el Live Lab de teoría, no se repitió la validación del workshop integrado.
+- **QA de navegador real (noviembre 2026):** dos tarjetas en la portada, 17 temas con un solo enlace Theory + Practice, cuatro proyectos (Data Analyst, 3D Design, Video Game Design, AI Agent Design), cuatro etapas por ruta, ocho figuras Operations V9, seis figuras Arrays V34, material ampliado V60 y 12 etapas integradas: PASS. La ejecución de Python `25` se comprobó en el Live Lab de teoría, no se repitió la validación del workshop integrado.
 - **Pendiente:** inicio de sesión real por correo y carga/consulta en Supabase 2027; pruebas completas de Run/Validate en el workshop integrado, todos los 204 problemas y todas las librerías avanzadas.
 
 ## Seguridad
