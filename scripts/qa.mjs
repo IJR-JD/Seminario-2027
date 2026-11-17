@@ -126,19 +126,35 @@ for(const id of ['sketch','extrude-add','extrude-cut','revolve','sweep','loft','
 }
 assert.ok(cadCourse.source.repository.includes('ITM-JOB/CAD'),'Original CAD reference must be explicit');
 assert.ok(cadCourse.source.sourceCode.endsWith('/scripts/lessons.py'),'ManimCE provenance must cite actual original source');
+assert.equal(cadCourse.source.verifiedOperationVideos.length,6,'Must embed six distinct recovered original ManimCE MP4s');
+assert.ok(cadCourse.source.videosRepository.includes('Manim-Scientific-Visualize'),'CAD videos must be sourced from their original rendering repository');
+const videoAssetIds=new Set();
 for(const video of cadCourse.source.verifiedOperationVideos){
- assert.ok(/^https:\/\//.test(video.src),'Unverified or local MP4 link in public video manifest');
+ assert.ok(/^https:\/\/raw\.githubusercontent\.com\/juanperez238421-cpu\/Manim-Scientific-Visualize\/[a-f0-9]{40}\/.*\.mp4$/.test(video.src),'Video must reference exact original committed MP4 in GitHub');
+ assert.ok(video.sourceUrl.includes('/blob/'+video.commit+'/'),'Source link must cite matching Git commit');
+ assert.ok(Number.isInteger(video.bytes)&&video.bytes>1000000,'Video metadata missing actual blob size');
+ assert.ok(!videoAssetIds.has(video.id),'Duplicate original ManimCE asset');
+ videoAssetIds.add(video.id);
  assert.ok(cadCourse.operations.some(o=>o.id===video.operationId),'Video references unknown CAD operation');
+ assert.ok(video.operationIds.includes(video.operationId),'Video mapping must contain its primary operation');
 }
+assert.ok(cadCourse.source.verifiedOperationVideos.some(v=>v.operationIds.includes('extrude-add')&&v.operationIds.includes('extrude-cut')),'House Extrusion video must cover both positive and negative extrusion');
+assert.ok(cadCourse.source.verifiedOperationVideos.some(v=>v.id==='mirror-senior-v4'),'Original mirror/symmetry video must be linked');
+assert.ok(cadCourse.source.verifiedOperationVideos.some(v=>v.id==='hole-senior-v2'),'Original hole video must be linked');
+assert.ok(cadCourse.source.verifiedOperationVideos.some(v=>v.id==='emboss-original'),'Original emboss video must be linked');
 assert.ok(projectPage.includes('id="cadOperations"')&&projectPage.includes('id="cadLessonGrid"'),'CAD operation studio not inserted');
 assert.ok(projectPage.includes('cad-curriculum.js')&&projectPage.includes('cad-lessons.js'),'CAD script loading missing');
 const renderer=read('projects/cad-lessons.js');
 assert.ok(renderer.includes('verifiedOperationVideos'),'CAD video registry not consulted');
-assert.ok(renderer.includes('VIDEO MANIMCE · PENDIENTE'),'Unpublished video must be transparently identified');
+assert.ok(renderer.includes('MP4 NO LOCALIZADO'),'Unpublished videos must be transparently identified');
+assert.ok(renderer.includes('video.controls=true')&&renderer.includes('video/mp4'),'Native MP4 playback not found');
+assert.ok(renderer.includes('clip.sourceUrl'),'Original video fallback links not found');
+assert.ok(renderer.includes('cadVideoIndex'),'Original video library navigation missing');
+assert.ok(projectPage.includes('id="cadVideoIndex"'),'Original video index container missing');
 assert.ok(projectsApp.includes('window.IJR_2027_RENDER_CAD(p)'),'CAD studio not activated by route');
 const cadProject=pctx.window.SEMINAR_2027_PROJECTS.find(p=>p.slug==='3d-design');
 assert.ok(cadProject.stages[0].title.includes('positiva y negativa'));
 assert.ok(cadProject.stages[1].title.includes('Revolución'));
 assert.ok(cadProject.stages[2].title.includes('Agujeros'));
 assert.ok(cadProject.stages[3].title.includes('Nervios'));
-console.log('PASS CAD 12 lessons / source-backed ManimCE manifest / route-specific visuals / four aligned workshops');
+console.log('PASS CAD 12 lessons / 6 original ManimCE MP4s from exact Git blobs / inline players / 4 guided workshops');
