@@ -147,7 +147,7 @@ assert.ok(projectPage.includes('cad-curriculum.js')&&projectPage.includes('cad-l
 const renderer=read('projects/cad-lessons.js');
 assert.ok(renderer.includes('verifiedOperationVideos'),'CAD video registry not consulted');
 assert.ok(renderer.includes('MP4 NO LOCALIZADO'),'Unpublished videos must be transparently identified');
-assert.ok(renderer.includes('video.controls=true')&&renderer.includes('video/mp4'),'Native MP4 playback not found');
+assert.ok(renderer.includes('player.controls=true')&&renderer.includes('video/mp4'),'Native MP4 playback not found');
 assert.ok(renderer.includes('clip.sourceUrl'),'Original video fallback links not found');
 assert.ok(renderer.includes('cadVideoIndex'),'Original video library navigation missing');
 assert.ok(projectPage.includes('id="cadVideoIndex"'),'Original video index container missing');
