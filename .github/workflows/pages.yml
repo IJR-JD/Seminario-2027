@@ -36,6 +36,9 @@ jobs:
           node --check projects/data.js
           node --check projects/projects.js
           node scripts/qa.mjs
+      - name: Probe original ManimCE MP4 URLs (external availability)
+        continue-on-error: true
+        run: node scripts/qa-video-urls.mjs
       - uses: actions/configure-pages@v5
         with:
           enablement: true
