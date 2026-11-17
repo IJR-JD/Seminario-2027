@@ -97,11 +97,16 @@ for(const path of [
 const projectPage=read('projects/index.html'),projectsApp=read('projects/projects.js');
 const pctx={window:{}};
 vm.runInNewContext(read('projects/data.js'),pctx,{timeout:1000});
-assert.equal(pctx.window.SEMINAR_2027_PROJECTS.length,6,'Project gallery must show six routes');
+assert.equal(pctx.window.SEMINAR_2027_PROJECTS.length,4,'Project gallery must show exactly four routes');
+assert.deepEqual(Array.from(pctx.window.SEMINAR_2027_PROJECTS,p=>p.slug),['data-analyst','3d-design','video-game-design','ai-agent-design'],'Unexpected 2027 project routes');
+assert.deepEqual(Array.from(pctx.window.SEMINAR_2027_PROJECTS,p=>p.title),['Data Analyst','3D Design','Video Game Design','AI Agent Design'],'Unexpected project titles');
+assert.ok(root.includes('<span>AI Agent Design</span>')&&root.includes('<span>Video Game Design</span>'),'Homepage must display the four defined tracks');
+assert.ok(projectPage.includes('04 project pathways'),'Projects summary must show four tracks');
+assert.ok(!projectPage.includes('06 project pathways'),'Old six-track summary still present');
 for(const p of pctx.window.SEMINAR_2027_PROJECTS){
  assert.equal(p.stages.length,4,'Every project needs four guided stages: '+p.slug);
  for(const step of p.stages)assert.ok(step.theory?.length&&step.build?.length&&step.test?.length&&step.evidence&&step.gate,'Project stage incomplete: '+p.slug);
 }
 assert.ok(projectPage.includes('id="projectCards"')&&projectPage.includes('id="stageCards"'),'Project gallery/detail elements missing');
 assert.ok(projectsApp.includes('Copy code')&&projectsApp.includes('projectDetail'),'Project interactions missing');
-console.log('PASS 2 learning spaces / integrated 12-stage notebooks / consolidated Stats 11 diagrams / 6 guided project routes');
+console.log('PASS 2 learning spaces / integrated 12-stage notebooks / consolidated Stats 11 diagrams / 4 guided project routes');
