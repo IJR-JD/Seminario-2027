@@ -1,4 +1,4 @@
-/* Seminario 2027 · Exact four project routes approved as topics by the instructor. Pedagogical guides are preliminary and do not assign students. */
+/* Seminario 2027 · Four project pathways. CAD includes positive/negative extrusion, revolution, sweep, loft and finishing. */
 window.SEMINAR_2027_PROJECTS = [
   {
     "slug": "data-analyst",
@@ -88,82 +88,94 @@ window.SEMINAR_2027_PROJECTS = [
     "slug": "3d-design",
     "title": "3D Design",
     "track": "3D Design",
-    "summary": "Diseña un objeto 3D paramétrico y editable: medidas, bocetos, operaciones, validación dimensional y preparación para fabricación o simulación.",
+    "summary": "Diseña piezas 3D mediante croquis, extrusión positiva y negativa, revolución, barrido, solevación y operaciones de detalle. Incluye un laboratorio de 12 operaciones con prácticas y fuentes ManimCE verificadas.",
     "stages": [
       {
-        "title": "01 · Necesidad, medidas y primer modelo",
+        "title": "01 · Croquis, extrusión positiva y negativa",
         "theory": [
-          "CAD paramétrico representa intención mediante cotas, restricciones y operaciones. El boceto debe definir una función y sus dimensiones críticas.",
-          "Un soporte de escritorio es un ejemplo inicial; el producto individual se confirma antes de construir."
+          "El modelado paramétrico comienza con croquis 2D cerrados, restricciones, cotas y planos de trabajo.",
+          "Extrusión positiva (Join/Pad) agrega material a partir de un perfil; extrusión negativa (Cut/Pocket) remueve material de un sólido existente.",
+          "El historial de operaciones permite modificar bocetos y profundidades sin reconstruir desde cero."
         ],
         "build": [
-          "Define usuario, función, carga de uso y restricciones de espacio. Mide el objeto que debe encajar.",
-          "Crea una tabla de parámetros en milímetros: ancho, alto, espesor y holgura.",
-          "En FreeCAD, Fusion u otra herramienta autorizada, crea un boceto restringido y extruye el volumen inicial."
+          "Diseña un croquis de placa 70 × 45 mm, completamente acotado y restringido.",
+          "Aplica una extrusión aditiva de 8 mm para crear la base; agrega un resalte de 18 mm mediante una segunda extrusión positiva.",
+          "Realiza un corte por extrusión negativa de profundidad 8 mm; documenta en el árbol Pad/Extrude y Pocket/Cut.",
+          "Realiza los ejercicios 01–03 del laboratorio CAD de esta página."
         ],
         "test": [
-          "Verifica unidades y cotas contra las mediciones.",
-          "Cambia el ancho y comprueba que el modelo se regenera sin errores."
+          "Modifica el largo de la placa a 80 mm y verifica regeneración de ambos features.",
+          "Inspecciona vista seccionada y comprueba la profundidad del corte.",
+          "Corrobora que Join y Cut tengan sentido correcto y no generen geometría huérfana."
         ],
-        "evidence": "Croquis acotado, tabla de parámetros, captura del boceto y archivo nativo.",
-        "gate": "El objeto tiene función definida y el modelo inicial cambia mediante parámetros.",
+        "evidence": "Archivo CAD nativo, croquis acotado, historial de extrusión positiva/negativa y capturas antes/después.",
+        "gate": "El sólido mantiene un único cuerpo válido al editar las cotas y demuestra una adición y una sustracción correctas.",
         "code": ""
       },
       {
-        "title": "02 · Geometría funcional y diseño reutilizable",
+        "title": "02 · Revolución, barrido y solevación",
         "theory": [
-          "El historial de operaciones explica cómo se construye la pieza. Las restricciones deben conservar relaciones al cambiar medidas.",
-          "Holgura y espesor se eligen para el material y proceso reales; no hay un valor universal válido para todas las impresoras."
+          "Revolve crea sólidos de simetría axial girando un medio perfil alrededor de un eje; el corte por revolución produce canales y vaciados.",
+          "Sweep/Barrido desplaza un perfil por una trayectoria recta o curva; requiere una sección orientada y compatible con la ruta.",
+          "Loft/Solevación interpola la transición entre perfiles diferentes y puede requerir guías para controlar la forma."
         ],
         "build": [
-          "Añade los elementos funcionales: alojamiento, apoyo, orificios o nervaduras según el contrato.",
-          "Nombra parámetros y operaciones. Evita cotas duplicadas o geometría sin restricción.",
-          "Documenta tres variantes cambiando parámetros."
+          "Crea una pieza de revolución con perfil escalonado y giro 360°; registra el eje de revolución.",
+          "Modela un conducto Ø8 mm por barrido sobre una trayectoria curva, sin autointersecciones.",
+          "Realiza una transición mediante solevación entre un círculo Ø25 mm y rectángulo 45 × 20 mm separados 60 mm.",
+          "Compara operaciones y completa los ejercicios 04–06 del laboratorio CAD."
         ],
         "test": [
-          "Revisa interferencias, espesores y acceso a los elementos de montaje.",
-          "Regenera las tres variantes y verifica las dimensiones críticas."
+          "Verifica concéntricidad y ausencia de autointersección en revolución.",
+          "Comprueba que el barrido sigue toda la trayectoria manteniendo el perfil.",
+          "Mide sección inicial y final y revisa la continuidad de la solevación."
         ],
-        "evidence": "Archivo editable, historial de operaciones y comparación de variantes.",
-        "gate": "Las variantes se regeneran y cumplen función y dimensiones del contrato.",
+        "evidence": "Tres piezas CAD editables, bocetos y trayectorias, capturas del árbol de features y matriz de comprobación.",
+        "gate": "Cada una de las tres técnicas genera geometría válida y modificable mediante parámetros.",
         "code": ""
       },
       {
-        "title": "03 · Preparación y fabricación",
+        "title": "03 · Agujeros, hélices, redondeos, patrones",
         "theory": [
-          "El archivo nativo conserva la intención; STL o 3MF representa la geometría para fabricación. El laminador transforma esa geometría en trayectorias.",
-          "Orientación, soportes, altura de capa y material afectan ajuste, resistencia y tiempo. Los valores se documentan para la máquina elegida."
+          "Hole/Agujero permite perforaciones controladas por diámetro, posición y profundidad.",
+          "Coil/Bobina genera geometría helicoidal a partir de eje, paso, sección y vueltas; no equivale a representar una rosca con una textura.",
+          "Fillet y Chamfer modifican bordes con radios o distancias; Pattern y Mirror replican características de forma parametrizada."
         ],
         "build": [
-          "Exporta la pieza e impórtala en el laminador de la impresora disponible.",
-          "Confirma escala en mm, orientación y perfil de máquina/material. Inspecciona la vista por capas.",
-          "Imprime primero una probeta de ajuste si hay encajes; registra parámetros y después fabrica la pieza."
+          "Añade cuatro agujeros Ø5 mm a una pieza base y utiliza patrón rectangular/circular si corresponde.",
+          "Crea una hélice de cinco vueltas, paso 4 mm y diámetro medio 20 mm.",
+          "Aplica un redondeo R3 mm y un chaflán 1,5 mm × 45° en aristas compatibles.",
+          "Demuestra Pattern/Mirror y completa los ejercicios 07–10 del laboratorio CAD."
         ],
         "test": [
-          "Comprueba dimensiones en el laminador y ausencia de capas o paredes inesperadas.",
-          "Compara el encaje de la probeta con la holgura prevista antes de imprimir la pieza completa."
+          "Comprueba cantidad, posición y diámetro de agujeros.",
+          "Verifica parámetros de hélice, sentido y posibles interferencias.",
+          "Regenera las repeticiones tras cambiar el feature original y verifica radios/chaflanes."
         ],
-        "evidence": "Modelo nativo, STL/3MF, capturas de capas y ficha de fabricación.",
-        "gate": "El archivo es fabricable y la prueba de ajuste justifica la configuración. Sin impresora, registra fabricación pendiente.",
+        "evidence": "Archivo paramétrico con operaciones identificadas, dimensiones, capturas de detalle y resultados QA.",
+        "gate": "Los features se regeneran sin fallas y las operaciones de repetición conservan sus relaciones.",
         "code": ""
       },
       {
-        "title": "04 · Medición, iteración y defensa",
+        "title": "04 · Nervios, repujado, planos y proyecto final",
         "theory": [
-          "La validación compara medidas y función del producto físico con el contrato. Una imagen de render no demuestra fabricación.",
-          "La iteración modifica un parámetro por una razón medible y conserva las versiones."
+          "Rib/Nervio crea paredes de refuerzo conectadas al cuerpo; Emboss/Repujado genera relieve aditivo o sustractivo sobre superficies.",
+          "Una exportación STL/3MF discretiza geometría para fabricación; un formato nativo o STEP conserva otras propiedades y debe distinguirse de un plano técnico.",
+          "El diseño se valida mediante cotas, ensayos funcionales y trazabilidad del historial. Una animación no sustituye la prueba dimensional."
         ],
         "build": [
-          "Mide dimensiones críticas con el instrumento disponible y registra resolución.",
-          "Prueba la función con el objeto real. Identifica un defecto y ajusta el modelo.",
-          "Entrega versiones antes/después, plano, archivos nativo y de fabricación e instrucciones de uso."
+          "Integra en una pieza final al menos una extrusión positiva y negativa, una revolución o barrido y dos operaciones de detalle.",
+          "Construye nervaduras de espesor 3 mm y un relieve de 1 mm cuando sean funcionalmente apropiados.",
+          "Renombra features, prepara tabla de parámetros y crea planos con vistas acotadas.",
+          "Exporta archivo nativo y, según el uso, STEP y STL/3MF; ejecuta los ejercicios 11–12 del laboratorio."
         ],
         "test": [
-          "Compara medida nominal y real; calcula desviación y verifica la tolerancia acordada.",
-          "Repite el ensayo funcional después del cambio. Si solo hay simulación, identifica qué falta validar físicamente."
+          "Cambia una cota crítica y demuestra que el historial se regenera.",
+          "Compara cotas del modelo, el plano y el archivo exportado.",
+          "Documenta funcionamiento, tolerancias y pruebas físicas si hubo fabricación; si no, distingue qué quedó sin verificar."
         ],
-        "evidence": "Tabla de medidas, fotos, prueba funcional, iteración y defensa del historial.",
-        "gate": "El producto cumple los criterios medidos; la fabricación pendiente se declara como pendiente, no aprobada.",
+        "evidence": "Modelo nativo, STEP, plano, reporte de cambios, historial, capturas y presentación final.",
+        "gate": "La pieza final tiene funciones y operaciones trazables, regeneración válida y una entrega reproducible sin declarar pruebas no realizadas.",
         "code": ""
       }
     ],
