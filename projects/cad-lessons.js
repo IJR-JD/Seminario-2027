@@ -110,6 +110,17 @@
     const list=$("cadLessonGrid");list.replaceChildren();
     operations.forEach((op,i)=>list.append(lessonCard(op,i)));
     $("cadCourseCount").textContent=operations.length+" operaciones · "+cad.source.verifiedOperationVideos.length+" videos originales · 4 etapas guiadas";
+    const videoIndex=$("cadVideoIndex");
+    if(videoIndex){
+      videoIndex.replaceChildren();
+      for(const clip of cad.source.verifiedOperationVideos){
+        const link=elem("a","");
+        link.href="#cad-"+clip.operationId;
+        const play=elem("span","cad-video-play","▶");
+        const label=elem("span","",clip.title);
+        link.append(play,label);videoIndex.append(link);
+      }
+    }
     const resources=$("cadSourceLinks");resources.replaceChildren();
     const src=cad.source;
     for(const [label,url] of [["Repositorio original de videos ManimCE",src.videosRepository],["Repositorio técnico CAD",src.repository],["Fuente real ManimCE de mecanismos · scripts/lessons.py",src.sourceCode],["Procedencia de las lecciones de mecanismos",src.readme]]){
