@@ -46,6 +46,22 @@ Cada unidad incluye 12 ejercicios (17 × 12 = 204). El catálogo y los textos es
 - Ejecutor Python editable: Run / Reset / Output
 - Enlaces a Workshop y a las unidades anterior/siguiente
 
+## Standalone Python Sandbox (ported from Statistics 11)
+
+**Open:** https://ijr-jd.github.io/Seminario-2027/learning/sandbox.html
+
+The source sandbox from `juanperez238421-cpu/ijr-estadistica-11-2026/python/` has been directly adapted using its actual five HTML/CSS/JavaScript files:
+
+- `learning/sandbox.html`
+- `learning/sandbox-v39.js`
+- `learning/sandbox-v39.css`
+- `learning/sandbox-workspace-v40.js`
+- `learning/sandbox-workspace-v40.css`
+
+The sandbox retains the original Colab-style UI, real Pyodide 0.27.7 runtime, multi-cell notebook, Run/Run all, cell reordering/deletion, output clearing, local autosave, `.py` export, CSV/XLSX uploads, Matplotlib plot rendering, package loading and a virtual Python filesystem with download/delete file manager. It is linked from the site home, learning hub, theory and workshop headers.
+
+2027-specific adaptations: branding/year, a beginner algorithms-and-variables example, own `ijr-seminario-2027-python-sandbox-v39` browser storage key and `seminario2027_sandbox.py` export name. It does not use the Statistics 11 Supabase project or copy identities/progress/grades. This is an intentionally **ungraded independent workspace**, and notebook code stays on the current browser unless exported.
+
 ## Workshop
 
 `learning/workshop.html?topic=<slug>` presenta:
