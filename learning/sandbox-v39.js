@@ -301,14 +301,38 @@ __ijr_json.dumps(__ijr_images)
     setNotice('', 'Outputs cleared.', 'Your Python code is unchanged.');
   }
 
+  // Explicit two-click confirmation avoids native browser dialogs being suppressed
+  // in school-managed browsers and automated classroom QA.
+  let resetArmed = false;
+  let resetTimer = null;
+  function disarmReset() {
+    resetArmed = false;
+    resetNotebookButton.textContent = 'Reset notebook';
+    resetNotebookButton.removeAttribute('aria-describedby');
+    if (resetTimer) window.clearTimeout(resetTimer);
+    resetTimer = null;
+  }
   function resetNotebook() {
-    const confirmed = window.confirm('Reset the sandbox notebook? This clears locally saved code and outputs in this browser.');
-    if (!confirmed) return;
+    if (!resetArmed) {
+      resetArmed = true;
+      resetNotebookButton.textContent = 'Confirm reset';
+      resetNotebookButton.setAttribute('aria-describedby', 'runtimeNotice');
+      setNotice('error', 'Confirm notebook reset.', 'Click Confirm reset again to clear locally saved notebook code and outputs. This does NOT change workshop progress.');
+      resetTimer = window.setTimeout(() => {
+        if (resetArmed) {
+          disarmReset();
+          setNotice('', 'Reset cancelled.', 'Your notebook code is still saved.');
+        }
+      }, 12000);
+      return;
+    }
+    disarmReset();
     try { localStorage.removeItem(STORAGE_KEY); } catch {}
     cellList.replaceChildren();
     executionCount = 0;
     createCell(DEFAULT_CODE);
-    setNotice('', 'Notebook reset.', 'A fresh code cell is ready. Course workshop progress was not changed.');
+    saveNotebook();
+    setNotice('success', 'Notebook reset.', 'A fresh code cell is ready. Course workshop progress was not changed.');
   }
 
   function safeFileName(name) {
