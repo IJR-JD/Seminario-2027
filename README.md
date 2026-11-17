@@ -51,13 +51,28 @@ The original terminology, white/black card styling, animation conventions, expla
 
 Las cuatro etapas del proyecto están sincronizadas con estas operaciones. Las rutas Data Analyst, Video Game Design y AI Agent Design permanecen sin cambios.
 
-### Evidencia y estado de los videos originales
+### Original consolidated ManimCE video library (recovered November 2026)
 
-Se revisó la rama principal pública de [ITM-JOB/CAD](https://github.com/ITM-JOB/CAD), incluyendo el árbol Git y [scripts/lessons.py](https://github.com/ITM-JOB/CAD/blob/main/scripts/lessons.py). **Sí existe fuente ManimCE real** de las escenas `Hydraulic`, `Automotive` y `Transmission`, relacionadas con mecanismos y secciones CAD; **no son demostraciones de extrusión/revolución/barrido**. El README describe exportaciones `outputs/{A,B,C}/lesson.mp4`, pero los archivos MP4 no están presentes en la rama principal revisada. Tampoco se localizaron los MP4 originales por operación.
+**Six original MP4 files** were found as real committed Git blobs in the historical branches of [Manim-Scientific-Visualize](https://github.com/juanperez238421-cpu/Manim-Scientific-Visualize). Their filenames, paths, commit SHA and blob sizes were checked using the GitHub repository tree. Unlike prior reports based only on `ITM-JOB/CAD`, these videos are present in the user's historical render repository.
 
-Por integridad de fuente, **no se insertaron enlaces ni videos inventados**. `projects/cad-curriculum.js` contiene el inventario de fuentes y `verifiedOperationVideos: []`. `projects/cad-lessons.js` mostrará un reproductor nativo solamente cuando exista una URL HTTPS real y verificada asociada a `operationId`. Los diagramas SVG actuales son nuevos esquemas conceptuales de la página 2027, no ManimCE y no sustituyen los videos originales.
+The site now embeds those **original recordings** directly in the appropriate 3D Design operation lessons, using native `<video controls preload="none">` with a source-link fallback; it also provides a six-item video index.
 
-Cuando se publiquen o adjunten los MP4 correspondientes, deben añadirse a una ruta real servida por GitHub Pages (por ejemplo `/projects/media/extrude-add.mp4`) y registrarse en el catálogo por `operationId` tras probar que reproducen. Evitar enlaces a artefactos temporales de Actions o a archivos de salida inexistentes.
+| Original consolidated video | Related 2027 lessons | Verified source | File size |
+|---|---|---|---|
+| House Extrusion 3D · Step by Step V3 | extrude-add, extrude-cut | [Original MP4](https://github.com/juanperez238421-cpu/Manim-Scientific-Visualize/blob/fcdd6d2951fcc7f2c0731590d5d5a9770211b88e/render_jobs/house_step_v3/delivery_final/House_Extrusion_3D_STEP_BY_STEP_V3_FULL_PQH.mp4) | 7.9 MiB |
+| Inventor · Hole / Agujero Senior V2 FINAL | hole | [Original MP4](https://github.com/juanperez238421-cpu/Manim-Scientific-Visualize/blob/14bda0f269fe263dc2ffbc856d53abe6bcdfdaa9/deliveries/hole_agujero_senior_v2/Inventor_Hole_Agujero_Senior_V2_FINAL_PQH.mp4) | 8.6 MiB |
+| Inventor · Mirror / Simetría Senior V4 FINAL | pattern | [Original MP4](https://github.com/juanperez238421-cpu/Manim-Scientific-Visualize/blob/d22340811a09fadf2d6b0556ccaf9104712ec82c/render_jobs/inventor_dedicated_20260826/delivery_mirror_v4_final/Inventor_Mirror_Simetria_Senior_V4_FINAL_PQH.mp4) | 5.7 MiB |
+| Inventor · Emboss / Repujado | rib | [Original MP4](https://github.com/juanperez238421-cpu/Manim-Scientific-Visualize/blob/a139d560fdd4a269ef3ed6e80c721545ca12e8bf/render_jobs/fillet_redondeo_senior_v5_20260826/delivery_emboss_v1/05_emboss_repujado.mp4) | 6.3 MiB |
+| Inventor · Thread Profile Triangle · SENIOR FINAL | sketch | [Original MP4](https://github.com/juanperez238421-cpu/Manim-Scientific-Visualize/blob/625f168ed95a16c7f48a8f421d0517ebdf591f36/published_renders/Inventor_Thread_Profile_Triangle_SENIOR_FINAL_PQH.mp4) | 6.1 MiB |
+| Inventor · Thread Profile PRO V2 FINAL | coil | [Original MP4](https://github.com/juanperez238421-cpu/Manim-Scientific-Visualize/blob/ba2a7472818cbd931631f52894ae3c169b93e917/published_renders/Inventor_Thread_Profile_PRO_V2_FINAL_PQH.mp4) | 13.6 MiB |
+
+**Topic integrity:** House Extrusion V3 demonstrates positive and negative extrusions; Mirror V4 teaches symmetry (not a generic rectangular/circular pattern); Thread Profile Triangle and PRO V2 teach thread geometry (not necessarily the Coil/Bobina feature); Emboss teaches embossing (not Rib/Nervio); Hole teaches the Hole feature. Every video card states its real topic.
+
+**Still unavailable as a durable MP4 in the checked sources:** the consolidated standalone Revolution, Barrido/Sweep, Loft/Solevación, Coil/Bobina, Fillet/Redondeo, and Chamfer/Chaflán lessons. Historical source branches and some successful workflow executions exist, but checked GitHub Actions runs return no downloadable artifacts and their branches do not contain a committed MP4 for these specific topics. These cards remain transparently marked without substituting an unrelated video.
+
+**Media verification:** the manifest `projects/cad-curriculum.js` records the exact SHA and path for every asset. `scripts/qa.mjs` checks source consistency and rendering components. `scripts/qa-video-urls.mjs` uses HTTP HEAD during GitHub Pages deployment to check live reachability. A Git-blob existence check and HTTP HEAD are not equivalent to full browser playback QA, so those are reported separately.
+
+The original technical-mechanism ManimCE sources in `ITM-JOB/CAD/scripts/lessons.py` are still linked as an additional reference, not conflated with the six CAD operations video files. The 2027 SVG figures remain independent conceptual diagrams, not screenshots of the original videos.
 
 ## 2027 Projects library
 
