@@ -37,6 +37,8 @@ jobs:
           node --check projects/projects.js
           node --check projects/game-lab.js
           node --check projects/game-curriculum.js
+          node --check projects/game-visual-lab.js
+          node scripts/qa-game-visual-lab.mjs
           node scripts/qa-godot-academy.mjs
           node scripts/qa-game-guide.mjs
           node scripts/qa.mjs
