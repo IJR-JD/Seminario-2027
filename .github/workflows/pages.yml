@@ -37,6 +37,7 @@ jobs:
           node --check projects/projects.js
           node --check projects/game-lab.js
           node --check projects/game-curriculum.js
+          node scripts/qa-godot-academy.mjs
           node scripts/qa-game-guide.mjs
           node scripts/qa.mjs
       - name: Probe original ManimCE MP4 URLs (external availability)

@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Curso práctico desde cero: programación 2D y 3D en Godot, modelado en Blender, GDScript, movimiento, escenas, estados, IA, exportación web y pruebas en 9 PC.">
+<title>Academia Godot 2D + 3D · Seminario 2027</title>
+<link rel="stylesheet" href="../learning/styles.css"><link rel="stylesheet" href="projects.css">
+<style>
+.academy{max-width:1190px;padding:34px clamp(16px,4vw,48px) 80px;margin:auto}.academy h1{font-size:clamp(37px,6vw,70px);letter-spacing:-.055em;line-height:1.03;margin:15px 0 20px}.academy h2{font-size:clamp(25px,3.5vw,41px);letter-spacing:-.046em;line-height:1.16}.academy h3{font-size:21px;letter-spacing:-.025em}
+.academy p,.academy li{line-height:1.74}.academy p{color:#515151}.academy .lead{font-size:18px;max-width:1000px}
+.academy-section{padding:34px 0 20px;border-top:1px solid var(--line);scroll-margin-top:96px}
+.academy-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.academy-card{background:#fff;border:1px solid var(--line);padding:22px;border-radius:17px;min-width:0}.academy-card h3{margin:0 0 12px}
+.academy-note{background:var(--soft);border:1px solid var(--line);padding:18px 22px;border-radius:14px;margin:20px 0}
+.academy-chips,.academy-index{display:flex;flex-wrap:wrap;gap:8px;margin:22px 0}.academy-chips span,.academy-index a{padding:8px 11px;border:1px solid var(--line);border-radius:10px;font-size:12px;font-weight:700;background:#fff;text-decoration:none;color:#111}
+.academy pre{background:#151515;color:#f2f2f2;border-radius:14px;padding:18px;line-height:1.68;overflow:auto;font-size:13px;white-space:pre}.academy code{font-family:ui-monospace,Consolas,monospace}.academy .demo-link{display:inline-block;padding:11px 16px;border-radius:10px;background:#171717;color:white;text-decoration:none;font-weight:800;margin-top:8px}
+.academy table{width:100%;border-collapse:collapse;font-size:14px}.academy th,.academy td{padding:12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}.academy th{background:var(--soft)}
+.academy .lesson-number{font-size:12px;font-weight:850;letter-spacing:.09em;color:#777}.academy .check{border:1px solid #bbb;padding:11px 14px;border-radius:11px;margin:10px 0;background:#fff}.academy a:focus-visible{outline:3px solid #222;outline-offset:3px}
+@media(max-width:790px){.academy-grid{grid-template-columns:1fr}.academy table{display:block;overflow:auto}}
+</style></head><body><a class="skip" href="#main">Saltar al contenido</a>
+<header class="topbar"><a class="brand" href="../"><span class="brand-mark">IJR</span><span><small>Instituto Jorge Robledo · 2027</small><strong>Seminario / Game Engineering</strong></span></a><nav class="top-actions"><a class="button" href="./?project=video-game-design">Volver a proyectos</a><a class="button button-dark" href="game-example/">Jugar demo web</a></nav></header>
+<main class="academy" id="main"><p class="eyebrow">RUTA PROFUNDIZADA · GODOT + BLENDER + GDSCRIPT</p><h1>Videojuegos 2D y 3D: aprende a programarlos desde cero.</h1>
+<p class="lead">Primero aprende variables, coordenadas, condiciones, funciones, bucles y estados en <strong>2D</strong>. Después traslada esas ideas al espacio <strong>3D</strong> con cámaras, geometría, materiales y navegación. Los ejemplos editables están escritos para <strong>Godot 4 Standard</strong> y no dependen de servicios externos.</p>
+<div class="academy-chips"><span>Software libre · Godot + Blender</span><span>GDScript</span><span>Dos proyectos fuente editables</span><span>HTML5: exportación condicionada</span><span>9 PC · Playtesting real</span></div>
+<div class="academy-grid">
+<article class="academy-card"><p class="eyebrow">PROYECTO 2D</p><h3>Guardianes 2D · desde un lienzo vacío</h3><p>Control, vectores, límite de pantalla, objetos, reloj, enemigos y una máquina de estados con patrulla y persecución. Personajes dibujados con primitivas, sin archivos externos.</p><a class="demo-link" href="https://github.com/IJR-JD/Seminario-2027/tree/main/projects/godot-examples/guardianes-2d">Abrir código 2D</a></article>
+<article class="academy-card"><p class="eyebrow">PROYECTO 3D</p><h3>Guardianes 3D · un pequeño mundo interactivo</h3><p>Coordenadas X/Y/Z, creación de mallas, materiales, cámara, luz, entrada WASD y detección de objetos por distancia. Modelo 3D simple creado desde código.</p><a class="demo-link" href="https://github.com/IJR-JD/Seminario-2027/tree/main/projects/godot-examples/guardianes-3d">Abrir código 3D</a></article>
+</div>
+<nav class="academy-index" aria-label="Índice de curso"><a href="#elegir">1 · Motor</a><a href="#instalar">2 · Configurar</a><a href="#bases">3 · Programación</a><a href="#escenas">4 · Escenas</a><a href="#movimiento">5 · Movimiento</a><a href="#colisiones">6 · Colisiones</a><a href="#ia">7 · IA</a><a href="#tresd">8 · 3D</a><a href="#blender">9 · Blender</a><a href="#publicar">10 · Publicación</a><a href="#laboratorio">11 · Laboratorio</a></nav>
+<section class="academy-section" id="elegir"><span class="lesson-number">UNIDAD 01 · DECISIÓN DE PLATAFORMA</span><h2>Por qué Godot y no Blender o Unity como motor principal</h2><table><thead><tr><th>Tecnología</th><th>Qué enseña</th><th>Cuándo usarla</th><th>Límite real</th></tr></thead><tbody>
+<tr><td><strong>Godot 4</strong></td><td>Nodos, escenas, GDScript, física, 2D/3D y exportaciones</td><td>Motor estándar del curso</td><td>Exportación web exige Compatibility/WebGL 2</td></tr>
+<tr><td><strong>Blender</strong></td><td>Modelado, rigging, texturas, animación 3D</td><td>Crear personajes, objetos y escenarios</td><td>No incluye el antiguo Blender Game Engine</td></tr>
+<tr><td><strong>Unity</strong></td><td>C#, escenas 2D/3D y física profesional</td><td>Ruta optativa de profundización</td><td>Software propietario con condiciones de licencia</td></tr>
+<tr><td><strong>Phaser + JavaScript</strong></td><td>DOM/Canvas, game loop, lógica 2D y despliegue web</td><td>Juegos web de baja demanda</td><td>No ofrece 3D como motor integrado</td></tr>
+</tbody></table><p>Godot tiene licencia MIT y es abierto; Blender es un entorno de creación de contenido. Unity Personal puede ser gratuito según elegibilidad pero no es software libre. La decisión se basa en una propuesta educativa única para 2D y 3D, no en un benchmark de los nueve PC.</p>
+<div class="academy-note"><strong>Decisión institucional propuesta:</strong> Godot 4 Standard + GDScript para ambos entornos; Blender para recursos 3D; Phaser/HTML5 como respaldo si la prueba de WebGL 2 falla en algún PC.</div></section>
+<section class="academy-section" id="instalar"><span class="lesson-number">UNIDAD 02 · AMBIENTE DE TRABAJO</span><h2>Del equipo apagado al primer proyecto</h2>
+<ol><li><strong>Descargar:</strong> entra en <a href="https://godotengine.org/download/" target="_blank" rel="noopener noreferrer">godotengine.org/download</a> y elige Godot Standard 4, no Godot .NET. Los archivos oficiales incluyen instrucciones para cada sistema operativo.</li>
+<li><strong>Abrir el editor:</strong> ejecuta Godot y selecciona <em>New Project</em>. Crea una carpeta sin espacios problemáticos, por ejemplo <code>guardianes_2d</code>.</li>
+<li><strong>Renderer:</strong> selecciona <em>Compatibility</em> desde la creación del proyecto si se prevé publicación HTML5.</li>
+<li><strong>Escena:</strong> en el panel Scene añade un nodo raíz <code>Node2D</code> (para el juego 2D) o <code>Node3D</code> (para el 3D). Guarda como <code>main.tscn</code>.</li>
+<li><strong>Script:</strong> selecciona el nodo raíz, pulsa <em>Attach Script</em> y crea <code>main.gd</code>. Elige GDScript.</li>
+<li><strong>Proyecto:</strong> en Project → Project Settings → Application → Run configura la escena principal.</li>
+<li><strong>Ejecutar:</strong> F6 prueba la escena actual y F5 el proyecto. Abre Debugger cuando aparezca un error.</li></ol>
+<div class="academy-card"><h3>Importa uno de los dos ejemplos listos para editar</h3><p>Descarga la carpeta del proyecto desde GitHub (o clona el repositorio completo). En Godot pulsa <em>Import</em> y selecciona <code>project.godot</code>. Se cargarán <code>main.tscn</code> y el script <code>main.gd</code>.</p><pre><code>git clone https://github.com/IJR-JD/Seminario-2027.git
+# En Godot > Import > selecciona:
+# Seminario-2027/projects/godot-examples/guardianes-2d/project.godot</code></pre><p>Para el 3D importa la carpeta <code>guardianes-3d</code>. Estos archivos son código fuente real; sus pruebas en el editor y en el laboratorio quedan pendientes.</p></div></section>
+<section class="academy-section" id="bases"><span class="lesson-number">UNIDAD 03 · CONCEPTOS DE PROGRAMACIÓN</span><h2>Comprende cada línea antes de copiar código</h2>
+<div class="academy-grid">
+<article class="academy-card"><h3>Variables y tipos</h3><pre><code>var vidas: int = 3
+var velocidad: float = 220.0
+var nombre: String = "Luma"
+var jugando: bool = true</code></pre><p><code>var</code> crea una variable. <code>int</code> guarda enteros, <code>float</code> decimales, <code>String</code> texto y <code>bool</code> verdadero/falso. Cambia <code>vidas</code> y observa cómo debería responder el juego.</p></article>
+<article class="academy-card"><h3>Condiciones</h3><pre><code>if vidas == 0:
+    print("Game Over")
+elif vidas == 1:
+    print("Última oportunidad")
+else:
+    print("Continúa")</code></pre><p><code>if</code> toma decisiones. <code>==</code> compara valores; <code>=</code> asigna. La indentación delimita cada bloque. Diseña una condición para abrir una puerta solo cuando tengas tres objetos.</p></article>
+<article class="academy-card"><h3>Funciones</h3><pre><code>func sumar_puntos(valor: int) -> void:
+    puntaje += valor
+    print(puntaje)</code></pre><p>Una función agrupa pasos reutilizables; recibe parámetros. <code>-> void</code> indica que no retorna un valor. Antes de usar el ejemplo debes declarar <code>var puntaje := 0</code>.</p></article>
+<article class="academy-card"><h3>Bucles y colecciones</h3><pre><code>var objetos := [2, 5, 9]
+for objeto in objetos:
+    print(objeto)</code></pre><p>Una lista (Array) almacena varios elementos; <code>for</code> recorre cada uno. En el videojuego, una colección contiene las posiciones de los núcleos de energía.</p></article></div>
+<div class="academy-note"><strong>Actividad 1:</strong> escribe cinco variables del juego, dos decisiones, una función para sumar puntos y un bucle que recorra tres objetos. Explica cada línea y predice la salida antes de ejecutarla.</div></section>
+<section class="academy-section" id="escenas"><span class="lesson-number">UNIDAD 04 · ARQUITECTURA GODOT</span><h2>De un nodo a una escena reutilizable</h2>
+<p>En Godot, un <strong>nodo</strong> tiene una responsabilidad (dibujar, recibir entradas, mover un cuerpo o mostrar texto). Una <strong>escena</strong> guarda una jerarquía de nodos; puede instanciarse muchas veces. El <strong>script</strong> añade comportamiento.</p>
+<pre><code>Main (Node2D) — escenario 2D
+├── Player (CharacterBody2D) — movimiento del jugador
+│   ├── Sprite2D — imagen
+│   └── CollisionShape2D — forma física
+├── Bot9 (CharacterBody2D) — enemigo
+├── Collectibles (Node2D) — objetos
+└── HUD (CanvasLayer) — información fija en pantalla</code></pre>
+<p>Esta es la <strong>arquitectura de destino</strong> después del primer prototipo. Los archivos fuente proporcionados construyen formas directamente con código para eliminar dependencias y ayudar a comprender primero los fundamentos. La siguiente tarea consiste en separar <code>Player</code> y <code>Bot9</code> en escenas independientes.</p></section>
+<section class="academy-section" id="movimiento"><span class="lesson-number">UNIDAD 05 · VECTORES Y TIEMPO</span><h2>Cómo programar movimiento 2D</h2>
+<pre><code>extends Node2D
+var posicion := Vector2(100, 100)
+const VELOCIDAD := 220.0
+
+func _process(delta: float) -> void:
+    var direccion := Input.get_vector(
+        "ui_left", "ui_right", "ui_up", "ui_down"
+    )
+    posicion += direccion * VELOCIDAD * delta
+    queue_redraw()
+
+func _draw() -> void:
+    draw_circle(posicion, 20, Color.GREEN)</code></pre>
+<p><code>extends Node2D</code> indica qué tipo de nodo controla el script. <code>Vector2(x, y)</code> representa posición y dirección en dos dimensiones. <code>Input.get_vector</code> lee las flechas y devuelve un vector normalizado. <code>delta</code> indica segundos entre fotogramas, de modo que <code>VELOCIDAD * delta</code> representa distancia recorrida en ese intervalo. <code>queue_redraw</code> vuelve a dibujar.</p>
+<div class="academy-card"><h3>Experimento de velocidad</h3><p>Prueba velocidades de 100, 220 y 400 unidades/s y recorre la pantalla durante dos segundos. Calcula la distancia teórica <code>d = v × t</code> y compara con la observada. Explica por qué no debemos sumar una cantidad fija por fotograma.</p></div></section>
+<section class="academy-section" id="colisiones"><span class="lesson-number">UNIDAD 06 · CONTACTO Y FÍSICA</span><h2>¿Cómo sabe el juego que el jugador tocó un objeto?</h2>
+<pre><code>var jugador := Vector2(120, 90)
+var objeto := Vector2(140, 110)
+var radio_jugador := 18.0
+var radio_objeto := 12.0
+
+if jugador.distance_to(objeto) &lt; radio_jugador + radio_objeto:
+    print("¡Núcleo recogido!")</code></pre>
+<p>Esta aproximación compara centros y radios: funciona bien para objetos circulares, pero no resuelve toda la física de un escenario. Para paredes y plataformas se recomienda utilizar <code>CharacterBody2D</code>, <code>CollisionShape2D</code> y <code>move_and_slide()</code>.</p>
+<pre><code># Script para un nodo CharacterBody2D (con CollisionShape2D)
+extends CharacterBody2D
+const SPEED := 220.0
+
+func _physics_process(_delta: float) -> void:
+    velocity = Input.get_vector(
+        "ui_left", "ui_right", "ui_up", "ui_down"
+    ) * SPEED
+    move_and_slide()</code></pre><p><code>_physics_process</code> se ejecuta en pasos físicos, <code>velocity</code> indica velocidad en unidades/s y <code>move_and_slide()</code> resuelve el deslizamiento contra superficies físicas. Debes crear un collider para el jugador y los obstáculos; sin <code>CollisionShape2D</code> no habrá bloqueos reales.</p></section>
+<section class="academy-section" id="ia"><span class="lesson-number">UNIDAD 07 · PROGRAMAR INTELIGENCIA ARTIFICIAL</span><h2>Una IA sencilla que decide qué hacer</h2>
+<p>Para empezar, la IA de enemigos no necesita un modelo de lenguaje. Es suficiente definir <strong>percepción → decisión → acción</strong>. En el ejemplo, Bot-9 detecta la distancia al protagonista y pasa de patrulla a persecución.</p>
+<pre><code>var modo := "PATROL"
+var robot := Vector2(700, 220)
+var jugador := Vector2(100, 90)
+
+func actualizar_ia(delta: float) -> void:
+    var distancia := robot.distance_to(jugador)
+    if distancia &lt; 190:
+        modo = "CHASE"
+    elif distancia &gt; 270:
+        modo = "PATROL"
+
+    if modo == "CHASE":
+        robot = robot.move_toward(jugador, 90.0 * delta)</code></pre>
+<p>La separación entre los umbrales (190 y 270) se denomina <strong>histéresis</strong> y evita cambios excesivos de estado. <code>move_toward</code> limita cuánto avanza el robot cada vez.</p>
+<div class="academy-grid"><article class="academy-card"><h3>IA de nivel 1: FSM</h3><p>Estados PATROL, CHASE y SEARCH. Cada estado define un objetivo y transiciones. Introduce una variable <code>last_seen_position</code> para recordar dónde se observó por última vez al jugador.</p></article>
+<article class="academy-card"><h3>IA de nivel 2: navegación</h3><p>Si el mapa contiene paredes, seguir una línea recta no basta. Para 2D utiliza una cuadrícula con BFS o AStarGrid2D; para 3D, una malla de navegación y NavigationAgent3D.</p></article></div>
+<p>El videojuego HTML5 anterior implementa una IA más avanzada con FSM y BFS; los proyectos Godot comienzan con la FSM para facilitar que un estudiante sin experiencia comprenda la decisión antes de añadir algoritmos de rutas.</p></section>
+<section class="academy-section" id="tresd"><span class="lesson-number">UNIDAD 08 · TRANSICIÓN A 3D</span><h2>¿Qué cambia al agregar una tercera dimensión?</h2>
+<p>La lógica de objetivos, variables, funciones y estados sigue siendo prácticamente igual. Cambian el espacio, la representación visual y los sistemas de cámara y colisión.</p>
+<table><thead><tr><th>En 2D</th><th>En 3D</th><th>Interpretación</th></tr></thead><tbody><tr><td><code>Vector2(x,y)</code></td><td><code>Vector3(x,y,z)</code></td><td>Se añade la profundidad</td></tr><tr><td><code>Node2D</code></td><td><code>Node3D</code></td><td>Árbol de nodos con transformación espacial</td></tr><tr><td><code>Sprite2D</code></td><td><code>MeshInstance3D</code></td><td>De imagen a malla</td></tr><tr><td><code>CharacterBody2D</code></td><td><code>CharacterBody3D</code></td><td>Colisiones y movimiento físico</td></tr><tr><td><code>Camera2D</code></td><td><code>Camera3D</code></td><td>Proyección del mundo a la pantalla</td></tr><tr><td><code>AStarGrid2D</code></td><td><code>NavigationAgent3D</code></td><td>Rutas en escenarios con obstáculos</td></tr></tbody></table>
+<pre><code>extends Node3D
+const SPEED := 5.0
+
+func _process(delta: float) -> void:
+    var direction := Vector3.ZERO
+    if Input.is_key_pressed(KEY_W): direction.z -= 1
+    if Input.is_key_pressed(KEY_S): direction.z += 1
+    if Input.is_key_pressed(KEY_A): direction.x -= 1
+    if Input.is_key_pressed(KEY_D): direction.x += 1
+    position += direction.normalized() * SPEED * delta</code></pre>
+<p><code>Y</code> es la altura y <code>X/Z</code> forman el plano del suelo en el ejemplo. El código mueve un <code>Node3D</code> sin físicas; para colisiones reales cambia a <code>CharacterBody3D</code> y configura un <code>CollisionShape3D</code>. Añade una <code>Camera3D</code> con <code>current = true</code> y una <code>DirectionalLight3D</code> para visualizar geometrías.</p>
+<div class="academy-note"><strong>Actividad 3D:</strong> abre el proyecto Guardianes 3D, cambia la posición de la cámara, modifica el material del robot, agrega un obstáculo geométrico y explica por qué una pared visual aún no bloquea al personaje sin física de colisión.</div></section>
+<section class="academy-section" id="blender"><span class="lesson-number">UNIDAD 09 · MODELADO DE PERSONAJES</span><h2>Blender → Godot: del modelo a un objeto jugable</h2>
+<ol><li><strong>Modelo base:</strong> crea un personaje low-poly con cubos, esferas y extrusiones. Define una silueta reconocible para estudiantes pequeños.</li>
+<li><strong>Topología:</strong> mantén pocos polígonos y controla normales. Evita geometrías ocultas y modificadores innecesarios.</li>
+<li><strong>Materiales:</strong> usa una paleta pequeña, contraste alto y colores consistentes; no dependas solo del color para diferenciar personajes.</li>
+<li><strong>Rigging (ampliación):</strong> crea un armature si necesitas animaciones de brazos, piernas o cabeza; para el primer proyecto no es obligatorio.</li>
+<li><strong>Exportar:</strong> aplica transformaciones cuando corresponda y utiliza <em>File → Export → glTF 2.0</em> con formato <code>.glb</code>.</li>
+<li><strong>Importar:</strong> copia el <code>.glb</code> a la carpeta Godot, deja que el editor lo importe y arrastra la escena importada al escenario.</li>
+<li><strong>Juego:</strong> crea un collider separado de la malla visual y ajusta escala, origen, dirección y animaciones.</li></ol>
+<p>Una malla bonita no constituye por sí misma un personaje jugable: debe conectarse a scripts, entradas, cámara y colisiones. Blender es herramienta de creación; Godot administra la interacción en tiempo real.</p>
+<p><small>Referencia técnica: <a href="https://docs.godotengine.org/en/stable/tutorials/assets_pipeline/importing_3d_scenes/available_formats.html" target="_blank" rel="noopener noreferrer">Formatos de importación 3D admitidos por Godot</a>.</small></p></section>
+<section class="academy-section" id="publicar"><span class="lesson-number">UNIDAD 10 · EXPORTACIÓN Y PUBLICACIÓN</span><h2>De Godot a un juego para el laboratorio</h2>
+<p><strong>Opción A — Ejecutable local:</strong> exporta para Windows o el sistema real del laboratorio, copia el paquete y prueba políticas de ejecución. Su funcionamiento no depende del navegador, pero puede requerir autorización para ejecutar archivos.</p>
+<p><strong>Opción B — HTML5:</strong> en Godot ve a <em>Project → Export → Add → Web</em>, instala las export templates correspondientes y utiliza Compatibility. Exporta, publica los archivos generados juntos en un servidor HTTPS y verifica WebGL 2 en cada navegador.</p>
+<p>Para Godot 4, evita C# si la entrega debe ejecutarse desde el navegador. El proyecto puede exportarse sin hilos para simplificar requisitos de alojamiento, según las opciones de la versión de Godot utilizada.</p>
+<div class="academy-note"><strong>Distinción crítica:</strong> GitHub Pages aloja el HTML5 exportado, pero <em>no convierte</em> automáticamente el código GDScript del repositorio en un juego web. El exportado web incluye HTML, JavaScript y recursos que deben publicarse como un conjunto.</div>
+<p>Como plan B, la página actual ya dispone de un juego HTML5 en JavaScript/Canvas que no requiere exportación desde Godot: <a href="game-example/">Guardianes del Laboratorio web</a>.</p></section>
+<section class="academy-section" id="laboratorio"><span class="lesson-number">UNIDAD 11 · VALIDACIÓN CON USUARIOS REALES</span><h2>Pruebas en los nueve PC y evaluación de grados inferiores</h2>
+<div class="academy-grid"><article class="academy-card"><h3>Prueba técnica</h3><ul><li>Registrar CPU, RAM, GPU, navegador, sistema operativo y conectividad.</li><li>Ejecutar durante 15 minutos y anotar bloqueos/FPS.</li><li>Probar controles, audio, pausa, victoria, derrota y reinicio.</li><li>Comprobar que todos los recursos abren sin permisos ni instalaciones inesperadas.</li></ul></article>
+<article class="academy-card"><h3>Prueba pedagógica</h3><ul><li>Definir el grado de los jugadores y objetivos adecuados a su edad.</li><li>Asignar 9 estaciones independientes; no exigir multijugador.</li><li>Permitir partidas breves, con observación sin ayuda constante.</li><li>Recolectar comentarios sin nombres ni correos y comparar versiones.</li></ul></article></div>
+<table><thead><tr><th>Entrega por equipo</th><th>Evidencia</th></tr></thead><tbody>
+<tr><td>GDD y personajes</td><td>Ficha de audiencia, reglas, controles, bocetos propios</td></tr>
+<tr><td>Juego 2D</td><td>Proyecto editable y demostración de variables, bucles, estados y colisiones</td></tr>
+<tr><td>Ampliación 3D</td><td>Proyecto editable con cámara, luces, mallas y un modelo de Blender</td></tr>
+<tr><td>Pruebas</td><td>Matriz de nueve PC, errores observados, capturas y correcciones</td></tr>
+<tr><td>Iteración</td><td>Feedback anónimo exportado, cambios y versión final</td></tr>
+</tbody></table>
+<p><strong>Estado de validación:</strong> los dos proyectos son plantillas fuente para abrir en el editor. No se ha ejecutado Godot en este entorno ni se ha probado físicamente el laboratorio; cualquier afirmación de compatibilidad necesita esas verificaciones.</p></section>
+<section class="academy-section"><h2>Documentación oficial y siguiente nivel</h2><p>Para ampliar conceptos y contrastar las instrucciones con las versiones instaladas:</p><ul>
+<li><a target="_blank" rel="noopener noreferrer" href="https://docs.godotengine.org/en/stable/getting_started/first_2d_game/index.html">Godot: primer videojuego 2D</a></li>
+<li><a target="_blank" rel="noopener noreferrer" href="https://docs.godotengine.org/en/stable/getting_started/first_3d_game/index.html">Godot: primer videojuego 3D</a></li>
+<li><a target="_blank" rel="noopener noreferrer" href="https://docs.godotengine.org/en/stable/tutorials/export/exporting_for_web.html">Godot: exportación web</a></li>
+<li><a target="_blank" rel="noopener noreferrer" href="https://www.blender.org/">Blender: modelado y animación</a></li>
+</ul><a class="demo-link" href="./?project=video-game-design">Volver a Game Lab y evaluar un videojuego</a></section>
+</main><footer class="foot" style="padding:20px 40px"><span>Instituto Jorge Robledo · Seminario 2027 · Godot / Blender</span><a href="./game-development-guide.html">Guía web inicial</a></footer></body></html>
