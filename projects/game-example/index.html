@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Guardianes del Laboratorio · Demo jugable IJR</title>
+<meta name="description" content="Videojuego educativo 2D con personajes originales, IA de patrulla y persecución, niveles, pruebas y controles de teclado.">
+<style>
+:root{font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#151515;background:#f5f5f3}*{box-sizing:border-box}body{margin:0}
+header,main,footer{max-width:1180px;margin:auto;padding:18px clamp(15px,3vw,38px)}
+header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;border-bottom:1px solid #ddd}
+a{color:inherit}.logo{font-weight:900;letter-spacing:-.03em}.tag{border:1px solid #c8c8c8;background:white;border-radius:99px;padding:6px 11px;font-size:12px}
+h1{font-size:clamp(28px,5vw,49px);letter-spacing:-.055em;margin:8px 0}p{line-height:1.65;color:#505050}.grid{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:18px;align-items:start}
+.game-wrap{border:1px solid #c9c9c9;border-radius:18px;background:white;overflow:hidden}
+canvas{width:100%;height:auto;aspect-ratio:16/9;display:block;background:#f2f5f2;touch-action:none}
+.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:12px 16px;border-top:1px solid #ddd}
+button{border:1px solid #222;border-radius:10px;background:#161616;color:#fff;font:inherit;font-weight:700;padding:10px 15px;cursor:pointer}button.secondary{color:#161616;background:white}
+button:focus-visible,a:focus-visible{outline:3px solid #287b67;outline-offset:3px}
+aside{background:#fff;border:1px solid #ccc;border-radius:18px;padding:20px}aside h2{font-size:19px;margin:0 0 9px}aside ul{padding-left:19px;line-height:1.85;font-size:14px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:9px}.stat{background:#f4f4f3;border-radius:10px;padding:11px}.stat b{font-size:24px;display:block}.stat small{color:#666}
+footer{font-size:12px;color:#666}
+@media(max-width:870px){.grid{grid-template-columns:1fr}aside{order:2}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style></head>
+<body><header><a href="../?project=video-game-design" class="logo">IJR / SEMINARIO 2027</a><span class="tag">DEMO 01 · GAME DEVELOPMENT LAB</span><a href="../game-development-guide.html">Abrir guía completa</a></header>
+<main><p class="tag" style="display:inline-block">ORIGINAL · HTML5 CANVAS · SIN DEPENDENCIAS</p><h1>Guardianes del Laboratorio</h1><p>Controla a <strong>Luma</strong>, recoge los tres núcleos de energía y llega al portal. Evita a <strong>Bot-9</strong>, cuyo comportamiento cambia entre patrulla, persecución y búsqueda. Ejemplo real desarrollado para el laboratorio de nueve PC.</p>
+<div class="grid"><div class="game-wrap">
+<canvas id="game" width="960" height="540" aria-label="Escenario 2D: mueve el personaje Luma con flechas o WASD, toma núcleos verdes y evita al robot rojo." tabindex="0">Tu navegador necesita Canvas 2D.</canvas>
+<div class="toolbar"><button id="start">Iniciar / reiniciar</button><button id="pause" class="secondary">Pausar / continuar</button><span id="status" role="status" aria-live="polite">Pulsa Iniciar o Enter.</span></div></div>
+<aside><h2>Controles y objetivos</h2><ul><li><b>WASD / flechas:</b> mover a Luma.</li><li><b>Enter:</b> iniciar o reiniciar.</li><li><b>P o Espacio:</b> pausar.</li><li><b>Objetivo:</b> recoger 3 núcleos y alcanzar el portal.</li><li><b>Bot-9:</b> patrulla, detecta y persigue al jugador cercano; luego regresa.</li><li><b>Partida:</b> duración máxima 90 segundos.</li></ul>
+<div class="stats"><div class="stat"><b id="collected">0 / 3</b><small>Núcleos</small></div><div class="stat"><b id="timer">90</b><small>Segundos</small></div><div class="stat"><b id="mode">Patrulla</b><small>Estado IA</small></div><div class="stat"><b id="fps">—</b><small>FPS medidos</small></div></div>
+<p style="font-size:12px">Diseño original con figuras vectoriales procedurales. No requiere bibliotecas ni recursos externos: útil como línea base de compatibilidad. No representa un benchmark certificado del laboratorio.</p></aside></div>
+</main><footer>Instituto Jorge Robledo · Seminario de Programación · Ejemplo educativo. No envía datos personales ni guarda resultados.</footer>
+<script>
+(function(){
+'use strict';
+const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');
+const el=id=>document.getElementById(id),W=960,H=540,keys=new Set();
+const walls=[{x:230,y:115,w:36,h:300},{x:490,y:0,w:32,h:170},{x:490,y:325,w:32,h:215},{x:675,y:132,w:36,h:275}];
+const crystals=[{x:130,y:440},{x:410,y:255},{x:850,y:110}];
+const start={x:76,y:80},exit={x:865,y:455};
+let player,enemy,pickups,time,state='ready',prev=0,frameSamples=[],message='';
+function reset(){
+ player={x:start.x,y:start.y,r:15,speed:192};enemy={x:835,y:245,r:16,speed:102,mode:'patrol',target:0,search:0,last:{x:835,y:245}};
+ pickups=crystals.map(p=>({...p,taken:false}));time=90;state='playing';message='';frameSamples=[];updateUi();canvas.focus();
+}
+function circleRect(x,y,r,b){const cx=Math.max(b.x,Math.min(x,b.x+b.w)),cy=Math.max(b.y,Math.min(y,b.y+b.h));return (x-cx)**2+(y-cy)**2<r*r;}
+function free(x,y,r){return x>r+10&&x<W-r-10&&y>r+10&&y<H-r-10&&!walls.some(w=>circleRect(x,y,r,w));}
+function move(obj,dx,dy){if(free(obj.x+dx,obj.y,obj.r))obj.x+=dx;if(free(obj.x,obj.y+dy,obj.r))obj.y+=dy;}
+function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y);}
+function stepTowards(obj,target,speed,dt){let dx=target.x-obj.x,dy=target.y-obj.y,d=Math.hypot(dx,dy);if(d<2)return true;const k=Math.min(speed*dt/d,1);move(obj,dx*k,dy*k);return d<10;}
+function gameOver(win,reason){state=win?'won':'lost';message=reason;updateUi();}
+const patrol=[{x:850,y:85},{x:790,y:455},{x:575,y:440},{x:575,y:215}];
+function updateAI(dt){
+ const d=dist(player,enemy);
+ if(d<170&&enemy.mode!=='chase'){enemy.mode='chase';enemy.search=2.7;}
+ if(enemy.mode==='chase'){
+   if(d<225){enemy.last={x:player.x,y:player.y};enemy.search=2.7;}
+   else enemy.search-=dt;
+   stepTowards(enemy,enemy.last,enemy.speed*1.28,dt);
+   if(enemy.search<=0)enemy.mode='search';
+ }else if(enemy.mode==='search'){
+   const arrived=stepTowards(enemy,enemy.last,enemy.speed*.85,dt);
+   enemy.search-=dt;
+   if(arrived||enemy.search<-1.8){enemy.mode='patrol';enemy.target=0;}
+ }else{
+   const arrived=stepTowards(enemy,patrol[enemy.target],enemy.speed,dt);
+   if(arrived||dist(enemy,patrol[enemy.target])<14)enemy.target=(enemy.target+1)%patrol.length;
+ }
+ // Defensive collision check: small robot won't cross walls; its state is finite and visible.
+ if(dist(player,enemy)<player.r+enemy.r-3)gameOver(false,'Bot-9 te encontró. ¡Vuelve a intentarlo!');
+}
+function tick(dt){
+ time=Math.max(0,time-dt);if(time===0){gameOver(false,'Se acabó el tiempo.');return;}
+ let dx=(keys.has('arrowright')||keys.has('d')?1:0)-(keys.has('arrowleft')||keys.has('a')?1:0);
+ let dy=(keys.has('arrowdown')||keys.has('s')?1:0)-(keys.has('arrowup')||keys.has('w')?1:0);
+ let length=Math.hypot(dx,dy)||1;move(player,dx/length*player.speed*dt,dy/length*player.speed*dt);
+ for(const p of pickups){if(!p.taken&&dist(player,p)<28)p.taken=true;}
+ updateAI(dt);if(state!=='playing')return;
+ if(pickups.every(p=>p.taken)&&dist(player,exit)<38)gameOver(true,'¡Laboratorio salvado! Has ganado.');
+ updateUi();
+}
+function roundRect(x,y,w,h,r,fill){ctx.fillStyle=fill;ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fill();}
+function drawCharacter(x,y,isRobot){
+ ctx.save();ctx.translate(x,y);
+ if(isRobot){roundRect(-16,-16,32,30,9,'#a02d36');roundRect(-11,-10,22,12,5,'#fff');roundRect(-7,-6,5,5,2,'#172a29');roundRect(3,-6,5,5,2,'#172a29');ctx.fillStyle='#a02d36';ctx.fillRect(-3,-22,6,7);}
+ else{ctx.fillStyle='#137c62';ctx.beginPath();ctx.arc(0,0,16,0,7);ctx.fill();roundRect(-11,-8,22,12,5,'#fff');ctx.fillStyle='#123';ctx.fillRect(-6,-4,4,4);ctx.fillRect(3,-4,4,4);ctx.strokeStyle='#d4eccc';ctx.lineWidth=4;ctx.beginPath();ctx.arc(0,0,23,.3,2.6);ctx.stroke();}
+ ctx.restore();
+}
+function draw(){
+ ctx.fillStyle='#f1f5f2';ctx.fillRect(0,0,W,H);
+ ctx.strokeStyle='#e0e7e0';ctx.lineWidth=1;for(let x=0;x<W;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}for(let y=0;y<H;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+ for(const w of walls){roundRect(w.x,w.y,w.w,w.h,8,'#344b4b');roundRect(w.x+5,w.y+5,w.w-10,w.h-10,5,'#547071');}
+ // Portal is locked until all three crystals are collected.
+ const unlocked=pickups.every(p=>p.taken);roundRect(exit.x-27,exit.y-38,54,76,16,unlocked?'#208765':'#919da1');
+ ctx.fillStyle='white';ctx.font='bold 13px system-ui';ctx.textAlign='center';ctx.fillText(unlocked?'SALIDA':'CERRADO',exit.x,exit.y+5);
+ for(const p of pickups)if(!p.taken){ctx.save();ctx.translate(p.x,p.y);ctx.rotate(Math.PI/4);roundRect(-11,-11,22,22,4,'#16a174');ctx.restore();}
+ if(player)drawCharacter(player.x,player.y,false);
+ if(enemy){if(enemy.mode==='chase'){ctx.strokeStyle='rgba(180,30,40,.26)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(enemy.x,enemy.y,170,0,Math.PI*2);ctx.stroke();}drawCharacter(enemy.x,enemy.y,true);}
+ roundRect(13,12,265,45,9,'#fff');ctx.textAlign='left';ctx.fillStyle='#162d2b';ctx.font='bold 15px system-ui';ctx.fillText('NÚCLEOS '+pickups.filter(p=>p.taken).length+'/3',26,40);
+ ctx.font='13px system-ui';ctx.fillText('TIEMPO '+Math.ceil(time)+' s',155,40);
+ if(state!=='playing'){
+  ctx.fillStyle='rgba(9,24,21,.76)';ctx.fillRect(0,0,W,H);
+  roundRect(235,166,490,205,20,'#fff');ctx.textAlign='center';ctx.fillStyle='#132d28';ctx.font='bold 33px system-ui';
+  ctx.fillText(state==='ready'?'GUARDIANES DEL LAB':state==='won'?'¡MISIÓN COMPLETA!':'FIN DE PARTIDA',480,226);
+  ctx.font='18px system-ui';ctx.fillText(message||(state==='ready'?'Tres núcleos. Un portal. Un robot.':'Pulsa Enter para volver a jugar.'),480,268);
+  ctx.font='16px system-ui';ctx.fillText(state==='ready'?'Presiona Enter o Iniciar':'Presiona Enter o Reiniciar',480,309);
+ }
+}
+function updateUi(){
+ el('collected').textContent=pickups.filter(p=>p.taken).length+' / 3';
+ el('timer').textContent=Math.ceil(time);
+ el('mode').textContent=({patrol:'Patrulla',chase:'Persigue',search:'Busca'})[enemy.mode];
+ el('status').textContent=state==='playing'?'Jugando':state==='paused'?'En pausa':state==='ready'?'Pulsa Iniciar o Enter.':message;
+}
+function frame(now){let dt=Math.min((now-prev)/1000||0,0.05);prev=now;if(state==='playing'){tick(dt);if(dt>0){frameSamples.push(1/dt);if(frameSamples.length>40)frameSamples.shift();}}draw();el('fps').textContent=frameSamples.length?Math.round(frameSamples.reduce((a,b)=>a+b,0)/frameSamples.length):'—';requestAnimationFrame(frame);}
+function pause(){if(state==='playing')state='paused';else if(state==='paused')state='playing';updateUi();}
+addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(['arrowup','arrowdown','arrowleft','arrowright',' ','enter'].includes(k))e.preventDefault();if(k==='enter')reset();else if(k==='p'||k===' '){if(!e.repeat)pause();}else keys.add(k);});
+addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));addEventListener('blur',()=>{keys.clear();if(state==='playing')pause();});
+el('start').addEventListener('click',reset);el('pause').addEventListener('click',pause);
+player={...start,r:15};enemy={x:835,y:245,mode:'patrol'};pickups=crystals.map(p=>({...p,taken:false}));time=90;updateUi();requestAnimationFrame(frame);
+})();
+</script></body></html>
