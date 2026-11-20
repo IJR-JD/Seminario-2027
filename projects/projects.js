@@ -15,6 +15,7 @@ for(const [i,p] of projects.entries()){
 function render(p){
  panel.hidden=false;$("projectTitle").textContent=p.title;$("projectSummary").textContent=p.summary;
  if(typeof window.IJR_2027_RENDER_CAD==="function") window.IJR_2027_RENDER_CAD(p);
+ if(typeof window.IJR_2027_RENDER_GAME_LAB==="function") window.IJR_2027_RENDER_GAME_LAB(p);
  const stages=$("stageCards");stages.replaceChildren();
  p.stages.forEach((s,i)=>{
   const d=make("details","project-stage");if(i===0)d.open=true;
