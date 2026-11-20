@@ -1,0 +1,134 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Guía completa: entorno, creación de personajes, programación 2D, IA de enemigos, colisiones, QA y playtesting para los nueve PC del laboratorio del IJR.">
+<title>Guía de Desarrollo de Videojuegos · Seminario IJR 2027</title>
+<link rel="stylesheet" href="../learning/styles.css"><link rel="stylesheet" href="projects.css">
+<style>
+.guide{max-width:1100px;margin:auto;padding:34px clamp(17px,3vw,42px) 76px}.guide h1{font-size:clamp(34px,5.5vw,68px);letter-spacing:-.055em;line-height:1.08;margin:15px 0}
+.guide h2{font-size:clamp(23px,3.4vw,38px);letter-spacing:-.04em;margin:0 0 15px}.guide p{line-height:1.75;color:#4a4a4a}
+.guide .lead{font-size:18px;max-width:920px}.guide-section{border-top:1px solid var(--line);padding-top:31px;margin-top:38px;scroll-margin-top:100px}
+.guide-card{border:1px solid var(--line);background:#fff;border-radius:17px;padding:22px;margin:17px 0}.guide-card h3{margin:0 0 10px;font-size:21px}
+.guide-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:17px}.guide ul,.guide ol{line-height:1.85}
+.guide pre{background:#151515;border-radius:12px;padding:19px;color:#f8f8f8;overflow-x:auto;font-size:13px;line-height:1.65;white-space:pre}
+.guide code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
+.guide table{width:100%;border-collapse:collapse;font-size:14px}.guide th,.guide td{padding:13px;text-align:left;border-bottom:1px solid #ddd;vertical-align:top}
+.guide th{background:var(--soft)}.guide-nav{display:flex;gap:9px;flex-wrap:wrap}.guide-nav a{border:1px solid var(--line);padding:8px 12px;border-radius:9px;font-size:13px;text-decoration:none}
+.guide .highlight{background:var(--soft);border:1px solid var(--line);border-radius:17px;padding:20px}
+.guide-callout{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;background:#171717;color:#fff;padding:22px;border-radius:17px}
+.guide-callout p{color:#ddd;margin:0}.guide-callout a{background:white;color:#111;padding:12px 17px;text-decoration:none;border-radius:9px;font-weight:800}
+.guide-steps{counter-reset:steps}.guide-steps li{margin-bottom:9px}.guide small{color:#666}
+@media(max-width:760px){.guide-two{grid-template-columns:1fr}.guide table{display:block;overflow:auto}.guide-callout{display:block}.guide-callout a{display:inline-block;margin-top:12px}}
+</style></head><body>
+<a class="skip" href="#content">Saltar al contenido</a>
+<header class="topbar"><a class="brand" href="../"><span class="brand-mark">IJR</span><span><small>Instituto Jorge Robledo · Seminario 2027</small><strong>Video Game Development Academy</strong></span></a>
+<nav class="top-actions"><a class="button" href="./?project=video-game-design">Ruta de videojuegos</a><a class="button button-dark" href="game-example/">Jugar demo</a></nav></header>
+<main id="content" class="guide"><p class="eyebrow">DE CERO A PROTOTIPO · PROGRAMACIÓN + UX + IA + QA</p><h1>Desarrolla un videojuego real, paso a paso.</h1>
+<p class="lead">Esta guía acompaña la ruta de <strong>Video Game Design</strong> con un producto que sí se puede jugar: <em>Guardianes del Laboratorio</em>. Diseñarás un personaje original, programarás movimiento y colisiones, crearás un enemigo con inteligencia artificial basada en reglas y validarás el juego con estudiantes de grados inferiores en nueve PC.</p>
+<div class="guide-callout"><div><strong>DEMO 01 · GUARDIANES DEL LABORATORIO</strong><p>Juego HTML5 completo sin instalaciones ni dependencias externas. Luma recoge tres núcleos y evita a Bot-9.</p></div><a href="game-example/">Jugar ahora →</a></div>
+<section class="guide-section"><h2>Mapa de la guía</h2><nav class="guide-nav" aria-label="Índice de la guía"><a href="#entorno">01 · Entorno</a><a href="#diseno">02 · Personajes</a><a href="#arquitectura">03 · Arquitectura</a><a href="#fisica">04 · Movimiento y colisiones</a><a href="#ia">05 · Inteligencia artificial</a><a href="#niveles">06 · Niveles e interfaz</a><a href="#pruebas">07 · QA de 9 PC</a><a href="#publicacion">08 · Publicación</a><a href="#evaluacion">09 · Playtesting</a><a href="#rubrica">10 · Entregables</a></nav></section>
+<section class="guide-section" id="entorno"><p class="eyebrow">01 · CONFIGURAR EL ENTORNO</p><h2>Instala las herramientas correctas</h2>
+<div class="guide-two"><article class="guide-card"><h3>Ruta A — Sin instalaciones (primer día)</h3><p>Abre el ejemplo directamente desde la página del colegio. Está escrito con HTML5 Canvas y JavaScript sin bibliotecas externas. Ideal para entender la estructura antes de aprender motores.</p><ol><li>Abre <a href="game-example/">el videojuego</a>.</li><li>Prueba con WASD, Enter y P.</li><li>Abre herramientas de desarrollador con F12 y observa <em>Console</em>.</li><li>Consulta el código del juego desde el repositorio en GitHub.</li></ol></article>
+<article class="guide-card"><h3>Ruta B — Phaser y un proyecto profesional</h3><p>Instala Node.js LTS, Visual Studio Code y Git. Utiliza la plantilla oficial de Phaser y selecciona <strong>Web Bundler → Vite</strong>.</p>
+<pre><code>node --version
+npm --version
+git --version
+npm create @phaserjs/game@latest mi-juego
+cd mi-juego
+npm install
+npm run dev</code></pre>
+<p>Abre la dirección local que muestra Vite. Los comandos dependen de la plantilla elegida y del entorno; comprueba <code>package.json</code> si alguna orden cambia.</p></article></div>
+<div class="guide-card"><h3>¿Qué carpeta y archivos debería tener?</h3><pre><code>mi-juego/
+├─ index.html
+├─ package.json
+├─ public/
+│  ├─ sprites/          # Personajes y animaciones
+│  ├─ audio/            # Efectos originales/licenciados
+│  └─ maps/             # Niveles JSON
+├─ src/
+│  ├─ main.js           # Inicialización del juego
+│  ├─ scenes/           # Menu, Gameplay, GameOver
+│  ├─ entities/         # Player, Enemy, Collectible
+│  ├─ systems/          # Input, Collision, AI
+│  └─ data/             # Configuración de niveles
+└─ README.md</code></pre><p>En el prototipo suministrado concentramos todo en un único <code>index.html</code> para que sea fácil inspeccionarlo. Para proyectos más grandes se deben separar módulos y responsabilidades.</p></div>
+<p><small>Referencias oficiales: <a href="https://docs.phaser.io/phaser/getting-started/installation" target="_blank" rel="noopener noreferrer">Phaser Installation</a> y <a href="https://editor.phaser.io/tutorials/create-game-app" target="_blank" rel="noopener noreferrer">Create Phaser Game</a>.</small></p></section>
+<section class="guide-section" id="diseno"><p class="eyebrow">02 · CHARACTER DESIGN</p><h2>Del concepto al personaje jugable</h2>
+<div class="guide-two"><article class="guide-card"><h3>Luma · protagonista</h3><svg role="img" aria-label="Luma, robot verde de forma circular y visor claro" viewBox="0 0 180 140" width="180" height="140" style="max-width:100%"><circle cx="90" cy="70" r="46" fill="#177b61"/><rect x="61" y="53" width="58" height="35" rx="13" fill="white"/><rect x="73" y="64" width="10" height="10" rx="3" fill="#14322d"/><rect x="98" y="64" width="10" height="10" rx="3" fill="#14322d"/><path d="M48 91 Q90 138 132 91" fill="none" stroke="#c7eddc" stroke-width="8" stroke-linecap="round"/></svg><p><strong>Silueta:</strong> circular. <strong>Paleta:</strong> verde y blanco. <strong>Rol:</strong> recoger núcleos y resolver el nivel. Se dibuja en código: no requiere imagen descargada.</p></article>
+<article class="guide-card"><h3>Bot-9 · enemigo inteligente</h3><svg role="img" aria-label="Bot-9, robot rojo cuadrado con ojos y antena" viewBox="0 0 180 140" width="180" height="140" style="max-width:100%"><rect x="84" y="14" width="12" height="18" fill="#962e3b"/><rect x="54" y="30" width="72" height="80" rx="17" fill="#a02d36"/><rect x="67" y="50" width="46" height="30" rx="11" fill="white"/><rect x="77" y="61" width="10" height="10" rx="2" fill="#14322d"/><rect x="96" y="61" width="10" height="10" rx="2" fill="#14322d"/></svg><p><strong>Silueta:</strong> rectangular. <strong>Paleta:</strong> rojo y blanco. <strong>Rol:</strong> patrullar, perseguir y buscar a Luma. Sus tres estados se muestran en pantalla para facilitar la depuración.</p></article></div>
+<ol><li><strong>Brief:</strong> identifica la edad de los jugadores y escribe tres atributos del personaje.</li><li><strong>Concept art:</strong> crea tres variaciones de forma, paleta y expresión antes de elegir una.</li><li><strong>Sprite:</strong> dibuja con Canvas, SVG o una herramienta de pixel art; usa recursos propios o licenciados.</li><li><strong>Animaciones:</strong> define <em>idle</em>, movimiento, recolección y derrota. Un sprite sheet puede organizar 4–8 fotogramas por acción.</li><li><strong>Accesibilidad:</strong> diferencia aliados y enemigos también por forma, no únicamente por color.</li></ol>
+<div class="highlight"><strong>IA para ideación y recursos (opcional):</strong><p>Puede ayudar a proponer siluetas, escribir una ficha de personaje, depurar errores o preparar una lista de pruebas. No sustituye el diseño, el código ni la verificación de los alumnos. Evita introducir datos personales de menores en herramientas externas; declara los recursos generados y revisa sus licencias.</p></div></section>
+<section class="guide-section" id="arquitectura"><p class="eyebrow">03 · SOFTWARE ENGINEERING</p><h2>Organiza la lógica del juego</h2><p>Un juego no es solo dibujar un personaje. Se repite un ciclo de <strong>entrada → simulación → renderizado</strong> y se gestiona un conjunto de estados para el menú, la partida, la pausa y el resultado.</p>
+<pre><code>const states = ['ready', 'playing', 'paused', 'won', 'lost'];
+function frame(now) {
+  const dt = Math.min((now - previous) / 1000, 0.05);
+  previous = now;
+  if (state === 'playing') {
+    updatePlayer(dt);
+    updateEnemyAI(dt);
+    checkObjectives();
+  }
+  drawScene();
+  requestAnimationFrame(frame);
+}</code></pre><p><strong>Delta time</strong> evita que la velocidad dependa de cuántos cuadros dibuja el PC. Limitar <code>dt</code> también reduce saltos anormales tras cambiar de pestaña. En la demo, Enter inicia, P/espacio pausa y perder el foco pausa automáticamente.</p></section>
+<section class="guide-section" id="fisica"><p class="eyebrow">04 · MOVIMIENTO, COLISIONES Y EVENTOS</p><h2>Haz que el personaje responda correctamente</h2>
+<pre><code>const length = Math.hypot(inputX, inputY) || 1;
+player.x += (inputX / length) * player.speed * dt;
+player.y += (inputY / length) * player.speed * dt;</code></pre><p>Normalizar el vector impide que moverse en diagonal sea más rápido. La demo separa el desplazamiento horizontal del vertical y comprueba círculos contra rectángulos para impedir cruzar las paredes. El contacto con núcleos registra una sola recolección.</p>
+<div class="guide-card"><h3>Pruebas imprescindibles</h3><ul><li>Caminar en las cuatro direcciones y en diagonal.</li><li>Intentar atravesar muros y bordes del mapa.</li><li>Recolectar un objeto sin duplicar el puntaje.</li><li>Pausar y reanudar sin modificar el temporizador.</li><li>Reiniciar después de ganar o perder sin variables residuales.</li></ul></div></section>
+<section class="guide-section" id="ia"><p class="eyebrow">05 · ARTIFICIAL INTELLIGENCE FOR GAMES</p><h2>Construye una IA verificable, no una ilusión</h2>
+<p>La IA del enemigo Bot-9 es una <strong>máquina de estados finitos (FSM) con búsqueda de rutas BFS</strong>. No utiliza un modelo generativo ni servicios en la nube: es inteligencia artificial basada en reglas y búsqueda en grafos.</p>
+<div class="guide-two"><article class="guide-card"><h3>Estados del enemigo</h3><ol><li><strong>PATROL:</strong> sigue puntos de control.</li><li><strong>CHASE:</strong> detecta a Luma si está a menos de 170 píxeles y persigue su última posición conocida.</li><li><strong>SEARCH:</strong> explora esa posición cuando pierde el contacto.</li><li><strong>RETURN:</strong> vuelve a patrullar si termina su búsqueda (implementado como transición a PATROL).</li></ol></article>
+<article class="guide-card"><h3>Búsqueda de caminos</h3><ol><li>Divide el escenario en celdas de 30 píxeles.</li><li>Descarta las celdas bloqueadas por paredes.</li><li>Desde la celda inicial, explora vecinas accesibles con BFS.</li><li>Reconstruye el camino al destino.</li><li>Recalcula la ruta aproximadamente cada 0,28 segundos.</li></ol></article></div>
+<pre><code>// Idea central de BFS: explorar vecinos libres
+const queue = [startCell];
+const previous = new Map([[startCell, null]]);
+while (queue.length) {
+  const current = queue.shift();
+  if (current === goalCell) break;
+  for (const next of accessibleNeighbors(current)) {
+    if (!previous.has(next)) {
+      previous.set(next, current);
+      queue.push(next);
+    }
+  }
+}
+// Luego reconstruir la ruta desde goalCell.</code></pre>
+<p>En la demo real se utiliza una cola con índice de lectura para evitar <code>shift()</code> repetidos. BFS encuentra rutas mínimas en número de movimientos sobre una cuadrícula no ponderada. No crea una estrategia humana ni garantiza comportamiento óptimo en todos los mapas. Un nivel más avanzado puede incorporar A*, línea de visión, árboles de comportamiento y dificultad adaptativa.</p>
+<div class="highlight"><strong>Experimento de IA:</strong><p>Abre la demo, atrae a Bot-9 y escóndete detrás de un muro. Observa el estado mostrado en la pantalla y registra si el robot encuentra un camino, si pierde al jugador y cómo retoma su patrulla. Cambia el radio de detección y contrasta resultados.</p></div></section>
+<section class="guide-section" id="niveles"><p class="eyebrow">06 · LEVEL DESIGN & USER EXPERIENCE</p><h2>Diseña niveles para grados inferiores</h2><p>Comienza con un nivel que enseñe movimiento sin riesgo. Después introduce la mecánica de recolección y finalmente el enemigo. El primer minuto debe explicar visualmente el objetivo sin lectura extensa.</p>
+<table><thead><tr><th>Nivel</th><th>Objetivo</th><th>Nuevo concepto</th><th>Criterio de prueba</th></tr></thead><tbody>
+<tr><td>Tutorial</td><td>Llegar a una puerta</td><td>Movimiento y paredes</td><td>El jugador aprende sin ayuda</td></tr>
+<tr><td>Exploración</td><td>Recoger 3 núcleos</td><td>Objetos y puntaje</td><td>No hay recolectas duplicadas</td></tr>
+<tr><td>Guardianes</td><td>Recoger y escapar</td><td>Patrulla, persecución y riesgo</td><td>Reto comprensible y reinicio fácil</td></tr></tbody></table>
+<p>La demo entregada implementa el nivel <em>Guardianes</em>. Los niveles Tutorial y Exploración son actividades de ampliación propuestas, no niveles ya disponibles.</p></section>
+<section class="guide-section" id="pruebas"><p class="eyebrow">07 · QA & PERFORMANCE</p><h2>Certifica el juego en los nueve computadores</h2>
+<table><thead><tr><th>Medición</th><th>Cómo verificar</th><th>Meta de aceptación propuesta</th></tr></thead><tbody>
+<tr><td>Arranque</td><td>Abrir en navegador y jugar desde el menú</td><td>Sin errores de consola</td></tr>
+<tr><td>Rendimiento</td><td>Leer FPS y observar fluidez durante 15 minutos</td><td>30 FPS estables como referencia inicial</td></tr>
+<tr><td>Resolución</td><td>Probar pantalla completa y ventana reducida</td><td>Escenario legible y adaptable</td></tr>
+<tr><td>Controles</td><td>Teclado y ratón existentes del PC</td><td>Sin periféricos adicionales</td></tr>
+<tr><td>Partida</td><td>Ganar, perder, pausar y reiniciar</td><td>Sin errores críticos</td></tr>
+<tr><td>Conectividad</td><td>Ejecutar copia local y verificar recursos</td><td>Sin dependencias externas en la demo</td></tr></tbody></table>
+<p>Los umbrales indicados son objetivos del curso, no mediciones realizadas en los PC físicos. Registra CPU, RAM, sistema operativo, navegador, GPU, incidencias y evidencia por estación.</p></section>
+<section class="guide-section" id="publicacion"><p class="eyebrow">08 · VERSION CONTROL & DEPLOYMENT</p><h2>Publica un juego reproducible</h2>
+<pre><code>git init
+git add .
+git commit -m "feat: prototipo jugable del laboratorio"
+git branch -M main
+# Crea el repositorio en GitHub antes de añadir remoto
+git remote add origin https://github.com/USUARIO/mi-juego.git
+git push -u origin main</code></pre>
+<p>Para una página estática, GitHub Pages puede servir el proyecto con un <code>index.html</code> y recursos relativos. Si el proyecto usa Vite, configura la ruta <code>base</code> para el nombre del repositorio y publica los archivos generados por <code>npm run build</code>, no los fuentes sin compilar. Si se desarrolla con Godot, exporta para Web con el renderizador Compatibility y valida el navegador y los recursos reales.</p>
+<p><small>Referencia: <a href="https://docs.godotengine.org/es/4.x/tutorials/export/exporting_for_web.html" rel="noopener noreferrer" target="_blank">Godot · Exportar para la Web</a>.</small></p></section>
+<section class="guide-section" id="evaluacion"><p class="eyebrow">09 · USER TESTING</p><h2>Deja que los jugadores reales decidan qué mejorar</h2>
+<ol><li>Asigna un código de juego y una versión verificable; entrega las instrucciones impresas o en pantalla.</li><li>Organiza nueve estaciones independientes, con partidas de 5 a 10 minutos.</li><li>Invita a estudiantes de grados inferiores a jugar sin asistencia constante.</li><li>Observa dónde dudan, en qué pantalla abandonan y qué errores aparecen.</li><li>Desde <a href="./?project=video-game-design">Game Lab</a>, evalúa diversión, controles, diseño visual, dificultad y experiencia general.</li><li>Exporta las calificaciones anónimas a CSV antes de cerrar la pestaña.</li><li>Prioriza tres mejoras y repite una segunda sesión con una nueva versión.</li></ol>
+<div class="highlight"><strong>Privacidad y persistencia:</strong><p>El formulario actual no tiene backend: sus evaluaciones permanecen solo en la memoria de la pestaña y deben exportarse. No solicites nombres, correos ni fotografías de estudiantes menores de edad. El almacenamiento central exige una implementación posterior con controles de acceso.</p></div></section>
+<section class="guide-section" id="rubrica"><p class="eyebrow">10 · DELIVERABLES & ACCEPTANCE</p><h2>Qué debe entregar cada equipo</h2>
+<table><thead><tr><th>Entregable</th><th>Evidencia mínima</th><th>Peso recomendado</th></tr></thead><tbody>
+<tr><td>Arquitectura y programación</td><td>Repositorio, funciones, módulos, control de versiones</td><td>25 %</td></tr>
+<tr><td>Compatibilidad y estabilidad</td><td>QA de nueve PC, registros de errores y correcciones</td><td>20 %</td></tr>
+<tr><td>Público objetivo</td><td>GDD y análisis de edad, instrucciones y accesibilidad</td><td>15 %</td></tr>
+<tr><td>Jugabilidad y UX</td><td>Partida completa, niveles, feedback visual</td><td>15 %</td></tr>
+<tr><td>Playtesting</td><td>CSV anónimo, análisis y plan de mejora</td><td>15 %</td></tr>
+<tr><td>Iteración y documentación</td><td>Comparación de versiones, README, defensa</td><td>10 %</td></tr></tbody></table>
+<div class="guide-callout"><div><strong>Producto final de referencia</strong><p>Juega, inspecciona, modifica una mecánica y registra tu primera incidencia antes de crear un juego nuevo.</p></div><a href="game-example/">Abrir Guardianes del Laboratorio →</a></div></section>
+</main><footer class="foot" style="padding:25px"><span>Instituto Jorge Robledo · Seminario 2027 · Guía de programación de videojuegos</span><a href="./?project=video-game-design">Volver a la ruta</a></footer></body></html>
