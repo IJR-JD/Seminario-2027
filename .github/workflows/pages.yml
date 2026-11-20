@@ -35,6 +35,9 @@ jobs:
           node --check projects/cad-lessons.js
           node --check projects/data.js
           node --check projects/projects.js
+          node --check projects/game-lab.js
+          node --check projects/game-curriculum.js
+          node scripts/qa-game-guide.mjs
           node scripts/qa.mjs
       - name: Probe original ManimCE MP4 URLs (external availability)
         continue-on-error: true
