@@ -1,0 +1,1 @@
+(()=>{'use strict';const section=document.getElementById('gameCurriculum');if(!section)return;const p=new URLSearchParams(location.search).get('project');section.hidden=p!=='video-game-design';})();
