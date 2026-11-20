@@ -45,7 +45,37 @@ function circleRect(x,y,r,b){const cx=Math.max(b.x,Math.min(x,b.x+b.w)),cy=Math.
 function free(x,y,r){return x>r+10&&x<W-r-10&&y>r+10&&y<H-r-10&&!walls.some(w=>circleRect(x,y,r,w));}
 function move(obj,dx,dy){if(free(obj.x+dx,obj.y,obj.r))obj.x+=dx;if(free(obj.x,obj.y+dy,obj.r))obj.y+=dy;}
 function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y);}
-function stepTowards(obj,target,speed,dt){let dx=target.x-obj.x,dy=target.y-obj.y,d=Math.hypot(dx,dy);if(d<2)return true;const k=Math.min(speed*dt/d,1);move(obj,dx*k,dy*k);return d<10;}
+// Grid BFS is real pathfinding AI: route around walls, no external library.
+const GRID=30,COLS=Math.ceil(W/GRID),ROWS=Math.ceil(H/GRID);
+const cell=(x,y)=>({c:Math.max(0,Math.min(COLS-1,Math.floor(x/GRID))),r:Math.max(0,Math.min(ROWS-1,Math.floor(y/GRID)))});
+function findPath(from,to,radius){
+ const a=cell(from.x,from.y),b=cell(to.x,to.y),id=(c,r)=>r*COLS+c;
+ const start=id(a.c,a.r),goal=id(b.c,b.r),prev=new Map([[start,-1]]),queue=[start];let head=0,found=-1;
+ while(head<queue.length){const cur=queue[head++],c=cur%COLS,r=Math.floor(cur/COLS);
+   if(cur===goal){found=cur;break;}
+   for(const [dc,dr] of [[1,0],[-1,0],[0,1],[0,-1]]){
+     const nc=c+dc,nr=r+dr,n=id(nc,nr),x=nc*GRID+GRID/2,y=nr*GRID+GRID/2;
+     if(nc<0||nr<0||nc>=COLS||nr>=ROWS||prev.has(n)||!free(x,y,radius+1))continue;
+     prev.set(n,cur);queue.push(n);
+   }
+ }
+ if(found<0)return [];
+ const steps=[];for(let cur=found;cur!==start&&cur!==-1;cur=prev.get(cur))steps.push({x:(cur%COLS)*GRID+GRID/2,y:Math.floor(cur/COLS)*GRID+GRID/2});
+ return steps.reverse();
+}
+function stepTowards(obj,target,speed,dt){
+ const d=dist(obj,target);if(d<12)return true;
+ obj.repath=(obj.repath||0)-dt;
+ const goal=cell(target.x,target.y);
+ if(obj.repath<=0||!obj.path||!obj.goal||obj.goal.c!==goal.c||obj.goal.r!==goal.r){
+   obj.path=findPath(obj,target,obj.r);obj.goal=goal;obj.repath=.28;
+ }
+ const point=obj.path&&obj.path.length?obj.path[0]:target;
+ const dx=point.x-obj.x,dy=point.y-obj.y,len=Math.hypot(dx,dy)||1,step=Math.min(speed*dt,len);
+ move(obj,dx/len*step,dy/len*step);
+ if(obj.path&&dist(obj,point)<9)obj.path.shift();
+ return dist(obj,target)<12;
+}
 function gameOver(win,reason){state=win?'won':'lost';message=reason;updateUi();}
 const patrol=[{x:850,y:85},{x:790,y:455},{x:575,y:440},{x:575,y:215}];
 function updateAI(dt){
