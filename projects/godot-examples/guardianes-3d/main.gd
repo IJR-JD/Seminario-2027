@@ -56,7 +56,8 @@ func build_world() -> void:
 	for z in [-9.0, 9.0]:
 		add_box(Vector3(0, 0.25, z), Vector3(18, 0.5, 0.2), "#435c59")
 	player = add_sphere(Vector3(-6, 0.7, -6), 0.65, "#137b62")
-	add_box(Vector3(-6, 0.88, -6.6), Vector3(0.62, 0.22, 0.2), "#ffffff")
+	var visor := add_box(Vector3(-6, 0.88, -6.6), Vector3(0.62, 0.22, 0.2), "#ffffff")
+	visor.reparent(player, true)
 	robot = add_box(Vector3(5, 0.7, 5), Vector3(1.2, 1.2, 1.2), "#a5333d")
 	portal = add_box(Vector3(6.8, 1.2, -6.8), Vector3(1.4, 2.4, 0.4), "#778a86")
 	for position in [Vector3(-4, 0.5, 5), Vector3(0, 0.5, 0), Vector3(4, 0.5, -4)]:
@@ -84,6 +85,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
 func restart() -> void:
 	player.position = Vector3(-6, 0.7, -6)
 	robot.position = Vector3(5, 0.7, 5)
+	(portal as MeshInstance3D).material_override = make_material("#778a86")
 	for index in collectibles.size():
 		collectibles[index].visible = true
 	ai_state = "PATROL"
