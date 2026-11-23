@@ -34,6 +34,7 @@ async function openIsland(page){
 try{
   const desktop=await browser.newPage({viewport:{width:1440,height:900}});
   await prepare(desktop);
+  console.log('QA desktop: island ready');
   await openIsland(desktop);
   await desktop.locator('#islandDirectoryToggle').click();
   assert.equal(await desktop.locator('#levelList .missionCard').count(),22);
@@ -61,6 +62,7 @@ try{
   assert((await desktop.locator('#islandTrailProgress').textContent()).includes('1 / 5'),'Discovery survives reload');
   assert((await desktop.locator('#islandTrailList .islandTrailEntry').first().textContent()).includes('distance = 4'),'Found landmark unlocks Python example');
 
+  console.log('QA desktop: checking second-floor access via exterior ladder');
   // End-to-end second-floor challenge: there must be no interaction from ground level.
   // Start at Room 02's exterior ladder, climb in the real 3D scene, then enter the door.
   await desktop.evaluate(()=>localStorage.setItem('ijr-codequest-world-v2',
@@ -83,6 +85,7 @@ try{
     'Room 02 must be accessible from the upstairs balcony');
   await desktop.close();
 
+  console.log('QA mobile: touch controls and district atlas');
   const mobile=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
   await prepare(mobile);
   await openIsland(mobile);
