@@ -253,3 +253,8 @@ body.source-operations-parity .theory-section-v2{margin-top:clamp(44px,5vw,68px)
 /* Multi-part badges in the Pandas module must wrap rather than extend the page. */
 .integrated-practice .problem-topline{display:flex;flex-wrap:wrap;justify-content:flex-start;gap:8px;min-width:0}
 .integrated-practice .problem-topline .badge{white-space:normal;min-width:0;max-width:100%;overflow-wrap:anywhere;line-height:1.45}
+
+/* A visible cue is provided only for diagrams with measured horizontal overflow. */
+.diagram-scroll-cue{font-size:12px;line-height:1.55;color:#555;letter-spacing:.01em;margin:0;padding:10px 16px;border-top:1px solid var(--line);background:#fff}
+.code-utilities button{min-height:40px}
+.integrated-practice .guide-head .button{min-height:40px}
