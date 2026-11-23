@@ -26,6 +26,7 @@ jobs:
           node scripts/qa-codequest.mjs
           node scripts/qa-codequest-skills.mjs
           node scripts/qa-codequest-island.mjs
+          node scripts/qa-codequest-villages.mjs
   browser:
     runs-on: ubuntu-24.04
     timeout-minutes: 12
