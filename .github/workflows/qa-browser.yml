@@ -5,6 +5,7 @@ on:
     paths:
       - 'learning/**'
       - 'scripts/qa-browser.mjs'
+      - 'scripts/qa-visual.mjs'
       - '.github/workflows/qa-browser.yml'
   workflow_dispatch:
 permissions:
@@ -33,3 +34,12 @@ jobs:
           trap 'kill "$server_pid" || true' EXIT
           sleep 2
           node scripts/qa-browser.mjs
+          node scripts/qa-visual.mjs
+      - name: Preserve visual QA evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-qa-2027
+          path: qa-visual/
+          if-no-files-found: ignore
+          retention-days: 7
