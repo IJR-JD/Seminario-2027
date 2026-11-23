@@ -84,13 +84,16 @@ try{
    null,{timeout:12000});
   assert.equal(await page.locator('.sv27-workshop-panel .sv27-figure svg').count(),1,
    slug+' standalone workshop lacks its scientific diagram');
-  await page.locator('#stageList .stage').last().click();
-  await page.waitForFunction(()=>
-   document.querySelector('.sv27-workshop-footer')?.textContent.includes('ETAPA 12'),
-   null,{timeout:5000});
-  assert.equal(await page.locator('.sv27-workshop-panel .sv27-figure svg').count(),1,
-   slug+' final stage lost its visual');
-  console.log('PASS standalone-workshop-visual',slug,'12 stages');
+  for(let i=0;i<12;i++){
+   await page.locator('#stageList .stage').nth(i).click();
+   const stageLabel='ETAPA '+String(i+1).padStart(2,'0');
+   await page.waitForFunction(expected=>
+     document.querySelector('.sv27-workshop-footer')?.textContent.includes(expected),
+     stageLabel,{timeout:5000});
+   assert.equal(await page.locator('.sv27-workshop-panel .sv27-figure svg').count(),1,
+     slug+' stage '+(i+1)+' lost its contextual vector figure');
+  }
+  console.log('PASS standalone-workshop-visual',slug,'12/12 stages with figures');
  }
 
  assert.deepEqual(errors,[],'Uncaught browser errors while navigating 17 topics');
