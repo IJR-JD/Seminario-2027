@@ -64,19 +64,31 @@
         'screen = pygame.display.set_mode((640, 360))',
         'player = pygame.Rect(100, 150, 40, 40)',
         'keys = pygame.key.get_pressed()',
-        'if keys[pygame.K_RIGHT]: player.x += 5'
+        'running = True',
+        'clock = pygame.time.Clock()',
+        'while running:',
+        '    for event in pygame.event.get():',
+        '        if event.type == pygame.QUIT: running = False',
+        '    keys = pygame.key.get_pressed()',
+        '    player.x += (keys[pygame.K_RIGHT] - keys[pygame.K_LEFT]) * 5',
+        '    screen.fill((255, 255, 255))',
+        '    pygame.draw.rect(screen, (0, 0, 0), player)',
+        '    pygame.display.flip()',
+        '    clock.tick(60)',
+        'pygame.quit()'
       ],
       result:'keyboard input → player movement'
     },
     {
       area:'Animation',
       library:'Matplotlib',
-      tag:'VISUALIZATION',
-      use:'Turn changing numerical values into animated scientific graphics.',
+      tag:'COLAB NOTEBOOK · ANIMATION OUTPUT',
+      use:'Execute in Google Colab to render the HTML animation; the browser practice console cannot display the notebook HTML player.',
       code:[
         'import numpy as np',
         'import matplotlib.pyplot as plt',
         'from matplotlib.animation import FuncAnimation',
+        'from IPython.display import HTML, display',
         'x = np.linspace(0, 2*np.pi, 200)',
         'fig, ax = plt.subplots()',
         'line, = ax.plot(x, np.zeros_like(x))',
@@ -84,7 +96,7 @@
         '    line.set_ydata(np.sin(x + frame / 10))',
         '    return (line,)',
         'animation = FuncAnimation(fig, update, frames=60)',
-        'print(type(animation).__name__)',
+        'display(HTML(animation.to_jshtml()))',
         'plt.close(fig)'
       ],
       result:'calculation → moving figure'
@@ -174,7 +186,7 @@
       n:'05',
       title:'Analyze the DataFrame',
       copy:'One statement can filter complete observations, create derived variables and summarize groups. The analytical rule remains visible in code.',
-      code:['df["performance_index"] = (df["score"] * df["attendance"]).round(1)','high = df.loc[df["score"] >= 80]','summary = df.groupby("group")["score"].mean().round(1)'],
+      code:['import pandas as pd','df = pd.read_excel("pandas_excel_students.xlsx", sheet_name="Students")','df["performance_index"] = (df["score"] * df["attendance"]).round(1)','high = df.loc[df["score"] >= 80]','summary = df.groupby("group")["score"].mean().round(1)','print(summary.to_dict())'],
       points:['derive','filter','group','summarize']
     },
     {
@@ -182,7 +194,7 @@
       n:'06',
       title:'Export a real result',
       copy:'The final product can return to Excel. This closes the complete workflow from a classroom workbook to an analytical output that can be shared.',
-      code:['with pd.ExcelWriter("class_analysis.xlsx") as writer:','    high.to_excel(writer, sheet_name="High performance", index=False)','    summary.to_excel(writer, sheet_name="Group summary")'],
+      code:['import pandas as pd','df = pd.read_excel("pandas_excel_students.xlsx", sheet_name="Students")','high = df.loc[df["score"] >= 80]','summary = df.groupby("group")["score"].mean().round(1)','with pd.ExcelWriter("class_analysis.xlsx") as writer:','    high.to_excel(writer, sheet_name="High performance", index=False)','    summary.to_excel(writer, sheet_name="Group summary")','print("class_analysis.xlsx")'],
       points:['analysis','output workbook','reproducible result']
     }
   ];
