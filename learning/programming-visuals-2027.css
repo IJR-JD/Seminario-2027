@@ -1,0 +1,38 @@
+/* IJR 2027 · General programming course, scientific black/white diagrams */
+html.pc27-coding-track .diagram-grid-v2{grid-template-columns:minmax(0,1fr)}
+html.pc27-coding-track .pc27-stage{padding:clamp(13px,2.1vw,25px);background:linear-gradient(135deg,#f5f5f3,#fcfcfb);overflow-x:auto;overflow-y:hidden;scrollbar-width:thin}
+html.pc27-coding-track .pc27-figure{width:100%;min-width:0;max-width:100%;background:#fff;border-radius:7px}
+html.pc27-coding-track .pc27-figure svg{max-height:470px;min-height:240px;width:100%;height:auto;border:1px solid #d9d9d6;border-radius:8px;overflow:visible}
+html.pc27-coding-track .pc27-figure svg text{font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;paint-order:stroke fill}
+html.pc27-coding-track .pc27-figure .pc27-mono{font-family:ui-monospace,"SFMono-Regular",Consolas,monospace;letter-spacing:.005em}
+html.pc27-coding-track .pc27-figure .sv27-box{transform-origin:center;animation:pc27-introduce .62s cubic-bezier(.2,.8,.25,1) both}
+html.pc27-coding-track .pc27-figure .sv27-box:nth-of-type(2){animation-delay:.16s}
+html.pc27-coding-track .pc27-figure .sv27-box:nth-of-type(3){animation-delay:.29s}
+html.pc27-coding-track .pc27-figure .sv27-box:nth-of-type(4){animation-delay:.40s}
+html.pc27-coding-track .pc27-figure .sv27-box:nth-of-type(5){animation-delay:.50s}
+html.pc27-coding-track .pc27-figure .pc27-arrow{stroke-dasharray:8 5;animation:pc27-flow 3.5s linear infinite}
+html.pc27-coding-track .pc27-figure .pc27-cycle{animation:pc27-flow 5s linear infinite}
+html.pc27-coding-track .pc27-figure .pc27-grid-cell{transform-origin:center}
+html.pc27-coding-track .pc27-workshop-panel .sv27-workshop-body{padding:clamp(10px,1.4vw,16px)}
+html.pc27-coding-track .pc27-workshop-panel .pc27-figure{max-width:890px;margin:auto}
+html.pc27-coding-track .pc27-workshop-panel .pc27-figure svg{border:0;max-height:315px;min-height:190px}
+html.pc27-coding-track .pc27-workshop-panel .sv27-workshop-heading{background:#f4f4f2}
+html.pc27-coding-track .sv28-dock-top{background:#181818}
+html.pc27-coding-track .sv28-focus-rect{stroke:#111;fill:rgba(0,0,0,.042)}
+html.pc27-coding-track .code-surface:focus-within{box-shadow:inset 3px 0 #252525}
+html.pc27-coding-track .concept-example-v2{font-family:ui-monospace,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.75;font-size:13px}
+html.pc27-coding-track .syntax-card-v2 code{white-space:pre-wrap;overflow-wrap:anywhere;tab-size:4}
+html.pc27-coding-track .diagram-card-v2{scroll-margin-top:108px}
+@keyframes pc27-introduce{from{opacity:.18;transform:translateY(5px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes pc27-flow{to{stroke-dashoffset:-38}}
+@media(max-width:650px){
+ html.pc27-coding-track .pc27-stage{padding:9px}
+ html.pc27-coding-track .pc27-stage .pc27-figure{width:700px;min-width:700px;max-width:none}
+ html.pc27-coding-track .pc27-workshop-panel .pc27-figure{width:700px;min-width:700px;max-width:none}
+ html.pc27-coding-track .pc27-workshop-panel .pc27-figure svg{max-height:none;min-height:0}
+ html.pc27-coding-track .pc27-stage .pc27-figure svg{min-height:0;max-height:none}
+ html.pc27-coding-track .diagram-card-v2{scroll-margin-top:18px}
+}
+@media(prefers-reduced-motion:reduce){
+ html.pc27-coding-track .pc27-figure .sv27-box,html.pc27-coding-track .pc27-arrow,html.pc27-coding-track .pc27-cycle{animation:none!important;transition:none!important}
+}
