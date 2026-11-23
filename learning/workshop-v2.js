@@ -37,8 +37,22 @@ function setBusy(b){
  $("previousStage").disabled=b||stage===0;$("nextStage").disabled=b||stage===tasks.length-1;
  [...sidebar.children].forEach(button=>button.disabled=b);
 }
+function renderStageFiles(files){
+ const area=$("workshopDownloads");if(!area)return;
+ area.replaceChildren();area.hidden=!Array.isArray(files)||files.length===0;
+ if(area.hidden)return;
+ const heading=document.createElement("span");heading.textContent="Generated files:";area.appendChild(heading);
+ files.forEach(name=>{
+  const btn=document.createElement("button");btn.type="button";btn.textContent="Download "+name;
+  btn.addEventListener("click",async()=>{
+   btn.disabled=true;
+   try{await window.IJR_RUNNER.downloadFile(name);}catch(error){status("No se pudo descargar "+name+": "+(error.message||String(error)));}
+   finally{btn.disabled=false;}
+  });area.appendChild(btn);
+ });
+}
 function displayStage(){
- const task=tasks[stage];runResult=null;feedback.textContent="";feedback.className="feedback";
+ const task=tasks[stage];runResult=null;feedback.textContent="";feedback.className="feedback";renderStageFiles([]);
  set("sideTitle",lesson.title);set("workshopTitle",lesson.title);
  set("workshopEyebrow","TOPIC "+String(lesson.order).padStart(2,"0")+" · PYTHON GUIDED WORKSHOP");
  const cls=lesson.slug==="logic"?" · CLASS "+(stage<6?"1 · Libraries + XLSX":"2 · Pandas"):"";
@@ -76,10 +90,10 @@ async function execute(){
  const code=editor.value;
  if(!code.trim()){status("Escribe una solución antes de ejecutar la celda.");return;}
  if(!window.IJR_RUNNER){status("El intérprete de Python no está disponible. Recarga la página.");return;}
- setBusy(true);set("workshopRuntimeStatus"," · Starting Python…");set("outputText","Loading Python runtime…");
+ setBusy(true);set("workshopRuntimeStatus"," · Starting Python…");set("outputText","Loading Python runtime…");renderStageFiles([]);
  try{
   const result=await window.IJR_RUNNER.run(code,{timeoutMs:90000});
-  runResult=result.ok?{key:task.key,code,output:result.output}:null;
+  runResult=result.ok?{key:task.key,code,output:result.output}:null;renderStageFiles(result.ok?result.files:[]);
   set("outputText",result.output||(result.ok?"(No output generated)":"Python execution error"));
   set("workshopRuntimeStatus",result.ok?" · Python executed":" · Fix Python error");
   status(result.ok?"El código se ejecutó. Comprueba la salida y pulsa Validate.":"La ejecución falló. Lee el error, corrige y vuelve a ejecutar.",result.ok);
