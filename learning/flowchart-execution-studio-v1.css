@@ -1,0 +1,302 @@
+/* Seminario 2027 · Flowchart Execution Studio
+ * Precision vector teaching aids / monochrome editorial interface.
+ * Scopes all rules to #flowchartExecutionStudio, respecting existing site UI.
+ */
+#flowchartExecutionStudio{--fc-ink:#171717;--fc-muted:#62625d;--fc-line:#d5d5d0;--fc-soft:#f7f7f5;--fc-white:#fff;min-width:0;scroll-margin-top:92px}
+#flowchartExecutionStudio *{box-sizing:border-box}
+#flowchartExecutionStudio .section-heading-v2 p:last-child{max-width:93ch}
+#flowchartExecutionStudio .fc28-symbols{
+ display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;
+ border:1px solid var(--fc-line);padding:12px;margin:15px 0 22px;border-radius:13px;
+ background:linear-gradient(115deg,#fbfbfa,#f5f5f3);
+}
+#flowchartExecutionStudio .fc28-symbols>div{
+ display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+ min-width:0;padding:10px 5px;color:#44443f;text-align:center;
+ background:#fff;border:1px solid #e1e1dd;border-radius:8px;
+ font-size:11px;font-weight:780;line-height:1.35
+}
+#flowchartExecutionStudio .fc28-symbols svg{width:65px;height:32px;overflow:visible}
+#flowchartExecutionStudio .fc28-symbols svg rect,
+#flowchartExecutionStudio .fc28-symbols svg polygon{fill:#fff;stroke:#222;stroke-width:1.75}
+#flowchartExecutionStudio .fc28-symbols svg path{stroke:#222}
+#flowchartExecutionStudio .fc28-tabs{
+ display:flex;gap:7px;overflow-x:auto;overscroll-behavior-inline:contain;scrollbar-width:thin;
+ padding:0 0 12px;border-bottom:1px solid var(--fc-line);
+}
+#flowchartExecutionStudio .fc28-tab{
+ flex:1 0 auto;min-height:49px;padding:12px 17px;border:1px solid #c7c7c2;
+ border-radius:10px;background:#fff;color:#383835;
+ font-family:inherit;font-weight:810;font-size:13px;line-height:1.3;cursor:pointer;
+ transition:background .24s,border-color .24s,transform .24s;
+}
+#flowchartExecutionStudio .fc28-tab.is-selected{background:#171717;color:#fff;border-color:#171717}
+#flowchartExecutionStudio .fc28-tab:hover:not(.is-selected){border-color:#797975;background:#efefed;transform:translateY(-1px)}
+#flowchartExecutionStudio :is(button,input,textarea,select,[tabindex="0"]):focus-visible{
+ outline:3px solid #777771;outline-offset:3px
+}
+#flowchartExecutionStudio .fc28-summary{
+ display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:end;
+ margin:8px 0 17px;padding:16px 18px;
+ border:1px solid #d5d5d0;border-radius:13px;
+ background:linear-gradient(135deg,#f8f8f6,#fff 65%);
+}
+#flowchartExecutionStudio .fc28-summary .eyebrow{
+ font-size:11px;letter-spacing:.13em;font-weight:830;color:#73736e;margin:0 0 9px
+}
+#flowchartExecutionStudio .fc28-summary h3{
+ font-size:clamp(22px,2.6vw,31px);font-weight:830;letter-spacing:-.043em;line-height:1.13;margin:0 0 6px
+}
+#flowchartExecutionStudio .fc28-summary p:not(.eyebrow){font-size:14px;line-height:1.6;color:#575752;margin:0;max-width:74ch}
+#flowchartExecutionStudio .fc28-params{display:flex;gap:9px;flex-wrap:wrap;justify-content:flex-end}
+#flowchartExecutionStudio .fc28-parameter{
+ display:flex;flex-direction:column;gap:6px;min-width:95px;
+ color:#62625e;font-size:11px;letter-spacing:.06em;font-weight:840;text-transform:uppercase
+}
+#flowchartExecutionStudio .fc28-parameter input{
+ width:100%;min-height:43px;padding:8px 10px;background:#fff;color:#141414;
+ border:1px solid #b9b9b4;border-radius:8px;font:800 17px/1.3 ui-monospace,Consolas,monospace
+}
+#flowchartExecutionStudio .fc28-workspace{
+ display:grid;grid-template-columns:minmax(0,1.16fr) minmax(0,.84fr);
+ gap:14px;align-items:stretch;min-width:0
+}
+#flowchartExecutionStudio .fc28-panel{
+ display:flex;flex-direction:column;min-width:0;overflow:hidden;
+ border:1px solid #cfcfca;background:#fff;border-radius:15px;
+ box-shadow:0 7px 24px rgba(0,0,0,.025)
+}
+#flowchartExecutionStudio .fc28-panel-head{
+ display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+ border-bottom:1px solid #e3e3df;background:#fbfbfa;padding:13px 15px;
+ font-size:11px;font-weight:850;color:#595954;letter-spacing:.11em;line-height:1.35
+}
+#flowchartExecutionStudio .fc28-panel-head strong{
+ letter-spacing:.015em;background:#171717;color:#fff;font-size:11px;font-weight:820;
+ border-radius:6px;padding:5px 9px
+}
+#flowchartExecutionStudio .fc28-diagram-scroll{
+ flex:1;min-width:0;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;
+ background:linear-gradient(145deg,#fafaf9,#f2f2ef);padding:11px;
+ scroll-behavior:smooth;overscroll-behavior-inline:contain
+}
+#flowchartExecutionStudio .fc28-svg{display:block;width:100%;min-width:0;max-width:100%;height:auto;max-height:690px}
+#flowchartExecutionStudio .fc28-svg-heading{
+ fill:#777770;font:820 12px/1 system-ui,-apple-system,"Segoe UI",sans-serif;letter-spacing:1.5px
+}
+#flowchartExecutionStudio .fc28-svg .fc28-node{
+ cursor:pointer;outline:0;transition:filter .35s ease;
+}
+#flowchartExecutionStudio .fc28-svg .fc28-node :is(rect,polygon){
+ stroke:#1d1d1b;stroke-width:2.1;fill:#fff;vector-effect:non-scaling-stroke;
+ transition:fill .42s ease,stroke-width .42s ease,stroke .42s ease
+}
+#flowchartExecutionStudio .fc28-svg .fc28-terminator :is(rect,polygon){fill:#282824}
+#flowchartExecutionStudio .fc28-svg .fc28-node text{
+ fill:#1e1e1c;pointer-events:none;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
+ font-size:18px;font-weight:800;paint-order:stroke fill;
+}
+#flowchartExecutionStudio .fc28-svg .fc28-terminator text{fill:#fff}
+#flowchartExecutionStudio .fc28-svg .fc28-node .fc28-sub{
+ font-size:14px;font-weight:560;fill:#64645f
+}
+#flowchartExecutionStudio .fc28-svg .fc28-node.is-visited:not(.is-current) :is(rect,polygon){
+ stroke:#777771;stroke-width:2.6;fill:#ededeb
+}
+#flowchartExecutionStudio .fc28-svg .fc28-terminator.is-visited:not(.is-current) :is(rect,polygon){fill:#444440}
+#flowchartExecutionStudio .fc28-svg .fc28-node.is-current :is(rect,polygon){
+ fill:#171717;stroke:#171717;stroke-width:3.4;
+ filter:drop-shadow(0 6px 9px rgba(0,0,0,.13))
+}
+#flowchartExecutionStudio .fc28-svg .fc28-node.is-current text{fill:#fff}
+#flowchartExecutionStudio .fc28-svg .fc28-node.is-current .fc28-sub{fill:#e1e1de}
+#flowchartExecutionStudio .fc28-svg .fc28-node.is-visited:not(.is-current) text{fill:#151513}
+#flowchartExecutionStudio .fc28-svg .fc28-terminator.is-visited:not(.is-current) text{fill:#fff}
+#flowchartExecutionStudio .fc28-svg .fc28-node:focus-visible :is(rect,polygon){stroke:#a9a9a3;stroke-width:5;stroke-dasharray:8 4}
+#flowchartExecutionStudio .fc28-svg .fc28-edge path{
+ stroke:#a3a39e;stroke-width:2.9;fill:none;stroke-linejoin:round;stroke-linecap:round;
+ vector-effect:non-scaling-stroke;transition:stroke .25s,stroke-width .25s
+}
+#flowchartExecutionStudio .fc28-svg .fc28-edge.is-traversed path{stroke:#4b4b47;stroke-width:4}
+#flowchartExecutionStudio .fc28-svg .fc28-edge.is-current path{
+ stroke:#0c0c0c;stroke-width:5;stroke-dasharray:11 7;
+ animation:fc28-path-flow .72s linear infinite
+}
+#flowchartExecutionStudio .fc28-svg .fc28-edge-label{
+ font:850 14px/1 system-ui,-apple-system,"Segoe UI",sans-serif;
+ fill:#4d4d49;paint-order:stroke fill;stroke:#fff;stroke-width:4px;
+}
+#flowchartExecutionStudio .fc28-svg .fc28-edge.is-current .fc28-edge-label{fill:#000}
+#flowchartExecutionStudio .fc28-svg .fc28-token{
+ fill:#fff;stroke:#111;stroke-width:3;vector-effect:non-scaling-stroke;
+ pointer-events:none;filter:drop-shadow(0 2px 3px rgba(0,0,0,.12))
+}
+@keyframes fc28-path-flow{to{stroke-dashoffset:-36}}
+#flowchartExecutionStudio .fc28-panel-caption{
+ margin:0;padding:10px 14px;border-top:1px solid #e5e5e1;
+ font-size:12px;color:#62625e;line-height:1.6
+}
+#flowchartExecutionStudio .fc28-code-scroll{
+ flex:1 0 auto;max-height:360px;min-height:175px;overflow:auto;
+ scrollbar-width:thin;background:#f8f8f7;padding:13px 8px 14px
+}
+#flowchartExecutionStudio .fc28-lines{list-style:none;margin:0;padding:0}
+#flowchartExecutionStudio .fc28-line{
+ display:flex;gap:13px;padding:9px 12px;min-width:max-content;min-height:40px;
+ border-left:3px solid transparent;
+ transition:background .32s,border-color .32s,color .32s;white-space:pre
+}
+#flowchartExecutionStudio .fc28-line-no{
+ min-width:24px;flex:0 0 24px;color:#8e8e89;
+ font:650 13px/1.65 ui-monospace,Consolas,monospace;
+}
+#flowchartExecutionStudio .fc28-line code{
+ color:#242422;font:650 14px/1.65 ui-monospace,"SFMono-Regular",Consolas,monospace
+}
+#flowchartExecutionStudio .fc28-line.is-current{
+ background:#1d1d1b;border-left-color:#1d1d1b;border-radius:5px
+}
+#flowchartExecutionStudio .fc28-line.is-current :is(.fc28-line-no,code){color:#fff}
+#flowchartExecutionStudio .fc28-console{background:#fff;border-top:1px solid #dadad6}
+#flowchartExecutionStudio .fc28-console-title{
+ display:flex;justify-content:space-between;align-items:center;gap:10px;
+ background:#eeeef0;border-bottom:1px solid #ddddda;
+ color:#424240;font-size:11px;letter-spacing:.1em;font-weight:860;padding:10px 13px
+}
+#flowchartExecutionStudio .fc28-console-title span{color:#777771;font-weight:680;letter-spacing:0}
+#flowchartExecutionStudio .fc28-console pre{
+ margin:0;white-space:pre-wrap;overflow-wrap:anywhere;min-height:52px;
+ color:#151515;background:#fff;font:650 15px/1.7 ui-monospace,Consolas,monospace;
+ padding:12px 14px
+}
+#flowchartExecutionStudio .fc28-vars{border-top:1px solid #e3e3e0;padding:11px 13px 15px}
+#flowchartExecutionStudio .fc28-vars p{
+ margin:0 0 10px;font-weight:860;font-size:11px;letter-spacing:.11em;color:#62625e
+}
+#flowchartExecutionStudio #fc28-var-values{
+ display:flex;gap:7px;flex-wrap:wrap;align-items:center;min-height:28px;
+ color:#777771;font-size:13px
+}
+#flowchartExecutionStudio .fc28-variable{
+ display:inline-flex;gap:8px;align-items:center;padding:7px 10px;
+ color:#242422;background:#f3f3f1;border:1px solid #d7d7d3;border-radius:8px
+}
+#flowchartExecutionStudio .fc28-variable b{font:750 12px/1.2 ui-monospace,Consolas,monospace}
+#flowchartExecutionStudio .fc28-variable code{font:700 13px/1.2 ui-monospace,Consolas,monospace}
+#flowchartExecutionStudio .fc28-controls{
+ margin:14px 0 0;border:1px solid #d3d3cf;border-radius:14px;background:#fff;overflow:hidden
+}
+#flowchartExecutionStudio .fc28-actions{
+ display:flex;flex-wrap:wrap;align-items:center;gap:7px;padding:14px 15px 11px
+}
+#flowchartExecutionStudio .fc28-control{
+ display:inline-flex;align-items:center;justify-content:center;gap:5px;
+ min-height:42px;padding:9px 13px;color:#22221f;background:#fff;
+ border:1px solid #bdbdb8;border-radius:9px;font-size:13px;font-weight:810;
+ font-family:inherit;cursor:pointer;line-height:1.3;
+ transition:background .2s,color .2s,transform .2s,border-color .2s
+}
+#flowchartExecutionStudio .fc28-control:hover:not(:disabled){
+ border-color:#555551;background:#efefec;transform:translateY(-1px)
+}
+#flowchartExecutionStudio .fc28-control:disabled{opacity:.35;cursor:not-allowed}
+#flowchartExecutionStudio .fc28-primary{background:#181818;color:#fff;border-color:#181818}
+#flowchartExecutionStudio .fc28-primary:hover:not(:disabled){
+ background:#3b3b39;color:#fff;border-color:#3b3b39
+}
+#flowchartExecutionStudio .fc28-speed{
+ display:inline-flex;gap:8px;align-items:center;justify-content:center;
+ min-height:42px;padding:0 4px;font-size:12px;color:#686862;font-weight:770
+}
+#flowchartExecutionStudio .fc28-speed select{
+ min-width:77px;min-height:39px;padding:7px 8px;border:1px solid #bcbcb7;border-radius:8px;
+ background:#fff;color:#171717;font:800 13px/1.3 inherit
+}
+#flowchartExecutionStudio .fc28-sequence{display:flex;align-items:center;gap:14px;padding:4px 15px 13px}
+#flowchartExecutionStudio #fc28-step-counter{
+ color:#222;font:840 12px/1.3 ui-monospace,Consolas,monospace;
+ white-space:nowrap;font-variant-numeric:tabular-nums
+}
+#flowchartExecutionStudio .fc28-progress{
+ height:7px;flex:1;min-width:50px;border-radius:50px;
+ overflow:hidden;background:#e5e5e1
+}
+#flowchartExecutionStudio .fc28-progress span{
+ display:block;height:100%;width:0;background:#181818;border-radius:50px;
+ transition:width .47s cubic-bezier(.2,.78,.23,1)
+}
+#flowchartExecutionStudio .fc28-explanation{
+ border-top:1px solid #e2e2dd;background:#f9f9f8;
+ min-height:65px;padding:17px 16px;margin:0;
+ color:#3d3d38;font-size:14px;font-weight:620;line-height:1.65
+}
+#flowchartExecutionStudio .fc28-practice{
+ display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:25px;
+ border:1px solid #cfcfc9;border-radius:15px;padding:clamp(17px,2.5vw,29px);
+ margin-top:18px;background:linear-gradient(120deg,#f4f4f1,#fff 58%)
+}
+#flowchartExecutionStudio .fc28-practice .eyebrow{
+ color:#666660;font-size:11px;letter-spacing:.12em;font-weight:870;margin:0 0 14px
+}
+#flowchartExecutionStudio .fc28-practice h3{
+ font-size:clamp(19px,2.1vw,26px);line-height:1.24;font-weight:840;letter-spacing:-.033em;
+ margin:0 0 11px
+}
+#flowchartExecutionStudio .fc28-practice p:not(.eyebrow){
+ font-size:14px;line-height:1.65;color:#575752
+}
+#flowchartExecutionStudio .fc28-practice-input{min-width:0}
+#flowchartExecutionStudio .fc28-practice-input label{
+ display:block;font-size:12px;font-weight:830;margin:0 0 7px;color:#555550
+}
+#flowchartExecutionStudio .fc28-practice-input textarea{
+ display:block;width:100%;min-height:80px;resize:vertical;
+ border:1px solid #b8b8b3;border-radius:9px;padding:12px;
+ background:#fff;color:#161616;
+ font:650 14px/1.5 ui-monospace,Consolas,monospace
+}
+#flowchartExecutionStudio .fc28-practice-buttons{
+ display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px
+}
+#flowchartExecutionStudio .fc28-feedback{
+ margin:11px 0 0!important;font-size:13px;line-height:1.6;
+ font-weight:670;color:#55554f;min-height:25px
+}
+#flowchartExecutionStudio .fc28-feedback.is-ok{color:#252522}
+#flowchartExecutionStudio .fc28-disclaimer{
+ margin:15px 0 0;color:#676761;font-size:12px;line-height:1.7;
+ border-left:3px solid #999992;padding:4px 0 4px 13px
+}
+@media(max-width:1100px){
+ #flowchartExecutionStudio .fc28-workspace{grid-template-columns:minmax(0,1fr)}
+ #flowchartExecutionStudio .fc28-svg{max-height:610px}
+ #flowchartExecutionStudio .fc28-code-scroll{max-height:285px}
+ #flowchartExecutionStudio .fc28-practice{grid-template-columns:1fr}
+}
+@media(max-width:700px){
+ #flowchartExecutionStudio .fc28-symbols{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:8px}
+ #flowchartExecutionStudio .fc28-symbols>div{font-size:10px;padding:8px 3px}
+ #flowchartExecutionStudio .fc28-tabs{gap:6px}
+ #flowchartExecutionStudio .fc28-tab{flex:0 0 auto;padding:10px 12px;min-height:44px;font-size:12px}
+ #flowchartExecutionStudio .fc28-summary{grid-template-columns:minmax(0,1fr)}
+ #flowchartExecutionStudio .fc28-params{justify-content:flex-start}
+ #flowchartExecutionStudio .fc28-parameter{min-width:108px}
+ #flowchartExecutionStudio .fc28-diagram-scroll{padding:7px}
+ #flowchartExecutionStudio .fc28-svg{width:660px;max-width:none;max-height:none}
+ #flowchartExecutionStudio .fc28-panel-caption{font-size:11px}
+ #flowchartExecutionStudio .fc28-actions{padding:11px 10px}
+ #flowchartExecutionStudio .fc28-control{font-size:12px;padding:8px 10px;min-height:43px}
+ #flowchartExecutionStudio .fc28-speed{width:100%;justify-content:flex-start}
+ #flowchartExecutionStudio .fc28-sequence{padding:5px 10px 12px}
+ #flowchartExecutionStudio .fc28-practice{padding:16px 12px}
+}
+@media(max-width:370px){
+ #flowchartExecutionStudio .fc28-symbols{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #flowchartExecutionStudio .fc28-control{font-size:11px}
+}
+@media(prefers-reduced-motion:reduce){
+ #flowchartExecutionStudio *,#flowchartExecutionStudio *:before,#flowchartExecutionStudio *:after{
+  animation-duration:.01ms!important;animation-iteration-count:1!important;transition:none!important;scroll-behavior:auto!important
+ }
+ #flowchartExecutionStudio .fc28-control:hover{transform:none}
+}
