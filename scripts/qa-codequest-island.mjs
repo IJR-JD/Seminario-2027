@@ -14,7 +14,7 @@ for(const [i,station] of pythonWaystations.entries()){
 }
 assert(islandBounds.x>130&&islandBounds.z>100);
 assert.deepEqual(islandCrossings,[-76,0,76]);
-assert(!isIslandWalkable(0,0),'Walking on water should fail');
+assert(!isIslandWalkable(35,0),'Walking on water outside a bridge should fail');
 assert(isIslandWalkable(0,0.5),'Central bridge should allow crossing');
 assert(!isIslandWalkable(153,110),'Outside island should be blocked');
 assert.deepEqual(trailDirection({x:0,z:0},{x:10,z:-10}),{distance:14,bearing:'N · E'});
