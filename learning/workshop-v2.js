@@ -91,11 +91,11 @@ function norm(s){return String(s??"").replace(/\r/g,"").trim().replace(/[ \t]+$/
 // retaining strict comparisons for text, booleans and different container types.
 function comparable(line){
  const s=line.trim();
- if(/^[-+]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][-+]?\\d+)?$/.test(s))return {type:"number",value:Number(s)};
+ if(/^[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?$/.test(s))return {type:"number",value:Number(s)};
  const tuple=s.startsWith("(")&&s.endsWith(")");
  if(tuple||((s.startsWith("[")&&s.endsWith("]"))||(s.startsWith("{")&&s.endsWith("}")))){
   try{
-   const json=(tuple?"["+s.slice(1,-1)+"]":s).replace(/'/g,'"').replace(/\\bTrue\\b/g,"true").replace(/\\bFalse\\b/g,"false").replace(/\\bNone\\b/g,"null");
+   const json=(tuple?"["+s.slice(1,-1)+"]":s).replace(/'/g,'"').replace(/\bTrue\b/g,"true").replace(/\bFalse\b/g,"false").replace(/\bNone\b/g,"null");
    const parsed=JSON.parse(json);
    const canonical=value=>Array.isArray(value)?value.map(canonical):value&&typeof value==="object"?Object.fromEntries(Object.entries(value).sort(([a],[b])=>a.localeCompare(b)).map(([k,v])=>[k,canonical(v)])):value;
    return {type:tuple?"tuple":"container",value:JSON.stringify(canonical(parsed))};
@@ -106,7 +106,7 @@ function comparable(line){
 function outputMatches(expected,actual){
  const a=norm(expected),b=norm(actual);
  if(a===b)return true;
- const la=a.split("\\n"),lb=b.split("\\n");if(la.length!==lb.length)return false;
+ const la=a.split("\n"),lb=b.split("\n");if(la.length!==lb.length)return false;
  return la.every((line,i)=>{
   const x=comparable(line),y=comparable(lb[i]);if(x.type!==y.type)return false;
   return x.type==="number"?Number.isFinite(x.value)&&Number.isFinite(y.value)&&Math.abs(x.value-y.value)<=1e-9*Math.max(1,Math.abs(x.value)):x.value===y.value;
