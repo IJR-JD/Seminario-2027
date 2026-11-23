@@ -9,7 +9,7 @@
 .sv27-figure{display:block;min-width:0;max-width:100%;width:100%;margin:0 auto;flex:0 0 auto;color:#151515}
 .sv27-figure svg{display:block;width:100%;height:auto;max-height:440px;min-height:235px;overflow:visible;background:#fff;border:1px solid #dededc}
 .sv27-figure svg text{font-family:Inter,system-ui,-apple-system,"Segoe UI",Arial,sans-serif;fill:#151515}
-.sv27-figure svg text[fill="#fff"],.sv27-figure svg text[fill="#ddd"]{fill:inherit}
+/* Explicit SVG fill attributes preserve white text on dark analytical cards. */
 .sv27-figure svg .sv27-box{transform-origin:center center;animation:sv27-appear .55s ease both}
 .sv27-figure svg .sv27-box:nth-of-type(2){animation-delay:.15s}
 .sv27-figure svg .sv27-box:nth-of-type(3){animation-delay:.27s}
