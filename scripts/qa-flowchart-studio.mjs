@@ -116,6 +116,27 @@ try{
   if(size.name==='mobile')await page.locator('.fc28-workspace').screenshot({path:dir+'/flowchart-mobile.png'});
   console.log('PASS flowchart viewport',size.name,m);
  }
+ // Real, non-reduced animation: the marker must move along the SVG path,
+ // then disappear rather than permanently blocking a node's label.
+ const motion=await browser.newPage({viewport:{width:1440,height:900},reducedMotion:'no-preference'});
+ await motion.route('https://cdn.jsdelivr.net/npm/@supabase/**',route=>
+  route.fulfill({status:200,contentType:'application/javascript',body:'window.supabase={};'}));
+ try{
+  await motion.goto(base+'/learning/theory.html?topic=flowcharts',{waitUntil:'domcontentloaded'});
+  await motion.waitForFunction(()=>window.IJR_FLOWCHART_STUDIO?.version===1);
+  const cursor=motion.locator('.fc28-token');
+  assert.equal(await cursor.evaluate(el=>getComputedStyle(el).opacity),'0');
+  await motion.locator('#flowchartExecutionStudio [data-act="next"]').click();
+  await motion.waitForFunction(()=>getComputedStyle(document.querySelector('.fc28-token')).opacity>.55);
+  const atOne=await cursor.getAttribute('cy');
+  await motion.waitForTimeout(260);
+  const atTwo=await cursor.getAttribute('cy');
+  assert.ok(Number(atTwo)>Number(atOne),'Motion token did not travel on the real SVG edge');
+  await motion.waitForFunction(()=>getComputedStyle(document.querySelector('.fc28-token')).opacity<.05,
+   null,{timeout:4000});
+  assert.equal(await motion.locator('.fc28-node.is-current').getAttribute('data-node'),'base');
+  console.log('PASS real SVG path animation: moving token + readable final node labels');
+ }finally{await motion.close();}
  assert.deepEqual(errors,[]);
  console.log('PASS FLOWCHART_STUDIO_QA — 4 programs, all branches, dynamic loops, exact Python outputs, 5 breakpoints');
 }finally{await browser.close();}
