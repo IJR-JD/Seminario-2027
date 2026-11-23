@@ -213,7 +213,8 @@ function mount(fig){
   const explanation=scene.beats[position];
   narrated.textContent=explanation;
   count.textContent=String(position+1).padStart(2,"0")+" / "+String(scene.beats.length).padStart(2,"0");
-  const coord=coords[scene.mode==="box"?Math.min(position,coords.length-1):position%coords.length];
+  const index=Array.isArray(scene.targets)&&Number.isInteger(scene.targets[position])?scene.targets[position]:scene.mode==="box"?Math.min(position,coords.length-1):position%coords.length;
+  const coord=coords[Math.max(0,Math.min(coords.length-1,index))];
   const pad=scene.mode==="table"?3:8;
   const ox=Math.max(12,coord.x-pad),oy=Math.max(53,coord.y-pad);
   const ww=Math.min(854-ox,coord.w+pad*2),hh=Math.min(270-oy,coord.h+pad*2);
@@ -221,6 +222,16 @@ function mount(fig){
   halo.setAttribute("width",String(Math.max(20,ww)));
   halo.setAttribute("height",String(Math.max(20,hh)));
   mark.setAttribute("cx",String(Math.max(12,ww-3)));mark.setAttribute("cy","0");
+  // Keep the active concept visible on narrow screens instead of animating off-canvas.
+  const scroller=fig.closest(".diagram-stage,.sv27-workshop-body");
+  if((manual||playing)&&scroller&&scroller.scrollWidth>scroller.clientWidth+6){
+   const screen=svg.getBoundingClientRect(),port=scroller.getBoundingClientRect();
+   const center=screen.left-port.left+scroller.scrollLeft+
+      (coord.x+coord.w/2)*(screen.width/880);
+   const desired=Math.max(0,Math.min(scroller.scrollWidth-scroller.clientWidth,
+      center-scroller.clientWidth/2));
+   scroller.scrollTo({left:desired,behavior:prefersReduced.matches?"instant":"smooth"});
+  }
   fill.style.width=String(100*(position+1)/scene.beats.length)+"%";
   progress.setAttribute("aria-valuenow",String(position+1));
   progress.setAttribute("aria-valuetext",explanation);
