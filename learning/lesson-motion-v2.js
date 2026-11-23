@@ -277,7 +277,11 @@ function mount(fig){
  }
  function play(manual=true){
   if(disposed)return;
-  if(prefersReduced.matches){setStep(position+1,true);refreshPlay();return;}
+  if(prefersReduced.matches){
+   if(position===scene.beats.length-1){finished=false;inst.finished=false;setStep(0,true);}
+   else setStep(position+1,true);
+   refreshPlay();return;
+  }
   if(manual){manuallyTouched=true;inst.manuallyTouched=true;}
   if(position===scene.beats.length-1){finished=false;inst.finished=false;setStep(0);}
   pause(false);
