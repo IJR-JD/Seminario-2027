@@ -186,6 +186,7 @@ function insertWorkshopVisual(){
  if(!problem||!guide)return;
  problem.insertBefore(panel,guide);
  const badge=document.getElementById("stageBadge"),body=panel.querySelector(".sv27-workshop-body");
+ body.tabIndex=0;body.setAttribute("role","region");body.setAttribute("aria-label","Diagrama del ejercicio: desplázate horizontalmente si es necesario");
  let latest=-1;
  const draw=()=>{
   const match=badge?.textContent.match(/STAGE\s+(\d+)/);
@@ -198,7 +199,7 @@ function insertWorkshopVisual(){
   body.innerHTML=html;
   const total=12;
   panel.querySelector(".sv27-workshop-footer").textContent=
-   "ETAPA "+String(index+1).padStart(2,"0")+" / "+total+" · La figura representa un modelo; resuelve el reto con tus propios datos y código.";
+   "ETAPA "+String(index+1).padStart(2,"0")+" / "+total+" · La figura es una guía, no la solución. ↔ En móvil, desliza para verla completa.";
  };
  if(badge)new MutationObserver(draw).observe(badge,{childList:true,subtree:true,characterData:true});
  draw();
