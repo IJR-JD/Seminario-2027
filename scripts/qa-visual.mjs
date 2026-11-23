@@ -4,7 +4,9 @@
 import {chromium} from 'playwright';
 import fs from 'node:fs';
 const base=process.env.QA_BASE||'http://127.0.0.1:8765';
-const topics=['operations','arrays','logic','descriptive','analyst-project'];
+const topics=['algoritmos','operations','types','arrays','logic','conditions','loops','functions',
+ 'statistics','descriptive','position-outliers','pandas-dataframes','data-cleaning',
+ 'filter-transform','group-aggregate','visualization','analyst-project'];
 const sizes=[{name:'desktop',width:1440,height:900},{name:'laptop',width:1024,height:800},{name:'tablet',width:768,height:1024},{name:'mobile',width:390,height:844},{name:'compact',width:320,height:720}];
 const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
 const report=[];const screenshotsDir='qa-visual';fs.mkdirSync(screenshotsDir,{recursive:true});
@@ -19,6 +21,7 @@ try{
    await page.waitForFunction(()=>document.querySelectorAll('#stageList .stage').length===12,{timeout:15000});
    if(topic==='operations')await page.waitForFunction(()=>document.querySelectorAll('#diagramGrid .v9-stage').length===8,{timeout:10000});
    if(topic==='arrays')await page.waitForFunction(()=>document.querySelectorAll('#diagramGrid .arr34-figure').length===6,{timeout:10000});
+   if(!['operations','arrays'].includes(topic))await page.waitForFunction(()=>document.querySelectorAll('#diagramGrid .sv27-stage svg').length===document.querySelectorAll('#diagramGrid .diagram-card-v2').length,{timeout:10000});
    const m=await page.evaluate(()=>{
     const rect=(selector)=>{let e=document.querySelector(selector);if(!e)return null;let b=e.getBoundingClientRect(),s=getComputedStyle(e);return {width:Math.round(b.width),height:Math.round(b.height),font:parseFloat(s.fontSize),scrollWidth:e.scrollWidth,clientWidth:e.clientWidth,overflow:e.scrollWidth>e.clientWidth+4}};
     const figures=[...document.querySelectorAll('#diagramGrid .diagram-stage')].map((e,i)=>({index:i+1,visibleWidth:e.clientWidth,contentWidth:e.scrollWidth,scrollOverflow:e.scrollWidth>e.clientWidth+5}));
@@ -43,7 +46,7 @@ try{
     await page.locator('#practice').scrollIntoViewIfNeeded();
     await page.locator('.integrated-practice .editor-cell').screenshot({path:screenshotsDir+'/operations-desktop-editor.png'});
    }
-   if(size.name==='mobile'&&['operations','arrays','logic'].includes(topic)){
+   if(size.name==='mobile'&&['operations','arrays','logic','position-outliers','data-cleaning','visualization','analyst-project'].includes(topic)){
     await page.locator('#diagramGrid .diagram-card-v2').first().screenshot({path:screenshotsDir+'/'+topic+'-mobile-first-figure.png'});
     await page.locator('.integrated-practice .editor-cell').screenshot({path:screenshotsDir+'/'+topic+'-mobile-editor.png'});
    }
