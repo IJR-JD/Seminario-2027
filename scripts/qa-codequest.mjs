@@ -102,3 +102,27 @@ for(const room of expedition){
   assert(solved,'Unsolvable expedition room: '+room.title);
   console.log('PASS expedition room · '+room.title+' · traversable with its abilities and constraints');
 }
+
+const {logicRooms,compileLogic,sense,pulse,logicMove}=await import('../projects/codequest-rpg/logic.mjs');
+const parsed=compileLogic('if clear(right):\n    if not danger(right):\n        right = 1\nelse:\n    down = 1',row=>row);
+assert.equal(parsed[0].yes[0].negate,true);
+assert.equal(parsed[0].no[0].text,'down = 1');
+assert.throws(()=>compileLogic('if clear(right):\n  right = 1',row=>row),/indent/);
+assert.throws(()=>compileLogic('else:\n    down = 1',row=>row),/matching/);
+const state={open:new Set(),shield:false};
+const [grove,lock,sentinel,core]=logicRooms;
+assert.equal(sense(grove,state,{x:5,z:4},'clear','right'),false);
+assert.equal(sense(grove,state,{x:5,z:2},'clear','right'),true);
+assert.equal(sense(lock,state,{x:6,z:4},'locked','right'),true);
+assert.throws(()=>pulse(lock,state,{x:4,z:4}),/adjacent/);
+pulse(lock,state,{x:6,z:4});
+assert.equal(sense(lock,state,{x:6,z:4},'locked','right'),false);
+assert.equal(logicMove(lock,state,{x:6,z:4},'right',1,'walk',0).x,7);
+pulse(lock,state,{x:6,z:4});
+assert.throws(()=>logicMove(lock,state,{x:6,z:4},'right',1,'walk',0),/prism/);
+assert.equal(sense(sentinel,state,{x:6,z:4},'danger','right'),true);
+assert.throws(()=>logicMove(sentinel,state,{x:6,z:4},'right',1,'walk',0),/Sentinel/);
+state.shield=true;
+assert.equal(logicMove(sentinel,state,{x:6,z:4},'right',1,'walk',0).x,7);
+assert.equal(logicMove(core,state,{x:4,z:7},'right',2,'jump',0).end,1);
+console.log('PASS Logic Worlds: nested branches, indentation, sensors, lock state, shield and elevation.');
