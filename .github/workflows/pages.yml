@@ -42,6 +42,7 @@ jobs:
           node scripts/qa-godot-academy.mjs
           node scripts/qa-game-guide.mjs
           node scripts/qa.mjs
+          node scripts/qa-learning-functional.mjs
           node scripts/qa-codequest.mjs
       - name: Probe original ManimCE MP4 URLs (external availability)
         continue-on-error: true
