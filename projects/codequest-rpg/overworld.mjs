@@ -1,13 +1,9 @@
 import * as THREE from 'three';
 import {islandBounds as bounds,islandCrossings as crossings,shore,isIslandWalkable as walkable,pythonWaystations,planIslandRoute,trailDirection} from './island-exploration.mjs';
+import {islandDistricts,villageHouses,secondFloorHeight,roomLocation} from './island-villages.mjs';
 
 const river=z=>Math.abs(z)<3.3;
 const bridge=x=>crossings.some(center=>Math.abs(x-center)<2.1);
-const landmarks=[
-  [[-13,7],[-6,5],[4,6],[13,7],[14,-1],[7,-4],[-2,-2],[-12,-1],[-14,-10],[-5,-14],[5,-14],[13,-10]],
-  [[-11,5],[10,-8]], [[-10,6],[8,-10]],
-  [[-10,-5],[10,8]], [[-11,-6],[10,9]], [[-10,-6],[9,9]],
-];
 const summits=[{x:25,z:-53,h:13,r:16},{x:-33,z:52,h:10,r:15},{x:68,z:-22,h:7,r:13}];
 const towers=[{x:23,z:24,h:8},{x:25,z:-53,h:6}];
 const passage={x:14,z:46};
@@ -254,7 +250,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
       if(index===null||index<0||(deck!==null&&deck!==index))return;
       const tower=towers[index],descending=deck!==null;
       const z=descending?tower.z+2.5:tower.z+1.35;
-      climb={index,descending,start:hero.position.clone(),end:new THREE.Vector3(tower.x,descending?elevation(tower.x,z):towerFloor(tower),z),time:0};
+      climb={index,descending,start:hero.position.clone(),end:new THREE.Vector3(tower.x,descending?elevation(tower.x,z):towerFloor(tower),z),time:0,started:performance.now()};
       target=null;
       waypoints=[];
     }
@@ -280,67 +276,125 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     ctx.textAlign='center';
     ctx.textBaseline='middle';
     ctx.fillText(text,image.width/2,33);
-    const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(image),depthTest:false}));
+    const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(image),depthTest:zone?false:true}));
     sprite.scale.set(zone?6.4:1.28,.70,1);
     return sprite;
   }
+  // Identical low-poly masonry, roofs and trim for the six educational districts.
+  // All 22 lesson IDs remain stable; a second-storey portal only changes physical access.
+  function addVillageHouse({x,z,zoneIndex,storeys,upper,roomIndex,topic}){
+    const facade=material(colors[zoneIndex]),accent=roofMats[zoneIndex],gold=material('#f4d594');
+    const y=elevation(x,z),hallZ=z-2.7,hallY=elevation(x,hallZ);
+    const height=storeys===2?6.15:3.05;
+    const base=box(3.2,.28,2.9,facade,x,y+.12,z+.15);
+    const hall=box(3.85,height,3.25,facade,x,hallY+height/2,hallZ);
+    const roof=new THREE.Mesh(roofGeometry,accent);
+    roof.rotation.y=Math.PI/4;
+    roof.position.set(x,hallY+height+.65,hallZ);
+    scene.add(roof);
+    // Consistent front porch, stone columns and warm windows on every house.
+    for(const side of [-1,1]){
+      box(.29,2.45,.28,ivory,x+side*1.37,y+1.2,z+.15);
+      box(.43,.18,.44,gold,x+side*1.37,y+2.5,z+.15);
+      box(.46,.66,.075,glow,x+side*1.08,hallY+1.58,hallZ+1.66);
+      if(storeys===2){
+        box(.49,.68,.08,glow,x+side*1.08,hallY+4.57,hallZ+1.66);
+        box(3.95,.18,3.45,ivory,x,hallY+3.06,hallZ);
+      }
+    }
+    let ladderIndex=null;
+    if(storeys===2){
+      // The actual collision deck matches the original lookout ladder mechanics.
+      ladderIndex=towers.length;
+      towers.push({x,z,h:secondFloorHeight,kind:'village',room:roomIndex});
+      const floorY=towerFloor(towers[ladderIndex]);
+      box(4.2,.25,3.1,wood,x,floorY-.13,z+.42);
+      for(const side of [-1,1])box(.11,.65,2.9,timber,x+side*2.0,floorY+.36,z+.42);
+      // Balcony front rail has a real gap directly ahead of the climb.
+      for(const side of [-1,1])box(1.12,.15,.12,timber,x+side*1.48,floorY+.68,z+1.89);
+      for(const dx of [-.43,.43])box(.12,secondFloorHeight,.13,timber,x+dx,y+secondFloorHeight/2,z+2.08);
+      for(let step=.25;step<secondFloorHeight;step+=.32){
+        box(.91,.08,.14,ivory,x,y+step,z+2.08);
+      }
+      // The raised doorway is visually distinct from the ground-floor facade.
+      box(1.32,2.03,.13,material('#344a4d'),x,floorY+1.04,hallZ+1.69);
+      box(1.65,.19,.20,gold,x,floorY+2.08,hallZ+1.73);
+    }else{
+      box(1.35,2.0,.10,material('#344a4d'),x,y+1.01,hallZ+1.68);
+    }
+    if(zoneIndex===2||zoneIndex===4){
+      const bx=x+2.5,bz=hallZ,by=elevation(bx,bz);
+      box(.9,height+1.2,.90,facade,bx,by+(height+1.2)/2,bz);
+      const beacon=new THREE.Mesh(lampGeo,glow);
+      beacon.position.set(bx,by+height+1.4,bz);
+      scene.add(beacon);
+    }
+    if(zoneIndex===5){
+      for(const side of [-1,1])box(.38,1.7,.43,timber,x+side*.82,hallY+height+.7,hallZ);
+    }
+    if(roomIndex===undefined)return;
+    const portalY=y+(upper?secondFloorHeight:0);
+    const ring=new THREE.Mesh(new THREE.TorusGeometry(.85,.12,10,28),
+      new THREE.MeshStandardMaterial({emissiveIntensity:.5}));
+    ring.position.set(x,portalY+1.12,z);
+    scene.add(ring);
+    portals.set(roomIndex,{index:roomIndex,x,z,y:portalY,ring,
+      deck:upper?ladderIndex:null,upper:!!upper,topic,storeys});
+    const roomNumber=label(String(roomIndex+1).padStart(2,'0'));
+    roomNumber.position.set(x,hallY+height+2.25,hallZ);
+    roomNumber.visible=false; // Follow camera shows only the reachable door's label.
+    portals.get(roomIndex).numberLabel=roomNumber;
+    scene.add(roomNumber);
+    for(const mesh of [base,ring,hall,roof]){
+      mesh.userData.room=roomIndex;
+      pickables.push(mesh);
+    }
+  }
   function addZones(zones){
     for(const [zoneIndex,zone] of zones.entries()){
-      const x0=crossings[zoneIndex%3],z0=zoneIndex<3?-46:46;
+      const design=islandDistricts[zoneIndex];
+      if(!design||design.lots.length!==zone.rooms.length){
+        throw Error('District / lesson count mismatch in '+zone.name);
+      }
+      const x0=design.anchor.x,z0=design.anchor.z;
+      const entrance=z0+(z0<0?23:-23),gateY=elevation(x0,entrance);
       const banner=label(zone.name,true);
-      const entrance=z0+(z0<0?25:-25),height=elevation(x0,entrance);
-      banner.position.set(x0,height+3.4,entrance);
+      banner.position.set(x0,gateY+4.0,entrance);
       scene.add(banner);
-      const stone=material(colors[zoneIndex]);
-      const gold=material('#f4d594');
+      const stone=material(colors[zoneIndex]),gold=material('#f4d594');
       for(const side of [-1,1]){
-        const x=x0+side*3.8,y=elevation(x,entrance);
-        box(.8,2.9,.85,stone,x,y+1.45,entrance);
-        box(1.1,.28,1.08,gold,x,y+2.95,entrance);
-        tree(x0+side*17,z0,.88,zoneIndex===5?'#925b41':'#456f52');
+        const x=x0+side*4.6,y=elevation(x,entrance);
+        box(.8,2.85,.82,stone,x,y+1.42,entrance);
+        box(1.05,.25,1.08,gold,x,y+2.97,entrance);
+        tree(x0+side*9,entrance+Math.sign(z0)*4,.86,zoneIndex===5?'#925b41':'#456f52');
       }
       for(const [j,index] of zone.rooms.entries()){
-        const [dx,dz]=landmarks[zoneIndex][j];
-        const x=x0+dx*1.72,z=z0+dz*1.72;
-        const y=elevation(x,z);
-        const base=box(2.45,.32,2.3,stone,x,y+.13,z);
-        const height=2.8+(j%3)*.5+(zoneIndex===4?1.0:0);
-        const hallZ=z-2.8;
-        const floor=elevation(x,hallZ);
-        const hall=box(3.45,height,2.6,stone,x,floor+height/2,hallZ);
-        const roof=new THREE.Mesh(roofGeometry,roofMats[zoneIndex]);
-        roof.rotation.y=Math.PI/4;
-        roof.position.set(x,floor+height+.62,hallZ);
-        scene.add(roof);
-        for(const side of [-1,1]){
-          box(.38,.52,.06,glow,x+side*.95,floor+height*.64,hallZ+1.32);
-          box(.29,2.2,.33,ivory,x+side*1.12,y+1.1,z);
-          box(.44,.17,.47,stone,x+side*1.12,y+2.23,z);
+        const lot=roomLocation(zoneIndex,j);
+        addVillageHouse({...lot,zoneIndex,roomIndex:index});
+      }
+      // Walkable stone paving marks the route between the houses of each topic.
+      for(let j=0;j<design.lots.length-1;j++){
+        const first=design.lots[j],next=design.lots[j+1];
+        if(first.topic!==next.topic)continue;
+        const n=Math.ceil(Math.hypot(next.x-first.x,next.z-first.z)/2.5);
+        for(let i=0;i<=n;i++){
+          const t=i/n,x=first.x+(next.x-first.x)*t;
+          const z=first.z+(next.z-first.z)*t+3.65;
+          box(2.0,.07,1.5,material('#aea58b'),x,elevation(x,z)+.025,z);
         }
-        box(2.62,.25,.40,ivory,x,y+2.34,z);
-        if(zoneIndex===2||zoneIndex===4){
-          const towerX=x+2.7;
-          const towerY=elevation(towerX,hallZ);
-          box(1.34,height+2.3,1.34,stone,towerX,towerY+(height+2.3)/2,hallZ);
-          const beacon=new THREE.Mesh(lampGeo,glow);
-          beacon.position.set(towerX,towerY+height+2.68,hallZ);
-          scene.add(beacon);
-        }
-        if(zoneIndex===0||zoneIndex===3){
-          const awning=box(1.5,.1,1.26,roofMats[zoneIndex],x,floor+1.82,hallZ+1.88);
-          awning.rotation.x=.20;
-        }
-        if(zoneIndex===5){
-          for(const offset of [-.7,.7])box(.46,2.1,.48,timber,x+offset,floor+height+.5,hallZ);
-        }
-        const ring=new THREE.Mesh(new THREE.TorusGeometry(.85,.12,10,28),new THREE.MeshStandardMaterial({emissiveIntensity:.5}));
-        ring.position.set(x,y+1.12,z);
-        scene.add(ring);
-        portals.set(index,{index,x,z,y,ring});
-        for(const mesh of [base,ring,hall]){
-          mesh.userData.room=index;
-          pickables.push(mesh);
-        }
+      }
+      // One readable sign per subtopic cluster, not one label on every house.
+      for(const topic of design.topics){
+        const group=design.lots.filter(lot=>lot.topic===topic);
+        const cx=group.reduce((sum,lot)=>sum+lot.x,0)/group.length;
+        const cz=group.reduce((sum,lot)=>sum+lot.z,0)/group.length;
+        const sign=label(topic,true);
+        const tallest=Math.max(...group.map(lot=>lot.storeys));
+        sign.position.set(cx,elevation(cx,cz)+ (tallest===2?9.5:5.8),cz-2.4);
+        scene.add(sign);
+      }
+      for(const extra of villageHouses.filter(house=>house.zone===zoneIndex)){
+        addVillageHouse({...extra,zoneIndex,storeys:2,upper:false});
       }
     }
   }
@@ -416,7 +470,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   }
   function travel(index){
     const portal=portals.get(index);
-    if(portal)routeTo(portal.x,portal.z+1.35);
+    if(portal&&deck===null)routeTo(portal.x,portal.z+(portal.upper?2.65:1.35));
   }
   function visit(index,available,marks){
     if(hero){
@@ -429,7 +483,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     hero=makeHero();
     scene.add(hero);
     const portal=portals.get(index);
-    position.set(portal?.x??0,0,(portal?.z??0)+1.15);
+    position.set(portal?.x??0,0,(portal?.z??0)+(portal?.upper?2.7:1.15));
     target=null;
     waypoints=[];
     gait=0;pace=0;air=0;velocity=0;deck=null;climb=null;crouched=false;
@@ -496,7 +550,8 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     hero.scale.y=THREE.MathUtils.lerp(hero.scale.y,baseHeight*(crouched?.56:1),Math.min(1,delta*15));
     if(climb){
       const tower=towers[climb.index];
-      climb.time=Math.min(1,climb.time+delta*.55);
+      // Wall-clock interpolation keeps ladders usable on slow school GPUs.
+      climb.time=Math.min(1,Math.max(0,(now-climb.started)/1800));
       const t=climb.time;
       hero.position.lerpVectors(climb.start,climb.end,t);
       if(t<.16)hero.position.z=THREE.MathUtils.lerp(climb.start.z,tower.z+2, t/.16);
@@ -580,14 +635,17 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     let closest,best=2.9;
     for(const item of portals.values()){
       const distance=Math.hypot(position.x-item.x,position.z-(item.z+1.15));
-      if(distance<best&&deck===null&&!climb){best=distance;closest=item.index;}
+      if(distance<best&&deck===item.deck&&!climb){best=distance;closest=item.index;}
       item.ring.position.y=item.y+1.12+.12*Math.sin(now*.002+item.index);
       item.ring.rotation.z=now*.00065;
-      item.ring.material.emissiveIntensity=distance<2.15?.92:.45+.17*Math.sin(now*.003+item.index);
+      item.ring.material.emissiveIntensity=deck===item.deck&&distance<2.15?.92:.45+.17*Math.sin(now*.003+item.index);
     }
     if(closest!==near){
       near=closest;
       onNear(near);
+    }
+    for(const item of portals.values()){
+      item.numberLabel.visible=mapMode; // Room names remain in the contextual door prompt.
     }
     if(onPrompt){
       let point;
@@ -614,5 +672,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     if(near!==undefined)onEnter(near);
     else if(nearbyGuide)onDialogue?.(nearbyGuide);
   }
-  return {addZones,visit,travel,frame,setMapMode,adjustCamera,action,setMovementKey,interact,trailState,setWaypoint,discoveries:()=>[discovered.size,secrets.length]};
+  return {addZones,visit,travel,frame,setMapMode,adjustCamera,action,setMovementKey,interact,trailState,setWaypoint,
+    districtMap:()=>[...portals.values()].map(({index,x,z,upper,deck,topic,storeys})=>({index,x,z,upper,deck,topic,storeys})),
+    discoveries:()=>[discovered.size,secrets.length]};
 }

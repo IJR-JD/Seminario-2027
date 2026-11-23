@@ -45,3 +45,31 @@ node scripts/qa-codequest-island.mjs
 ```
 
 The island pull-request workflow also runs `scripts/qa-codequest-browser.mjs` against locally served files using Chromium. Consult `QA-REPORT-2026-11-23.md` for risks, testing scope and release gates.
+
+## Two-storey topic villages — World 1 expansion
+
+The existing open island now groups all **22 original challenge portals** into six visually distinct neighborhoods, preserving room indices, progress, saved stars and interpreter behavior. Spatial data is centralized in `island-villages.mjs` rather than handwritten Three.js offsets:
+
+| District | Lessons | Topic clusters |
+|---|---:|---|
+| Meadow Trail | 01–12 | Movement fundamentals (01–04), Obstacle navigation (05–08), Route planning (09–12) |
+| Sunstone Heights | 13–14 | Elevation, Phase gates |
+| Aether Reach | 15–16 | Flight, Ordered relays |
+| Signal Grove | 17–18 | Conditions, Prism locks |
+| Clockwork Bastion | 19–20 | Sensors, Nested decisions |
+| Ember Foundry | 21–22 | Trap detection, Combined actions |
+
+The island includes **eight new decorative two-storey houses**. Existing portal houses may have one or two storeys; **eleven portals are accessible on raised balconies**. To enter an upstairs lesson, approach the exterior ladder and press **F** to climb; press **F** again on the balcony to descend. Touch devices retain the dedicated climb button. The zone directory labels floor and topic, and selecting an upstairs room routes to its ladder rather than bypassing the challenge. Lower-level entrances remain separate from upper ones.
+
+All architectural assets are procedural Three.js primitives (shared cached geometries, district-colored masonry, wooden balconies and ladders, pitched roofs, warm windows and themed signs). The layout uses safe terrain locations; the Python Trail landmarks, river bridges and relics remain independent of mission placement.
+
+### Verification
+
+```sh
+node scripts/qa-codequest.mjs
+node scripts/qa-codequest-skills.mjs
+node scripts/qa-codequest-island.mjs
+node scripts/qa-codequest-villages.mjs
+```
+
+The CodeQuest pull request workflow additionally runs `scripts/qa-codequest-browser.mjs` in Chromium. Its dedicated tests verify that an upstairs room cannot be entered from the ground, then perform the real climb, find the upper portal and enter the room. Inspect desktop/mobile screenshots from the corresponding Actions run as well.
