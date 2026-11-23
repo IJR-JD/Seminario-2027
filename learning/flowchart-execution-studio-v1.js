@@ -300,8 +300,16 @@ function init(){
    item.classList.toggle("is-current",active);
    item.setAttribute("aria-current",active?"step":"false");
   }
+  // Scroll only the code panel, never the whole page on initial load.
   const currentLine=q(".fc28-line.is-current");
-  currentLine?.scrollIntoView({block:"nearest",inline:"nearest",behavior:reduce.matches?"instant":"smooth"});
+  const codeArea=q(".fc28-code-scroll");
+  if(currentLine){
+   const top=currentLine.offsetTop-codeArea.offsetTop;
+   const bottom=top+currentLine.offsetHeight;
+   if(top<codeArea.scrollTop)codeArea.scrollTop=top;
+   else if(bottom>codeArea.scrollTop+codeArea.clientHeight)
+    codeArea.scrollTop=bottom-codeArea.clientHeight+12;
+  }
   q("#fc28-active-route").textContent=step.branch?("Condición → "+step.branch):"Paso "+(model.index+1)+" / "+model.trace.length;
   q("#fc28-explanation").textContent=step.why;
   q("#fc28-output").textContent=step.output||"—";
