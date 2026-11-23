@@ -214,7 +214,7 @@ try{
  await page.waitForFunction(()=>document.querySelector('#labOutput')?.textContent?.trim()==='42',
   null,{timeout:90000});
  assert.equal((await page.locator('.live-editor .code-lines').textContent()).trim(),'1');
- assert.equal(await page.locator('.integrated-practice [role="progressbar"]').count(),1,
+ assert.equal(await page.locator('.integrated-practice .progress-card [role="progressbar"]').count(),1,
   'Workshop progress must be announced to assistive technology');
  console.log('PASS interactive code UI: line numbers, font scaling, expansion, Ctrl+Enter, progressbar');
 
