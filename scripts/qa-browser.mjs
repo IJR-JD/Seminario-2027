@@ -85,6 +85,44 @@ try{
  const download=await downloadPromise;
  assert.equal(download.suggestedFilename(),'xlsx_library_output.xlsx');
  console.log('PASS generated XLSX download',download.suggestedFilename());
+
+ // Test the editor tools in a real browser, not just their DOM presence.
+ await visit('operations');
+ assert.equal(await page.locator('.code-surface').count(),2,
+  'Both theory and guided practice should expose enhanced code workspaces');
+ await page.locator('#theoryCode').fill('print(6*7)');
+ const oldFont=await page.locator('#theoryCode').evaluate(el=>parseFloat(getComputedStyle(el).fontSize));
+ await page.locator('.live-editor .code-utilities button[aria-label="Ampliar el texto del código"]').click();
+ const newFont=await page.locator('#theoryCode').evaluate(el=>parseFloat(getComputedStyle(el).fontSize));
+ assert.ok(newFont>oldFont,'Font enlargement must visibly increase monospace size');
+ await page.locator('.live-editor .code-utilities button[aria-label="Expandir o contraer el editor"]').click();
+ assert.ok(await page.locator('.live-editor .code-surface').evaluate(el=>el.classList.contains('is-expanded')),
+  'Editor expand control must actually expand the workspace');
+ await page.locator('#theoryCode').press('Control+Enter');
+ await page.waitForFunction(()=>document.querySelector('#labOutput')?.textContent?.trim()==='42',
+  null,{timeout:90000});
+ assert.equal((await page.locator('.live-editor .code-lines').textContent()).trim(),'1');
+ assert.equal(await page.locator('.integrated-practice [role="progressbar"]').count(),1,
+  'Workshop progress must be announced to assistive technology');
+ console.log('PASS interactive code UI: line numbers, font scaling, expansion, Ctrl+Enter, progressbar');
+
+ // The 12 stages on phones should scroll inside their own rail, not widen the page.
+ await page.setViewportSize({width:390,height:844});
+ await visit('logic');
+ await page.locator('#stageList .stage').nth(11).click();
+ await page.waitForFunction(()=>document.querySelector('#stageList')?.scrollLeft>60,
+  null,{timeout:5000});
+ const mobile=await page.evaluate(()=>({
+  viewport:innerWidth,width:document.documentElement.scrollWidth,
+  badges:[...document.querySelectorAll('#stageBadge,#stageKind')].map(el=>({
+   text:el.textContent,right:el.getBoundingClientRect().right
+  }))
+ }));
+ assert.ok(mobile.width<=mobile.viewport+3,'Mobile layout must not scroll horizontally');
+ assert.ok(mobile.badges.every(x=>x.right<=mobile.viewport+3),
+  'Pandas class badges must remain in the mobile viewport');
+ console.log('PASS mobile controls: horizontal stage rail, badges, no page overflow');
+
  assert.deepEqual(errors,[],'Uncaught browser errors during live Pyodide tests');
  console.log('PASS real browser: 17 theory routes, 8 V9 operations diagrams, 6 list figures, '+
   '204-stage navigation, Python execution, Pandas XLSX and downloadable generated file');
