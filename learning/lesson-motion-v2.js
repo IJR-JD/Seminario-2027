@@ -256,7 +256,7 @@ function mount(fig){
  }
  function refreshPlay(){
   playButton.innerHTML=icon(playing?ic.pause:ic.play)+"<span>"+(playing?"Pause":position===scene.beats.length-1?"Replay":"Play")+"</span>";
-  playButton.setAttribute("aria-label",playing?"Pause animation":"Play animation");
+  playButton.setAttribute("aria-label",playing?"Pause animation":position===scene.beats.length-1?"Replay sequence from start":"Play animation");
   playButton.setAttribute("aria-pressed",String(playing));
  }
  function pause(manual=true){
