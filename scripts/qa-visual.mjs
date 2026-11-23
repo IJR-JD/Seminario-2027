@@ -21,6 +21,11 @@ try{
    await page.waitForFunction(()=>document.querySelectorAll('#stageList .stage').length===12,{timeout:15000});
    if(topic==='operations')await page.waitForFunction(()=>document.querySelectorAll('#diagramGrid .v9-stage').length===8,{timeout:10000});
    if(topic==='arrays')await page.waitForFunction(()=>document.querySelectorAll('#diagramGrid .arr34-figure').length===6,{timeout:10000});
+   // Algorithms starts with a multiple-choice stage; inspect its real editor in stage 07.
+   if(topic==='algoritmos'){
+    await page.locator('#stageList .stage').nth(6).click();
+    await page.locator('#codeEditor').waitFor({state:'visible',timeout:5000});
+   }
    if(!['operations','arrays'].includes(topic))await page.waitForFunction(()=>document.querySelectorAll('#diagramGrid .sv27-stage svg').length===document.querySelectorAll('#diagramGrid .diagram-card-v2').length,{timeout:10000});
    const m=await page.evaluate(()=>{
     const rect=(selector)=>{let e=document.querySelector(selector);if(!e)return null;let b=e.getBoundingClientRect(),s=getComputedStyle(e);return {width:Math.round(b.width),height:Math.round(b.height),font:parseFloat(s.fontSize),scrollWidth:e.scrollWidth,clientWidth:e.clientWidth,overflow:e.scrollWidth>e.clientWidth+4}};
