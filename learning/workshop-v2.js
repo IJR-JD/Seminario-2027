@@ -1,7 +1,7 @@
 (()=>{"use strict";
 const lessons=window.SEMINAR_2027_COURSE||[],checks=window.IJR_2027_CHECKS||{outputs:{},choices:{}};
 const requested=new URLSearchParams(location.search).get("topic")||"algoritmos";
-const key=requested==="variables"?"types":requested;
+const key=window.SEMINAR_2027_TRACK==="statistics"&&requested==="variables"?"types":requested;
 const lesson=lessons.find(t=>t.slug===key)||lessons[0];
 if(!lesson)return;
 const tasks=lesson.exercises||[];
@@ -55,7 +55,7 @@ function displayStage(){
  const task=tasks[stage];runResult=null;feedback.textContent="";feedback.className="feedback";renderStageFiles([]);
  set("sideTitle",lesson.title);set("workshopTitle",lesson.title);
  set("workshopEyebrow","TOPIC "+String(lesson.order).padStart(2,"0")+" · PYTHON GUIDED WORKSHOP");
- const cls=lesson.slug==="logic"?" · CLASS "+(stage<6?"1 · Libraries + XLSX":"2 · Pandas"):"";
+ const cls=window.SEMINAR_2027_TRACK==="statistics"&&lesson.slug==="logic"?" · CLASS "+(stage<6?"1 · Libraries + XLSX":"2 · Pandas"):"";
  set("stageBadge","STAGE "+String(stage+1).padStart(2,"0")+" / 12"+cls);
  set("stageKind",task.mode==="choice"?"CONCEPT CHECK":"PYTHON CODE CELL");
  set("problemTitle",task.title);set("problemPrompt",task.prompt);
