@@ -1,0 +1,75 @@
+/* Seminario 2027 · Editorial learning map / integrated motion-lab discoverability */
+.hub-shell{max-width:1480px;padding:clamp(22px,3vw,46px) clamp(16px,3.5vw,50px) 88px}
+.hub-overview{
+ position:relative;isolation:isolate;overflow:hidden;align-items:stretch;
+ grid-template-columns:minmax(0,1fr) minmax(240px,280px);
+ background:linear-gradient(135deg,#f6f6f4 0%,#fff 52%,#efefec 100%);
+ border:1px solid #d1d1cd;border-radius:24px;
+ padding:clamp(26px,3.5vw,54px);gap:clamp(25px,4vw,66px);
+ box-shadow:0 20px 66px rgba(0,0,0,.035);
+}
+.hub-overview:before{
+ content:"";position:absolute;z-index:-1;pointer-events:none;right:-3%;top:-10%;
+ width:53%;height:118%;background:radial-gradient(#b8b8b4 .7px,transparent 1px) 0 0/18px 18px;
+ opacity:.18;mask-image:linear-gradient(90deg,transparent,#111)
+}
+.hub-overview .eyebrow{letter-spacing:.13em;color:#5d5d59;font-weight:840;font-size:12px}
+.hub-overview h1{font-size:clamp(42px,5.4vw,76px);letter-spacing:-.058em;line-height:1.01;font-weight:850;text-wrap:balance}
+.hub-overview>div:first-child>p:not(.eyebrow){font-size:clamp(15px,1.25vw,17px);line-height:1.75;max-width:69ch;color:#41413e}
+.hub-overview .note{background:rgba(255,255,255,.85);border-radius:13px;padding:16px 18px;border:1px solid #deded9}
+.hub-overview .note p{font-size:13px;line-height:1.6}
+.hub-overview .progress-card{align-self:stretch;display:flex;flex-direction:column;justify-content:center;border:1px solid #cacac6;border-radius:18px;background:rgba(255,255,255,.9);padding:clamp(18px,2.4vw,30px);min-width:0}
+.hub-overview .progress-card strong{font-size:clamp(46px,5vw,66px);line-height:1.12;letter-spacing:-.06em;font-variant-numeric:tabular-nums}
+.hub-shell .section-head{padding:0 0 15px;border-bottom:1px solid #dcdcd8}
+.hub-shell .section-head h2{font-size:clamp(30px,3.8vw,48px);font-weight:800;letter-spacing:-.045em;text-wrap:balance}
+.hub-shell .section-head p:last-child{line-height:1.7}
+.hub-explore{border:1px solid #d8d8d4;background:#fafaf9;border-radius:16px;padding:17px 20px 13px;margin:0 0 19px}
+.hub-explore-main{display:flex;flex-wrap:wrap;gap:15px;align-items:end;justify-content:space-between}
+.hub-search-group{display:flex;flex-direction:column;gap:8px;flex:1 1 280px;max-width:470px}
+.hub-search-group label{font-size:12px;font-weight:800;letter-spacing:.075em;text-transform:uppercase;color:#5c5c59}
+.hub-search-group input{width:100%;max-width:100%;box-sizing:border-box;border:1px solid #b6b6b0;border-radius:10px;min-height:43px;padding:11px 14px;background:#fff;color:#191919;font:600 14px/1.4 inherit;outline:0}
+.hub-search-group input:focus-visible{outline:2px solid #242424;outline-offset:2px}
+.hub-category-list{display:flex;gap:7px;flex-wrap:wrap}
+.hub-category-list button{border:1px solid #bfbfba;border-radius:9px;min-height:42px;background:#fff;padding:9px 14px;color:#252523;font:800 12px/1.2 inherit;cursor:pointer}
+.hub-category-list button[aria-pressed="true"]{background:#161616;color:#fff;border-color:#161616}
+.hub-category-list button:focus-visible{outline:2px solid #111;outline-offset:2px}
+.hub-category-list button:hover:not([aria-pressed="true"]){background:#ededeb;border-color:#888}
+.hub-explore-status{font-size:12px;color:#565651;line-height:1.5;margin:12px 0 0;font-variant-numeric:tabular-nums}
+.hub-empty{display:none;border:1px dashed #b7b7b1;border-radius:12px;padding:22px;text-align:center;font-size:14px}
+.hub-empty:not([hidden]){display:block}
+.topic-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:19px}
+.topic-card{
+ position:relative;overflow:hidden;min-width:0;min-height:315px;border:1px solid #d2d2cc;
+ border-radius:17px;padding:clamp(20px,2.25vw,30px);
+ background:linear-gradient(158deg,#fff 55%,#fafaf8);
+ box-shadow:0 5px 21px rgba(0,0,0,.025);
+ transition:transform .28s cubic-bezier(.22,.78,.26,1),box-shadow .28s,border-color .28s;
+}
+.topic-card:before{content:"";width:70px;height:3px;background:#151515;position:absolute;top:0;left:28px}
+.topic-card:hover{transform:translateY(-4px);border-color:#999995;box-shadow:0 16px 34px rgba(0,0,0,.065)}
+.topic-card[hidden]{display:none!important}
+.topic-card .topline{align-items:center;flex-wrap:wrap;letter-spacing:.1em;line-height:1.6}
+.topic-card .topline .topic-count{background:#f1f1ef;border:1px solid #dddcd8;border-radius:8px;padding:5px 8px;font-variant-numeric:tabular-nums}
+.topic-card .hub-kind{font-size:11px;font-weight:850;color:#646460;letter-spacing:.11em;text-transform:uppercase;margin:16px 0 0}
+.topic-card h3{font-size:clamp(24px,2.2vw,33px);line-height:1.15;letter-spacing:-.038em;overflow-wrap:anywhere;margin:12px 0 13px}
+.topic-card p{font-size:14px;line-height:1.7;color:#555550}
+.topic-card .bar{margin-bottom:10px}
+.topic-card .links{padding-top:17px}
+.topic-card .links .button{min-height:43px;border-radius:10px;font-size:13px;line-height:1.35;padding:10px 14px}
+.topic-card .links .button:focus-visible{outline:2px solid #111;outline-offset:2px}
+@media(min-width:1390px){.topic-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:930px){.hub-overview{grid-template-columns:minmax(0,1fr)}.hub-overview .progress-card{max-width:none}}
+@media(max-width:650px){
+ .hub-shell{padding:18px 13px 50px}
+ .hub-overview{padding:25px 20px;border-radius:17px}
+ .hub-overview h1{font-size:clamp(35px,9.2vw,49px)}
+ .hub-overview .note{padding:14px}
+ .hub-explore{padding:15px 12px}
+ .hub-search-group{flex-basis:100%}
+ .hub-category-list{width:100%;justify-content:flex-start}
+ .hub-category-list button{padding:9px 11px}
+ .topic-grid{grid-template-columns:minmax(0,1fr);gap:13px}
+ .topic-card{min-height:295px;padding:23px 20px;border-radius:15px}
+ .topic-card h3{font-size:26px}
+}
+@media(prefers-reduced-motion:reduce){.topic-card{transition:none}.topic-card:hover{transform:none}}
