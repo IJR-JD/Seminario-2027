@@ -17,7 +17,7 @@ try{
   page.on('pageerror',e=>problems.push('JS '+size.name+': '+e.message));
   await page.route('https://cdn.jsdelivr.net/npm/@supabase/**',route=>route.fulfill({status:200,contentType:'application/javascript',body:'window.supabase={};'}));
   for(const topic of topics){
-   await page.goto(base+'/learning/theory.html?topic='+topic,{waitUntil:'domcontentloaded',timeout:45000});
+   await page.goto(base+'/learning/theory.html?topic='+topic+'&track=statistics',{waitUntil:'domcontentloaded',timeout:45000});
    await page.waitForFunction(()=>document.querySelectorAll('#stageList .stage').length===12,{timeout:15000});
    if(topic==='operations')await page.waitForFunction(()=>document.querySelectorAll('#diagramGrid .v9-stage').length===8,{timeout:10000});
    if(topic==='arrays')await page.waitForFunction(()=>document.querySelectorAll('#diagramGrid .arr34-figure').length===6,{timeout:10000});
@@ -59,7 +59,7 @@ try{
   // Capture richer diagrams with the semantic animation at a meaningful frame.
   if(size.name==='desktop'){
    for(const topic of ['position-outliers','data-cleaning','visualization']){
-    await page.goto(base+'/learning/theory.html?topic='+topic,{waitUntil:'domcontentloaded'});
+    await page.goto(base+'/learning/theory.html?topic='+topic+'&track=statistics',{waitUntil:'domcontentloaded'});
     const card=page.locator('#diagramGrid .diagram-card-v2').first();
     await card.locator('.sv28-dock button[aria-label="Next explanation step"]').click();
     await card.locator('.sv28-dock button[aria-label="Next explanation step"]').click();
@@ -67,7 +67,7 @@ try{
    }
   }
   // The learning-hub catalog is part of the same responsive learning experience.
-  await page.goto(base+'/learning/',{waitUntil:'domcontentloaded',timeout:45000});
+  await page.goto(base+'/learning/?track=statistics',{waitUntil:'domcontentloaded',timeout:45000});
   await page.waitForFunction(()=>document.querySelectorAll('#topicGrid .topic-card').length===17,
    null,{timeout:10000});
   const hubWidth=await page.evaluate(()=>document.documentElement.scrollWidth);
