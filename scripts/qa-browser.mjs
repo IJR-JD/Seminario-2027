@@ -14,7 +14,7 @@ const errors=[];
 page.on('pageerror',error=>errors.push(String(error.message||error)));
 await page.route('https://cdn.jsdelivr.net/npm/@supabase/**',route=>
  route.fulfill({status:200,contentType:'application/javascript',body:'window.supabase={};'}));
-const visit=slug=>page.goto(BASE+'/learning/theory.html?topic='+encodeURIComponent(slug),
+const visit=slug=>page.goto(BASE+'/learning/theory.html?topic='+encodeURIComponent(slug)+'&track=statistics',
  {waitUntil:'domcontentloaded',timeout:60000});
 try{
  for(const slug of topics){
@@ -91,7 +91,7 @@ try{
 
  // Audit the independent workshop URL as well: all 17 topics, all 12 stages.
  for(const slug of topics){
-  await page.goto(BASE+'/learning/workshop.html?topic='+slug,
+  await page.goto(BASE+'/learning/workshop.html?topic='+slug+'&track=statistics',
    {waitUntil:'domcontentloaded',timeout:30000});
   await page.waitForFunction(()=>document.querySelectorAll('#stageList .stage').length===12,
    null,{timeout:12000});
@@ -115,12 +115,12 @@ try{
 
 
  // Validate the upgraded entry page (17 topics and real category/search controls).
- await page.goto(BASE+'/learning/',{waitUntil:'domcontentloaded',timeout:30000});
+ await page.goto(BASE+'/learning/?track=statistics',{waitUntil:'domcontentloaded',timeout:30000});
  await page.waitForFunction(()=>document.querySelectorAll('.topic-card').length===17,
   null,{timeout:12000});
  assert.equal(await page.locator('.topic-card:visible').count(),17);
  assert.equal(await page.evaluate(()=>window.IJR_2027_CATALOG?.topics),17);
- await page.getByRole('button',{name:'Python foundations'}).click();
+ await page.getByRole('button',{name:'Programming basics'}).click();
  assert.equal(await page.locator('.topic-card:visible').count(),5);
  await page.getByRole('button',{name:'Data science'}).click();
  assert.equal(await page.locator('.topic-card:visible').count(),11);
@@ -171,7 +171,7 @@ try{
  await moving.route('https://cdn.jsdelivr.net/npm/@supabase/**',route=>
   route.fulfill({status:200,contentType:'application/javascript',body:'window.supabase={};'}));
  try{
-  await moving.goto(BASE+'/learning/theory.html?topic=visualization',{waitUntil:'domcontentloaded'});
+  await moving.goto(BASE+'/learning/theory.html?topic=visualization&track=statistics',{waitUntil:'domcontentloaded'});
   const motionFigure=moving.locator('#diagramGrid .diagram-card-v2').last();
   await motionFigure.scrollIntoViewIfNeeded();
   await moving.waitForFunction(()=>Number(
