@@ -35,6 +35,12 @@ try{
   const desktop=await browser.newPage({viewport:{width:1440,height:900}});
   await prepare(desktop);
   await openIsland(desktop);
+  await desktop.locator('#islandDirectoryToggle').click();
+  assert.equal(await desktop.locator('#levelList .missionCard').count(),22);
+  assert.equal(await desktop.locator('#levelList .missionCard[data-floor="2"]').count(),11,
+    'Exactly eleven rooms should be on accessible upper floors');
+  assert.equal(await desktop.locator('#levelList .missionCard[data-floor="1"]').count(),11);
+  await desktop.locator('#islandDirectoryToggle').click();
   await desktop.locator('#islandTrailToggle').click();
   assert.equal(await desktop.locator('#islandTrailList .islandTrailEntry').count(),5,'Five Atlas entries');
   await desktop.locator('#islandTrailList button').first().click();
@@ -54,6 +60,27 @@ try{
   await desktop.locator('#islandTrailToggle').click();
   assert((await desktop.locator('#islandTrailProgress').textContent()).includes('1 / 5'),'Discovery survives reload');
   assert((await desktop.locator('#islandTrailList .islandTrailEntry').first().textContent()).includes('distance = 4'),'Found landmark unlocks Python example');
+
+  // End-to-end second-floor challenge: there must be no interaction from ground level.
+  // Start at Room 02's exterior ladder, climb in the real 3D scene, then enter the door.
+  await desktop.evaluate(()=>localStorage.setItem('ijr-codequest-world-v2',
+    JSON.stringify({level:1,completed:[],bestSteps:{}})));
+  await desktop.reload({waitUntil:'domcontentloaded'});
+  await desktop.waitForFunction(()=>document.querySelector('#commandPalette')?.children.length>0);
+  await desktop.locator('#continueAdventure').click();
+  await desktop.waitForFunction(()=>document.querySelector('#islandTraversalStatus')?.textContent.includes('Ladder nearby'),
+    null,{timeout:12000});
+  assert(await desktop.locator('#enterPortal').isHidden(),'Upper-floor room must not open from the ground');
+  await desktop.locator('#overworldCanvas').press('f');
+  await desktop.waitForFunction(()=>document.querySelector('#portalStatus')?.textContent.includes('A Name for Distance'),
+    null,{timeout:9000});
+  assert(await desktop.locator('#enterPortal').isVisible(),'Climbing must expose the upper-floor door');
+  assert((await desktop.locator('#doorStars').textContent()).includes('2F'),'Portal prompt must identify the second floor');
+  await desktop.screenshot({path:'qa-codequest/island-upper-entrance.png'});
+  await desktop.locator('#overworldCanvas').press('Enter');
+  await desktop.locator('#missionPicker').waitFor({state:'hidden',timeout:8000});
+  assert((await desktop.locator('#worldTitle').textContent()).includes('A Name for Distance'),
+    'Room 02 must be accessible from the upstairs balcony');
   await desktop.close();
 
   const mobile=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
@@ -70,9 +97,11 @@ try{
   await mobile.locator('#islandTrailToggle').click();
   assert.equal(await mobile.locator('#islandTrailList .islandTrailEntry').count(),5);
   await mobile.screenshot({path:'qa-codequest/island-mobile.png'});
+  await mobile.locator('#islandTrailToggle').click();
+  await mobile.screenshot({path:'qa-codequest/island-mobile-neighborhood.png'});
   await mobile.close();
   assert.deepEqual(errors,[],'No uncaught browser errors');
-  console.log('PASS Chromium CodeQuest: 3D island, Atlas, waypoint cue, 22 doors, persistence, mobile D-pad and screenshots');
+  console.log('PASS Chromium CodeQuest: 22 topic-clustered rooms, 11 second-floor portals, ladder entry, 3D island, persistence and mobile D-pad.');
 }finally{
   await browser.close();
 }
