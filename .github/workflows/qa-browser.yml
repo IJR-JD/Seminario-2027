@@ -9,6 +9,7 @@ on:
       - 'scripts/qa-programming-browser.mjs'
       - 'scripts/qa-programming-visual.mjs'
       - 'scripts/qa-programming-data.mjs'
+      - 'scripts/qa-flowchart-studio.mjs'
       - '.github/workflows/qa-browser.yml'
   workflow_dispatch:
 permissions:
@@ -38,6 +39,7 @@ jobs:
           sleep 2
           node scripts/qa-programming-data.mjs
           node scripts/qa-programming-browser.mjs
+          node scripts/qa-flowchart-studio.mjs
           node scripts/qa-programming-visual.mjs
           node scripts/qa-browser.mjs
           node scripts/qa-visual.mjs
@@ -49,5 +51,6 @@ jobs:
           path: |
             qa-visual/
             qa-programming-visual/
+            qa-flowchart-studio/
           if-no-files-found: ignore
           retention-days: 7
