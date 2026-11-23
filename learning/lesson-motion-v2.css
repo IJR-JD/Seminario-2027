@@ -64,6 +64,13 @@ html.sv27-visual-system .sv27-stage .sv27-figure svg{
  vector-effect:non-scaling-stroke;transition:width 680ms cubic-bezier(.2,.8,.2,1),height 680ms cubic-bezier(.2,.8,.2,1);
 }
 .sv28-orbit{fill:#171717;stroke:#fff;stroke-width:2}
+
+.sv28-iqr-bracket{opacity:0;stroke-dasharray:105;stroke-dashoffset:105;transition:opacity .5s ease,stroke-dashoffset 1.05s cubic-bezier(.18,.8,.2,1)}
+.sv28-iqr-bracket.sv28-revealed{opacity:1;stroke-dashoffset:0}
+.sv28-scatter-trace{opacity:.58}
+.sv27-figure svg circle,.sv27-figure svg rect{transform-box:fill-box;transform-origin:center center}
+.sv27-figure svg rect[fill="#181818"],.sv27-figure svg rect[fill="#e7e7e5"]{transform-origin:center bottom}
+
 .sv28-dock{
  margin:15px 0 0;border-radius:13px;
  background:#fff;border:1px solid #d4d4d0;
@@ -169,7 +176,7 @@ html.sv27-visual-system .choice-option:hover{border-color:#333;background:#f5f5f
  .sv28-speed{min-width:42px}
 }
 @media(prefers-reduced-motion:reduce){
- .sv28-focus-track,.sv28-focus-rect,.sv28-progress-fill,
+ .sv28-focus-track,.sv28-focus-rect,.sv28-progress-fill,.sv28-iqr-bracket,.sv28-scatter-trace,
  html.sv27-visual-system .concept-card-v2,.sv28-button{transition:none!important;animation:none!important}
  html.sv27-visual-system .concept-card-v2:hover,.sv28-button:hover{transform:none}
 }
