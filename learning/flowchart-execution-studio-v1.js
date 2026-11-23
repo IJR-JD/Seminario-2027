@@ -92,7 +92,7 @@ const graph={
    edge("c","initial","cond","M410 273V290"),
    edge("yes","cond","increment","M297 343H203V428","SÍ",255,326),
    edge("d","increment","print","M203 504V550"),
-   edge("back","print","cond","M203 624H73V343H297","REPETIR",120,329),
+   edge("back","print","cond","M203 624H73V294H345V321","REPETIR",120,279),
    edge("no","cond","done","M523 343H631V435","NO",567,327),
    edge("e","done","end","M631 513V595")
   ]
@@ -176,7 +176,7 @@ function renderGraph(ex){
  '<pattern id="fc28-paper-grid" width="22" height="22" patternUnits="userSpaceOnUse"><path d="M22 0H0V22" fill="none" stroke="#dededa" stroke-width=".8"/></pattern></defs>'+
  '<rect x="4" y="4" width="812" height="691" rx="13" fill="white" stroke="#d7d7d3"/>'+
  '<rect x="7" y="7" width="806" height="683" rx="12" fill="url(#fc28-paper-grid)" opacity=".45"/>'+
- '<text class="fc28-svg-heading" x="28" y="30">IJR / FLOWCHART EXECUTION TRACE</text>'+
+ '<text class="fc28-svg-heading" x="410" y="30" text-anchor="middle">IJR / FLOWCHART EXECUTION TRACE</text>'+
  arrows+g.nodes.map(renderNode).join("")+
  '<circle class="fc28-token" r="9" cx="'+g.nodes[0].x+'" cy="'+g.nodes[0].y+'" aria-hidden="true"/>'+
  '</svg>';
@@ -241,7 +241,7 @@ function init(){
  const getEdge=id=>q('.fc28-svg [data-edge="'+id+'"]');
  function cancelMotion(){
   if(model.frame!=null){cancelAnimationFrame(model.frame);model.frame=null;}
-  const dot=q(".fc28-token");if(dot)dot.style.opacity="1";
+  const dot=q(".fc28-token");if(dot)dot.style.opacity="0";
  }
  function pause(){
   if(model.timer!=null)clearTimeout(model.timer);
@@ -270,14 +270,14 @@ function init(){
   const edge=getEdge(pathId),path=edge?.querySelector("path");
   const dot=q(".fc28-token");
   if(!path||!dot||typeof path.getTotalLength!=="function")return;
-  cancelMotion();
+  cancelMotion();dot.style.opacity="1";
   const len=path.getTotalLength(),duration=720/model.speed;
   let first=null;
   function tick(t){
    if(first==null)first=t;
    const f=Math.min(1,(t-first)/duration),smooth=f*f*(3-2*f),point=path.getPointAtLength(len*smooth);
    dot.setAttribute("cx",String(point.x));dot.setAttribute("cy",String(point.y));
-   if(f<1)model.frame=requestAnimationFrame(tick);else model.frame=null;
+   if(f<1)model.frame=requestAnimationFrame(tick);else{model.frame=null;dot.style.opacity="0";}
   }
   model.frame=requestAnimationFrame(tick);
  }
@@ -324,8 +324,9 @@ function init(){
    token.append(key,val);vals.append(token);
   }
   const dot=q(".fc28-token"),node=graph[model.example.id].nodes.find(x=>x.id===step.node);
-  if(travel&&model.index>0&&step.via)moveDot(step.via);
-  else{cancelMotion();if(dot&&node){dot.setAttribute("cx",node.x);dot.setAttribute("cy",node.y);}}
+  // The travelling marker appears only on the connecting edge, never across node labels.
+  if(travel&&model.index>0&&step.via&&!reduce.matches)moveDot(step.via);
+  else cancelMotion();
   const scroller=q(".fc28-diagram-scroll");
   if(scroller.scrollWidth>scroller.clientWidth+6){
    const desired=Math.max(0,Math.min(scroller.scrollWidth-scroller.clientWidth,
