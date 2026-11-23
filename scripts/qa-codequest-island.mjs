@@ -55,5 +55,7 @@ for(const needle of ['islandTrailToggle','islandTrailPanel','islandTrailProgress
 assert(integration.includes('renderPythonTrail'),'Missing trail UI');
 assert(shell.includes('id="islandDpad"')&&shell.includes('data-walk="ArrowUp"'),'Touch D-pad missing');
 assert(game.includes('function setMovementKey('),'Touch movement API missing');
+assert(game.includes('materialCache')&&game.includes('boxGeometryCache')&&game.includes('crownGeometryCache'),
+  'Overworld should share repeated resources to reduce WebGL memory');
 assert(integration.includes('lostpointercapture'),'Pointer release cleanup missing');
 console.log('PASS CodeQuest Island: five persistent Python waystations, bridge-safe routing and integrated atlas controls');
