@@ -26,7 +26,7 @@ jobs:
       - name: Install isolated test browser dependencies
         run: |
           npm install --no-save --no-audit --no-fund playwright@1.56.1
-          npx playwright install --with-deps chromium
+          npx playwright install chromium
       - name: Execute full browser QA against the local production files
         run: |
           python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/seminario-browser-server.log 2>&1 &
