@@ -250,7 +250,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
       if(index===null||index<0||(deck!==null&&deck!==index))return;
       const tower=towers[index],descending=deck!==null;
       const z=descending?tower.z+2.5:tower.z+1.35;
-      climb={index,descending,start:hero.position.clone(),end:new THREE.Vector3(tower.x,descending?elevation(tower.x,z):towerFloor(tower),z),time:0};
+      climb={index,descending,start:hero.position.clone(),end:new THREE.Vector3(tower.x,descending?elevation(tower.x,z):towerFloor(tower),z),time:0,started:performance.now()};
       target=null;
       waypoints=[];
     }
@@ -550,7 +550,8 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     hero.scale.y=THREE.MathUtils.lerp(hero.scale.y,baseHeight*(crouched?.56:1),Math.min(1,delta*15));
     if(climb){
       const tower=towers[climb.index];
-      climb.time=Math.min(1,climb.time+delta*.55);
+      // Wall-clock interpolation keeps ladders usable on slow school GPUs.
+      climb.time=Math.min(1,Math.max(0,(now-climb.started)/1800));
       const t=climb.time;
       hero.position.lerpVectors(climb.start,climb.end,t);
       if(t<.16)hero.position.z=THREE.MathUtils.lerp(climb.start.z,tower.z+2, t/.16);
