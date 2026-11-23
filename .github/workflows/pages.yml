@@ -24,6 +24,10 @@ jobs:
           node --check learning/hub-v2.js
           node --check learning/theory-v2.js
           node --check learning/workshop-v2.js
+          node --check learning/programming-topics-2027.js
+          node --check learning/programming-workshops-2027.js
+          node --check learning/programming-visuals-2027.js
+          node --check learning/track-navigation-2027.js
           node --check learning/python-worker.js
           node --check learning/python-runner.js
           node --check learning/sandbox-v39.js
@@ -43,6 +47,7 @@ jobs:
           node scripts/qa-game-guide.mjs
           node scripts/qa.mjs
           node scripts/qa-learning-functional.mjs
+          node scripts/qa-programming-data.mjs
           node scripts/qa-codequest.mjs
           node scripts/qa-codequest-skills.mjs
       - name: Probe original ManimCE MP4 URLs (external availability)
