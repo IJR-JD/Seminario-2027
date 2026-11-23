@@ -40,13 +40,21 @@ export function planIslandRoute(start,end){
     throw Error('Island route begins or ends outside walkable terrain.');
   }
   const bank=z=>z>RIVER_HALF_WIDTH?1:z< -RIVER_HALF_WIDTH?-1:0;
+  const nearest=x=>islandCrossings.reduce((best,current)=>
+    Math.abs(x-current)<Math.abs(x-best)?current:best);
   const first=bank(start.z),last=bank(end.z),route=[];
-  if(first!==last){
-    const crossing=islandCrossings.reduce((best,x)=>
-      Math.abs(x-start.x)+Math.abs(x-end.x)<Math.abs(best-start.x)+Math.abs(best-end.x)?x:best);
+  if(!first&&!last){
+    // Two different bridges cannot be connected directly across open water.
+    const from=nearest(start.x),to=nearest(end.x);
+    if(from!==to)route.push({x:from,z:5},{x:to,z:5});
+  }else if(first!==last){
+    const crossing=!first?nearest(start.x):!last?nearest(end.x):
+      islandCrossings.reduce((best,x)=>
+        Math.abs(x-start.x)+Math.abs(x-end.x)<Math.abs(best-start.x)+Math.abs(best-end.x)?x:best);
     if(first)route.push({x:crossing,z:first*5});
     if(last)route.push({x:crossing,z:last*5});
   }
   route.push({x:end.x,z:end.z});
-  return route.filter((point,i)=>i===0||Math.hypot(point.x-route[i-1].x,point.z-route[i-1].z)>.05);
+  return route.filter((point,i)=>
+    Math.hypot(point.x-(i?route[i-1].x:start.x),point.z-(i?route[i-1].z:start.z))>.05);
 }
