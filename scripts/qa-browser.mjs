@@ -48,6 +48,19 @@ try{
    };
   });
   assert.equal(art.workshopFigures,1,slug+' missing contextual workshop figure');
+  const motion=await page.evaluate(()=>({
+   dockCount:document.querySelectorAll('.sv28-dock').length,
+   vectorCount:document.querySelectorAll('.sv27-figure').length,
+   controlled:document.querySelectorAll('.sv27-figure[data-motion-step]').length,
+   buttons:[...document.querySelectorAll('.sv28-dock')].every(d=>d.querySelectorAll('button').length===5),
+   version:window.IJR_MOTION_LAB?.version,
+   speedLabel:document.querySelector('.sv28-speed')?.textContent?.trim()
+  }));
+  assert.equal(motion.version,2,slug+' motion engine was not initialized');
+  assert.equal(motion.dockCount,motion.vectorCount,slug+' missing motion dock(s)');
+  assert.equal(motion.controlled,motion.vectorCount,slug+' missing SVG focus state(s)');
+  assert.ok(motion.buttons,slug+' playback controls not present');
+  assert.equal(motion.speedLabel,'1×',slug+' animation speed default is wrong');
   assert.equal(art.themeLoaded,true,slug+' vector figure styling missing');
   assert.equal(art.placeholders,0,slug+' still displays generic placeholders');
   if(slug!=='operations'&&slug!=='arrays'){
@@ -92,11 +105,58 @@ try{
      stageLabel,{timeout:5000});
    assert.equal(await page.locator('.sv27-workshop-panel .sv27-figure svg').count(),1,
      slug+' stage '+(i+1)+' lost its contextual vector figure');
+   assert.equal(await page.locator('.sv27-workshop-panel .sv28-dock').count(),1,
+    slug+' stage '+(i+1)+' lost its playback controls');
+   assert.equal(await page.locator('.sv27-workshop-panel .sv27-figure[data-motion-step]').count(),1,
+    slug+' stage '+(i+1)+' SVG was not attached to the motion engine');
   }
   console.log('PASS standalone-workshop-visual',slug,'12/12 stages with figures');
  }
 
  assert.deepEqual(errors,[],'Uncaught browser errors while navigating 17 topics');
+
+
+ // Reduced-motion is intentionally static until the user selects the next frame.
+ await visit('position-outliers');
+ const explainer=page.locator('#diagramGrid .diagram-card-v2').first();
+ const sequence=explainer.locator('.sv28-dock');
+ assert.equal(await sequence.locator('.sv28-count').textContent(),'01 / 06');
+ assert.equal(await explainer.locator('.sv27-figure').getAttribute('data-motion-step'),'1');
+ const firstText=await sequence.locator('.sv28-narration').textContent();
+ await sequence.getByRole('button',{name:'Next explanation step'}).click();
+ assert.equal(await explainer.locator('.sv27-figure').getAttribute('data-motion-step'),'2');
+ assert.notEqual(await sequence.locator('.sv28-narration').textContent(),firstText);
+ assert.equal(await sequence.locator('[role="progressbar"]').getAttribute('aria-valuenow'),'2');
+ await sequence.getByRole('button',{name:'Change animation speed'}).click();
+ assert.equal(await sequence.locator('.sv28-speed').textContent(),'1.5×');
+ await sequence.getByRole('button',{name:'Replay animation'}).click();
+ assert.equal(await explainer.locator('.sv27-figure').getAttribute('data-motion-step'),'1');
+ await sequence.getByRole('button',{name:'Play animation'}).click();
+ assert.equal(await explainer.locator('.sv27-figure').getAttribute('data-motion-step'),'2');
+ assert.equal(await page.locator('.sv28-iqr-bracket').count(),2,
+  'IQR visual overlay should be available in Theory and guided Practice');
+ console.log('PASS narrated motion: speed, next, replay, reduced-motion manual step, IQR overlay');
+
+ // Regular-motion Chromium test: auto-start must be visibility-aware and pauseable.
+ const moving=await browser.newPage({viewport:{width:1440,height:900},reducedMotion:'no-preference'});
+ await moving.route('https://cdn.jsdelivr.net/npm/@supabase/**',route=>
+  route.fulfill({status:200,contentType:'application/javascript',body:'window.supabase={};'}));
+ try{
+  await moving.goto(BASE+'/learning/theory.html?topic=visualization',{waitUntil:'domcontentloaded'});
+  const motionFigure=moving.locator('#diagramGrid .diagram-card-v2').last();
+  await motionFigure.scrollIntoViewIfNeeded();
+  await moving.waitForFunction(()=>Number(
+   document.querySelector('#diagramGrid .diagram-card-v2:last-child .sv27-figure')?.dataset.motionStep)>1,
+   null,{timeout:6500});
+  const movingPanel=motionFigure.locator('.sv28-dock');
+  await movingPanel.getByRole('button',{name:'Pause animation'}).click();
+  const held=await motionFigure.locator('.sv27-figure').getAttribute('data-motion-step');
+  await moving.waitForTimeout(2250);
+  assert.equal(await motionFigure.locator('.sv27-figure').getAttribute('data-motion-step'),held,
+   'Paused motion must not advance');
+  assert.ok(await motionFigure.locator('.sv28-scatter-trace').count()===1,'Correlation trace is absent');
+  console.log('PASS real-motion viewport activation, pausing and scatter trajectory');
+ }finally{await moving.close();}
 
  await visit('operations');
  await page.locator('#theoryCode').fill('print(17+8)');
