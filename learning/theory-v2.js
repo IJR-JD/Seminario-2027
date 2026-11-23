@@ -31,7 +31,7 @@ if(topic.slug==="operations"&&Array.isArray(topic.resources)&&topic.resources.le
   const logo=document.createElement("img");logo.src=resource.logo;logo.alt=resource.name+" logo";logo.loading="lazy";
   const details=document.createElement("div");const title=document.createElement("strong");title.textContent=resource.name;
   const kind=document.createElement("span");kind.textContent=resource.kind;
-  const url=document.createElement("small");url.textContent=resource.url.replace(/^https?:\\/\\//,"");
+  const url=document.createElement("small");url.textContent=resource.url.replace("https://","").replace("http://","");
   details.append(title,kind,url);const arrow=document.createElement("b");arrow.textContent="↗";
   card.append(logo,details,arrow);resourceGrid.append(card);
  });
