@@ -1,4 +1,4 @@
-import {createOverworld} from './overworld.mjs?v=highlands1';
+import {createOverworld} from './overworld.mjs?v=trails1';
 import {starTargets,starsFor,starsText} from './room-stars.mjs';
 import {insertCommand} from './command-editor.mjs';
 import {logicRooms,compileLogic,sense,pulse,logicMove,cellKey,RouteHazard} from './logic.mjs?v=edgefall1';
@@ -16,11 +16,11 @@ const foundryStart=logicStart+4;
 const heroDefaults={name:'Code Explorer',style:'guardian',personality:'brave',skin:'#d7a880',armor:'#48796b',hair:'#292b31',cape:'#b4a27f',hairStyle:'short',accessory:'satchel',height:100,build:100};
 let hero={...heroDefaults},completed=new Set(),level=0,worldGroup,actor,actorParts,goalMesh,crystalMeshes=[],checkpointMeshes=[],tileMeshes=[],activeRun=0,running=false,stopped=false,positions={x:0,z:0},variables={},collected=new Set(),visited=new Set(),actions=0,hasArithmetic=false,success=false,previewActor;
 const bestSteps=new Map();
-let overworld,portalChanged,portalEntered;
+let overworld,portalChanged,portalEntered,portalPrompt;
 try{const saved=JSON.parse(localStorage.getItem(STORAGE)||'{}');completed=new Set((saved.completed||[]).filter(i=>Number.isInteger(i)&&i>=0&&i<levels.length));for(const [id,steps] of Object.entries(saved.bestSteps??{})){const index=Number(id);if(completed.has(index)&&Number.isInteger(steps)&&steps>0&&steps<=75)bestSteps.set(index,steps);}level=clamp(saved.level||0,0,levels.length-1);if(!isAvailable(level))level=0}catch{}
 try{hero={...hero,...JSON.parse(localStorage.getItem(HERO)||'{}')}}catch{}
 function isAvailable(i){
-  return i===0||i===classicCount||i===logicStart||i===foundryStart||completed.has(i)||completed.has(i-1);
+  return Number.isInteger(i)&&i>=0&&i<levels.length;
 }
 const setbacks=new Map();
 let flightFuel=0, logicState, conditionUsed=false, devices=[], spikeTraps=[];
@@ -304,12 +304,19 @@ $('abilityPanel').hidden=!cfg.powers?.length;
 $('abilityPanel').textContent=cfg.powers?.map(mode=>['pulse','shield'].includes(mode)?mode+'()':mode+'(direction, distance)').join('  ·  ')??'';
 const flags=$('objectiveFlags');flags.innerHTML='';const notes=['Target ('+cfg.goal.join(', ')+')'];if(cfg.obstacles.length)notes.push('Avoid obstacles');if(cfg.crystals.length)notes.push('Collect '+cfg.crystals.length+' crystals');if(cfg.checkpoints.length)notes.push(cfg.ordered?'Relays: '+cfg.checkpoints.map(p=>'('+p.join(', ')+')').join(' → '):'Activate '+cfg.checkpoints.length+' waypoints');if(cfg.arithmetic)notes.push('Use arithmetic');for(const note of notes){const span=document.createElement('span');span.textContent=note;flags.append(span)}
 decorateWorld(cfg);addLogicDevices(cfg);resetLevel();renderEditor();updateLevelProgress()}
+function showIslandToast(message){
+  const toast=$('islandDiscoveryToast');
+  toast.textContent=message;
+  toast.hidden=false;
+  clearTimeout(toast.hideTimer);
+  toast.hideTimer=setTimeout(()=>{toast.hidden=true;},5500);
+}
 function openMissions(){
   const picker=$('missionPicker');
   const next=levels.findIndex((_,i)=>i<classicCount&&!completed.has(i));
   const recommended=level>=foundryStart?levels.findIndex((_,i)=>i>=foundryStart&&!completed.has(i)):level>=logicStart?levels.findIndex((_,i)=>i>=logicStart&&i<foundryStart&&!completed.has(i)):level>=classicCount?levels.findIndex((_,i)=>i>=classicCount&&i<logicStart&&!completed.has(i)):next;
   $('missionHero').textContent=hero.name.trim()||heroDefaults.name;
-  $('missionProgress').textContent=completed.size+' of '+levels.length+' missions complete';
+  $('missionProgress').textContent=completed.size+' / '+levels.length+' retos · '+[...bestSteps].reduce((sum,[index,steps])=>sum+starsFor(index,steps),0)+' / '+(levels.length*3)+' ★';
   const list=$('levelList');
   list.replaceChildren();
   const regions=$('regionLinks');
@@ -406,7 +413,7 @@ function openMissions(){
   picker.returnValue='';
   picker.showModal();
   selectZone(activeZone??zones[0]);
-  let nearby;
+  let promptKey;
   portalEntered=i=>{
     if(!isAvailable(i))return;
     if(i!==level){
@@ -418,13 +425,25 @@ function openMissions(){
     picker.close('play');
   };
   portalChanged=i=>{
-    nearby=i;
-    enter.disabled=i===undefined||!isAvailable(i);
-    $('portalStatus').textContent=i===undefined?'Walk to a numbered portal.':
-      (i+1)+' · '+levels[i].title+(isAvailable(i)?'':' · Locked');
+    $('portalStatus').textContent=i===undefined?'':levels[i].title;
     if(i!==undefined)selectZone(zoneForRoom.get(i));
   };
-  enter.onclick=()=>{if(nearby!==undefined)portalEntered(nearby);};
+  portalPrompt=prompt=>{
+    enter.hidden=!prompt;
+    if(!prompt)return;
+    enter.style.left=prompt.x+'%';
+    enter.style.top=prompt.y+'%';
+    const key=prompt.room??prompt.guide;
+    if(promptKey===key)return;
+    promptKey=key;
+    const room=prompt.room, best=bestSteps.get(room);
+    $('doorAction').textContent=room===undefined?'R · Hablar':'Enter para ingresar';
+    $('doorTitle').textContent=room===undefined?prompt.guide:levels[room].title;
+    $('doorStars').textContent=room===undefined?'':best===undefined?
+      '☆☆☆ · 3★ en '+starTargets(room).three+' pasos':starsText(starsFor(room,best))+' · '+best+' pasos';
+  };
+  enter.hidden=true;
+  enter.onclick=()=>{overworld?.interact();if(picker.open)$('overworldCanvas').focus();};
   const directory=$('islandDirectory'),directoryToggle=$('islandDirectoryToggle');
   const cameraToggle=$('islandCamera');
   function setDirectory(open){
@@ -455,13 +474,11 @@ function openMissions(){
           const output=$('islandTraversalStatus');
           if(output.textContent!==state)output.textContent=state;
         },
+        onPrompt:prompt=>portalPrompt(prompt),
+        onDialogue:guide=>showIslandToast(guide.name+' · '+guide.line),
         onDiscovery:(relic,found,total)=>{
           $('islandDiscoveries').textContent=found+' / '+total+' discoveries';
-          const toast=$('islandDiscoveryToast');
-          toast.textContent=relic.name+' · '+relic.note;
-          toast.hidden=false;
-          clearTimeout(toast.hideTimer);
-          toast.hideTimer=setTimeout(()=>{toast.hidden=true;},5500);
+          showIslandToast(relic.name+' · '+relic.note);
         }});
       overworld.addZones(zones);
     }catch(error){
@@ -481,6 +498,7 @@ function openMissions(){
   }else{
     cameraToggle.hidden=true;
     setDirectory(true);
+    $('portalStatus').classList.add('visible');
     $('portalStatus').textContent='3D map unavailable. Select a room below.';
     (activeZone??zones[0]).button.focus();
   }
