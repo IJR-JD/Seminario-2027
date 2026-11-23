@@ -63,7 +63,13 @@
      <button type="button" id="islandDirectoryToggle" aria-expanded="false" aria-controls="islandDirectory">Zone directory</button>
    </div>
    <output id="islandDiscoveryToast" class="islandDiscovery" hidden aria-live="polite"></output>
-   <p class="islandHelp">WASD / arrows · Shift to sprint · Drag to rotate · Scroll to zoom · Space to jump · C to crouch · F at ladders · R to talk</p>
+   <p class="islandHelp">WASD / arrows / touch arrows · Shift to sprint · Drag to rotate · Scroll to zoom · Space to jump · C to crouch · F at ladders · R to talk</p>
+   <div class="islandDpad" id="islandDpad" role="group" aria-label="Touch movement controls">
+     <button type="button" data-walk="ArrowUp" aria-label="Walk forward">↑</button>
+     <button type="button" data-walk="ArrowLeft" aria-label="Walk left">←</button>
+     <button type="button" data-walk="ArrowDown" aria-label="Walk backward">↓</button>
+     <button type="button" data-walk="ArrowRight" aria-label="Walk right">→</button>
+   </div>
    <div class="islandTraversal"><span id="islandTraversalStatus" aria-live="polite"></span>
      <button type="button" data-traversal="jump">Jump</button>
      <button type="button" data-traversal="crouch">Crouch</button>
