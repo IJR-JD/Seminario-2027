@@ -128,13 +128,27 @@ const snippets={
 };
 const code=$("theoryCode");const original=snippets[topic.slug]||"print('Hello Python')";
 code.value=original;set("labPurpose",topic.definition);
+function renderRunFiles(containerId,files){
+ const target=$(containerId);if(!target)return;
+ target.replaceChildren();target.hidden=!Array.isArray(files)||files.length===0;
+ if(target.hidden)return;
+ const title=document.createElement("span");title.textContent="Generated files:";target.appendChild(title);
+ files.forEach(name=>{
+  const btn=document.createElement("button");btn.type="button";btn.textContent="Download "+name;
+  btn.addEventListener("click",async()=>{
+   btn.disabled=true;
+   try{await window.IJR_RUNNER.downloadFile(name);}catch(error){btn.textContent="Error: "+(error.message||String(error));}
+   finally{btn.disabled=false;}
+  });target.appendChild(btn);
+ });
+}
 const output=$("labOutput"),status=$("runtimeStatus"),run=$("theoryRun");
-$("theoryReset").addEventListener("click",()=>{code.value=original;output.textContent="Pulsa Run para ejecutar.";});
+$("theoryReset").addEventListener("click",()=>{code.value=original;output.textContent="Pulsa Run para ejecutar.";renderRunFiles("theoryDownloads",[]);});
 run.addEventListener("click",async()=>{
  if(!window.IJR_RUNNER){output.textContent="No está disponible el ejecutor de Python.";return;}
- run.disabled=true;status.textContent=" · Loading Python…";output.textContent="Running…";
+ run.disabled=true;status.textContent=" · Loading Python…";output.textContent="Running…";renderRunFiles("theoryDownloads",[]);
  try{const result=await window.IJR_RUNNER.run(code.value);
- output.textContent=result.output||"(No print output)";status.textContent=" · "+(result.ok?"Executed":"Python error");
+ output.textContent=result.output||"(No print output)";status.textContent=" · "+(result.ok?"Executed":"Python error");renderRunFiles("theoryDownloads",result.ok?result.files:[]);
  }catch(e){output.textContent=e.message||String(e);status.textContent=" · Runtime unavailable";}
  finally{run.disabled=false;}
 });
