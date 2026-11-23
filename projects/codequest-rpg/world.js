@@ -1,3 +1,4 @@
+import {logicRooms,compileLogic,sense,pulse,logicMove,cellKey} from './logic.mjs';
 import * as THREE from 'three';
 import {directions,expedition,planMove,surfaceAt} from './expedition.mjs';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
@@ -6,15 +7,16 @@ const STORAGE='ijr-codequest-world-v2',HERO='ijr-codequest-world-hero-v1';
 const W=9,H=9;
 const levels=[{"title":"The First Steps","zone":"Meadow of Beginnings","theme":"meadow","start":[1,7],"goal":[3,7],"obstacles":[],"crystals":[],"checkpoints":[],"concept":"01 · One direction","description":"Walk to the glowing beacon.","objective":"Reach X 3 · Z 7","instruction":"Read the starting and target coordinates, then choose a direction and distance.","hint":"Identify the X direction. A single variable assignment moves the hero.","require":[]},{"title":"A Name for Distance","zone":"Meadow of Beginnings","theme":"meadow","start":[1,7],"goal":[5,7],"obstacles":[],"crystals":[],"checkpoints":[],"concept":"02 · Distance as a value","description":"Let a variable decide how far you go.","objective":"Reach X 5 · Z 7","instruction":"Write a single directional variable with a numeric value.","hint":"Compare the starting X and the target X. Choose the matching direction and value.","require":[]},{"title":"The First Turn","zone":"Willow Crossroads","theme":"meadow","start":[1,7],"goal":[4,4],"obstacles":[],"crystals":[],"checkpoints":[],"concept":"03 · Two assignments","description":"A new path bends toward the north.","objective":"Reach X 4 · Z 4","instruction":"Use two directional variables on separate lines.","hint":"Think about the horizontal change and vertical change as two separate assignments.","require":[]},{"title":"Across the Stream","zone":"Willow Crossroads","theme":"river","start":[1,7],"goal":[6,3],"obstacles":[[3,3],[3,4],[3,5],[3,6],[3,7],[3,8]],"crystals":[],"checkpoints":[],"concept":"04 · Order of movement","description":"The river blocks the direct path. Find the bridge at Z 2.","objective":"Cross the bridge and reach the beacon","instruction":"Plan a safe route across the stream using directional assignments.","hint":"Observe where the safe crossing lies. The order of your directional assignments matters.","require":[]},{"title":"Stones in the Valley","zone":"Mossy Passage","theme":"forest","start":[1,7],"goal":[7,3],"obstacles":[[3,7],[3,6],[3,5],[5,2],[5,3],[5,4],[5,5]],"crystals":[],"checkpoints":[],"concept":"05 · Navigating obstacles","description":"Stone walls split the valley into winding passages.","objective":"Find a safe route around stone walls","instruction":"Avoid the stones by dividing the route into several assignments.","hint":"Examine the stone obstacles from above and split the trip into smaller segments.","require":[]},{"title":"Crystals of the Glade","zone":"The Crystal Glade","theme":"forest","start":[1,7],"goal":[7,2],"obstacles":[[4,4],[4,5],[4,6]],"crystals":[[2,5],[6,3]],"checkpoints":[],"concept":"06 · Collect by visiting","description":"The beacon only awakens when both crystals are collected.","objective":"Collect two crystals before reaching the beacon","instruction":"Visit each crystal tile. Collection happens automatically upon arrival.","hint":"Crystals are picked up when the hero walks onto them. Plan to visit both before the beacon.","require":[]},{"title":"The Forest Gate","zone":"Ancient Woodland","theme":"forest","start":[1,7],"goal":[7,1],"obstacles":[[3,5],[3,6],[3,7],[5,2],[5,3],[5,4]],"crystals":[],"checkpoints":[[3,3]],"concept":"07 · Checkpoints","description":"Pass through the waypoint to activate the destination.","objective":"Touch the waypoint, then the beacon","instruction":"Visit the checkpoint before reaching the beacon.","hint":"First visit the marked checkpoint. Then continue toward the destination without crossing walls.","require":[]},{"title":"A Calculated Path","zone":"Sunstone Ruins","theme":"ruins","start":[1,7],"goal":[7,4],"obstacles":[[4,6],[4,7],[5,6],[6,6]],"crystals":[],"checkpoints":[],"concept":"08 · Arithmetic in movement","description":"Build your travel distance from two smaller values.","objective":"Use an arithmetic expression to reach the beacon","instruction":"Use an arithmetic expression to determine a movement distance.","hint":"Use a simple calculation as the numeric value of a direction. Remember that the value is a distance.","require":[],"arithmetic":true},{"title":"The Narrow Pass","zone":"Sunstone Ruins","theme":"ruins","start":[1,7],"goal":[7,1],"obstacles":[[2,4],[3,4],[4,4],[5,4],[6,4],[6,5],[6,6]],"crystals":[],"checkpoints":[[1,3]],"concept":"09 · Repeated direction assignments","description":"Use several short movements to go around the old walls.","objective":"Reach the waypoint and solve the maze","instruction":"Break a long trip into separate directional assignments.","hint":"Look for the open corridor around the barrier. You may reuse a direction on another line.","require":[]},{"title":"The Three Signals","zone":"Valley of Signals","theme":"river","start":[1,7],"goal":[7,2],"obstacles":[[4,4],[4,5],[4,6],[4,7]],"crystals":[[2,5],[5,2],[7,3]],"checkpoints":[],"concept":"10 · Multi-stop paths","description":"Collect three signals distributed across the valley.","objective":"Collect all three signals","instruction":"Collect all signals automatically by walking across their locations.","hint":"Think about each crystal as a stop along the route, not just the final destination.","require":[]},{"title":"The Coordinate Trial","zone":"Highland Observatory","theme":"ruins","start":[1,7],"goal":[7,1],"obstacles":[[3,3],[3,4],[3,5],[3,6],[5,2],[5,3],[5,4]],"crystals":[],"checkpoints":[[2,2],[6,6]],"concept":"11 · Waypoints and planning","description":"Two waypoints. A difficult route. Your variables are the map.","objective":"Activate both waypoints and reach the beacon","instruction":"Reach the checkpoints and destination with a planned sequence of movement variables.","hint":"Plan both checkpoints as intermediate objectives. Longer paths are fine when safe.","require":[]},{"title":"The Last Beacon","zone":"Citadel of Code","theme":"citadel","start":[1,7],"goal":[7,1],"obstacles":[[3,5],[3,6],[3,7],[4,3],[4,4],[4,5],[5,5],[6,5]],"crystals":[[2,3],[7,3]],"checkpoints":[[6,2]],"concept":"12 · Final exploration","description":"The finale combines variables, careful navigation, crystals, and a waypoint.","objective":"Collect both crystals, activate the waypoint and reach the final beacon","instruction":"Build a complete route through the final world. Every objective matters.","hint":"Use the map to plan a complete itinerary through both crystals and the checkpoint.","require":[]}];
 const classicCount=levels.length;
-levels.push(...expedition);
+levels.push(...expedition,...logicRooms);
+const logicStart=classicCount+expedition.length;
 const heroDefaults={name:'Code Explorer',style:'guardian',personality:'brave',skin:'#d7a880',armor:'#48796b',hair:'#292b31',cape:'#b4a27f',hairStyle:'short',accessory:'satchel',height:100,build:100};
 let hero={...heroDefaults},completed=new Set(),level=0,worldGroup,actor,actorParts,goalMesh,crystalMeshes=[],checkpointMeshes=[],tileMeshes=[],activeRun=0,running=false,stopped=false,positions={x:0,z:0},variables={},collected=new Set(),visited=new Set(),actions=0,hasArithmetic=false,success=false,previewActor;
 try{const saved=JSON.parse(localStorage.getItem(STORAGE)||'{}');completed=new Set((saved.completed||[]).filter(i=>Number.isInteger(i)&&i>=0&&i<levels.length));level=clamp(saved.level||0,0,levels.length-1);if(!isAvailable(level))level=0}catch{}
 try{hero={...hero,...JSON.parse(localStorage.getItem(HERO)||'{}')}}catch{}
 function isAvailable(i){
-  return i===0||i===classicCount||completed.has(i)||completed.has(i-1);
+  return i===0||i===classicCount||i===logicStart||completed.has(i)||completed.has(i-1);
 }
-let flightFuel=0;
+let flightFuel=0, logicState, conditionUsed=false, devices=[];
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const log=m=>{const pre=$('consoleView');pre.textContent=(pre.textContent==='Choose a path to begin.'?'':pre.textContent+'\n')+m;pre.scrollTop=pre.scrollHeight;};
 const status=m=>{$('executionStatus').textContent=m;};
@@ -36,6 +38,12 @@ if(settings.style==='guardian'){for(const dx of [-.5,.5])addSphere(group,.22,met
 if(settings.accessory==='scarf')addBox(group,.81,.12,.51,cloth,0,1.42,.05);
 if(settings.accessory==='staff'){const pole=addCyl(group,.04,.04,1.65,dark,.65,.97,0);addSphere(group,.12,metal,.65,1.84,0)}
 if(settings.accessory==='satchel')addBox(group,.33,.31,.23,metal,.48,.85,-.29);
+const trim=makeMat(settings.style==='mage'?'#d5a5fd':settings.style==='scout'?'#b3e8bf':'#ffe19b',.26);
+const sigil=new THREE.Mesh(new THREE.OctahedronGeometry(.125),trim);
+sigil.position.set(0,1.14,.235);
+group.add(sigil);
+addBox(group,.61,.09,.47,dark,0,.74,0);
+for(const arm of arms)addBox(arm,.22,.15,.29,trim,0,-.27,0);
 const cape=addBox(group,.67,.86,.08,cloth,0,.96,-.31);cape.rotation.x=.13;
 group.scale.set(Number(settings.build)/100,Number(settings.height)/100,Number(settings.build)/100);
 group.userData={legs,arms,cape};return group}
@@ -105,7 +113,7 @@ if(worldGroup){
     if(object.material)materials.add(object.material);
   });
   for(const material of materials)material.dispose();
-}worldGroup=new THREE.Group();scene.add(worldGroup);const palette=colorThemes[cfg.theme];scene.background.set(cfg.surfaces?(cfg.theme==='citadel'?'#a4cadb':'#daccac'):cfg.theme==='ruins'?'#d8d0bc':cfg.theme==='citadel'?'#c4d1c4':'#bed2ce');
+}worldGroup=new THREE.Group();scene.add(worldGroup);const palette=colorThemes[cfg.theme];scene.background.set(cfg.conditional?(cfg.zone==='Signal Grove'?'#b7cfbb':'#a6aec9'):cfg.surfaces?(cfg.theme==='citadel'?'#a4cadb':'#daccac'):cfg.theme==='ruins'?'#d8d0bc':cfg.theme==='citadel'?'#c4d1c4':'#bed2ce');
 const base=makeMat(palette[2]),grass=[makeMat(palette[0]),makeMat(palette[1]),makeMat(palette[2])],path=makeMat(palette[3]),stone=makeMat('#77877c'),stoneTop=makeMat('#a6b3aa'),trunk=makeMat('#746b50'),leaf=makeMat(cfg.theme==='forest'?'#456c4d':'#57845d');if(!cfg.surfaces)addBox(worldGroup,12,.66,12,base,4,-.45,4);tileMeshes=[];const obstacleSet=new Set(cfg.obstacles.map(p=>key(...p)));const otherUsed=new Set([key(...cfg.start),key(...cfg.goal),...cfg.crystals.map(p=>key(...p)),...cfg.checkpoints.map(p=>key(...p))]);
 const heightAt=(x,z)=>cfg.surfaces?surfaceAt(cfg,x,z):0;
 const islandMaterials=[makeMat('#729589'),makeMat('#86aa9d'),makeMat('#9caa80'),makeMat('#d2b787'),makeMat('#e3cd9e')];
@@ -169,22 +177,103 @@ if(action&&roomPowers.includes(action[1])){
   continue;
 }
 const m=line.match(/^([A-Za-z_]\w*)\s*=\s*(.+)$/);if(!m)throw Error('Line '+(i+1)+': write up = 1, right = 1, left = 1 or down = 1');if(!['up','right','left','down'].includes(m[1]))throw Error('Line '+(i+1)+': choose only up, right, left, or down');program.push({kind:'direction',name:m[1],value:m[2],line:i+1})}if(program.length>65)throw Error('Maximum 65 lines per program');return program}
+function compileRoom(source,cfg){
+  if(!cfg.conditional)return compile(source,cfg.powers);
+  return compileLogic(source,({text,line})=>{
+    const power=text.match(/^(pulse|shield)\(\)$/);
+    if(power&&cfg.powers.includes(power[1]))return {kind:power[1],line};
+    try{return {...compile(text,cfg.powers)[0],line}}
+    catch(error){throw Error(error.message.replace(/^Line 1:/,'Line '+line+':'))}
+  });
+}
+
+function addLogicDevices(cfg){
+  devices=[];
+  if(cfg.conditional){
+    const grove=cfg.zone==='Signal Grove';
+    const stone=makeMat(grove?'#3f665e':'#343c60',.55);
+    const inset=makeMat(grove?'#eeca85':'#9c86d4',.32);
+    for(const [x,z] of [[.8,.4],[cfg.width-2,.4],[.8,cfg.depth-.6],[cfg.width-2,cfg.depth-.6]]){
+      addCyl(worldGroup,.36,.59,2.1,stone,x,.85,z,6);
+      addCyl(worldGroup,.48,.38,.22,inset,x,1.62,z,6);
+      if(grove){
+        addCyl(worldGroup,.02,.87,1.55,makeMat('#5c8969'),x,2.45,z,5);
+      }else{
+        const light=new THREE.Mesh(new THREE.OctahedronGeometry(.34),inset);
+        light.position.set(x,2.13,z);
+        worldGroup.add(light);
+      }
+    }
+  }
+  for(const [kind,cells,color] of [['lock',cfg.locks,'#bb81ff'],['sentry',cfg.sentries,'#ff765e']]){
+    for(const [x,z] of cells??[]){
+      const root=new THREE.Group();
+      root.position.set(x,surfaceAt(cfg,x,z),z);
+      const base=makeMat('#243349',.35);
+      addCyl(root,.38,.47,.18,base,0,.09,0,8);
+      const rotor=new THREE.Group();
+      rotor.position.y=.62;
+      rotor.add(new THREE.Mesh(new THREE.OctahedronGeometry(.38),new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:.6,roughness:.3})));
+      const ring=new THREE.Mesh(new THREE.TorusGeometry(.43,.027,10,36),new THREE.MeshBasicMaterial({color}));
+      ring.rotation.x=Math.PI/2;
+      rotor.add(ring);
+      if(kind==='sentry'){
+        const face=addSphere(rotor,.23,base,0,0,.19);
+        face.scale.set(1,.68,.7);
+        const eye=makeMat('#fff1ac',.3);
+        for(const side of [-1,1])addSphere(rotor,.045,eye,side*.083,.025,.35);
+        for(const side of [-1,1])addBox(rotor,.22,.09,.44,base,side*.38,0,0);
+      }
+      root.add(rotor);
+      worldGroup.add(root);
+      devices.push({root,rotor,kind,x,z});
+    }
+  }
+}
+function syncLogic(){
+  for(const device of devices){
+    device.rotor.visible=device.kind!=='lock'||!logicState.open.has(cellKey(device.x,device.z));
+  }
+  $('shieldState').textContent=logicState.shield?'Charged':'Ready';
+  $('shieldHud').hidden=!levels[level].powers?.includes('shield');
+}
+async function powerEffect(color,runId){
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(1,.035,10,40),new THREE.MeshBasicMaterial({color,transparent:true,opacity:.85,depthWrite:false}));
+  ring.position.copy(actor.position);
+  ring.position.y+=.65;
+  ring.rotation.x=Math.PI/2;
+  scene.add(ring);
+  const start=performance.now();
+  try{
+    while(runId===activeRun&&!stopped){
+      const progress=Math.min(1,(performance.now()-start)/300);
+      ring.scale.setScalar(.3+1.3*progress);
+      ring.material.opacity=.85*(1-progress);
+      if(progress===1)break;
+      await new Promise(resolve=>requestAnimationFrame(resolve));
+    }
+  }finally{
+    scene.remove(ring);
+    ring.geometry.dispose();
+    ring.material.dispose();
+  }
+}
 function coordinateText(cfg,x,z){
   return 'X '+x+' · Z '+z+(cfg.surfaces?' · H '+surfaceAt(cfg,x,z):'');
 }
 function setActorPosition(x,z){positions={x,z};const cfg=levels[level];actor.position.set(x,cfg.surfaces?surfaceAt(cfg,x,z):0,z);$('coordinateLabel').textContent=coordinateText(cfg,x,z);}
-function resetLevel(preserveEditor=false){stopped=true;activeRun++;running=false;const cfg=levels[level];flightFuel=cfg.flightBudget??0;variables={};collected.clear();visited.clear();hasArithmetic=false;actions=0;success=false;setActorPosition(...cfg.start);actor.rotation.y=Math.PI/2;clearPose();actor.visible=true;if(!preserveEditor)$('editor').value=cfg.powers?'# Plan a route with movement and the available abilities.\n\n':'# Write your own movement variables below\n# Each line makes your hero move.\n\n';$('editorLines').textContent=$('editor').value.split('\n').length+' lines';for(const mesh of crystalMeshes)mesh.visible=true;for(const mesh of checkpointMeshes){mesh.traverse(o=>{if(o.material?.color)o.material.color.set('#6887af')})}updateHud();$('variableView').textContent='No variables defined';$('consoleView').textContent='Ready · '+cfg.title;$('nextLevel').hidden=true;$('runCode').disabled=false;status('READY');message('Write code and press Run program.');$('toggleHint').textContent='Show a clue';$('hintText').hidden=true}
+function resetLevel(preserveEditor=false){conditionUsed=false;logicState={open:new Set(),shield:false};syncLogic();traceLine(0);stopped=true;activeRun++;running=false;$('editor').readOnly=false;const cfg=levels[level];flightFuel=cfg.flightBudget??0;variables={};collected.clear();visited.clear();hasArithmetic=false;actions=0;success=false;setActorPosition(...cfg.start);actor.rotation.y=Math.PI/2;clearPose();actor.visible=true;if(!preserveEditor)$('editor').value=cfg.powers?'# Plan a route with movement and the available abilities.\n\n':'# Write your own movement variables below\n# Each line makes your hero move.\n\n';updateLines();for(const mesh of crystalMeshes)mesh.visible=true;for(const mesh of checkpointMeshes){mesh.traverse(o=>{if(o.material?.color)o.material.color.set('#6887af')})}updateHud();$('variableView').textContent='No variables defined';$('consoleView').textContent='Ready · '+cfg.title;$('nextLevel').hidden=true;$('runCode').disabled=false;status('READY');message('Write code and press Run program.');$('toggleHint').textContent='Show a clue';$('hintText').hidden=true}
 function updateHud(){const cfg=levels[level];$('flightHud').hidden=!cfg.flightBudget;$('flightRange').textContent=flightFuel+' / '+(cfg.flightBudget??0);$('itemHud').hidden=cfg.crystals.length===0;$('itemCount').textContent=collected.size+' / '+cfg.crystals.length}
-function updateLevelUI(){const cfg=levels[level];$('zoneLabel').textContent=(cfg.powers?'EXPEDITION · ':'CHAPTER 01 · ')+cfg.zone.toUpperCase();$('worldTitle').textContent=cfg.title;$('worldDesc').textContent=cfg.description;$('levelIndex').textContent=String(level+1).padStart(2,'0')+' / '+levels.length;$('missionLabel').textContent=cfg.objective;$('objective').textContent=cfg.objective;$('instruction').textContent=cfg.instruction;$('hintText').textContent=cfg.hint;$('concept').textContent=cfg.concept;
+function updateLevelUI(){const cfg=levels[level];$('zoneLabel').textContent=(cfg.conditional?'LOGIC WORLDS · ':cfg.powers?'EXPEDITION · ':'CHAPTER 01 · ')+cfg.zone.toUpperCase();$('worldTitle').textContent=cfg.title;$('worldDesc').textContent=cfg.description;$('levelIndex').textContent=String(level+1).padStart(2,'0')+' / '+levels.length;$('missionLabel').textContent=cfg.objective;$('objective').textContent=cfg.objective;$('instruction').textContent=cfg.instruction;$('hintText').textContent=cfg.hint;$('concept').textContent=cfg.concept;
 $('editorContext').textContent=cfg.powers?'EXPEDITION · '+cfg.powers.join(' / '):'CHAPTER 01 · VARIABLES';
-$('abilityPanel').hidden=!cfg.powers;
-$('abilityPanel').textContent=cfg.powers?.map(mode=>mode+'(direction, distance)').join('  ·  ')??'';
+$('abilityPanel').hidden=!cfg.powers?.length;
+$('abilityPanel').textContent=cfg.powers?.map(mode=>['pulse','shield'].includes(mode)?mode+'()':mode+'(direction, distance)').join('  ·  ')??'';
 const flags=$('objectiveFlags');flags.innerHTML='';const notes=['Target ('+cfg.goal.join(', ')+')'];if(cfg.obstacles.length)notes.push('Avoid obstacles');if(cfg.crystals.length)notes.push('Collect '+cfg.crystals.length+' crystals');if(cfg.checkpoints.length)notes.push(cfg.ordered?'Relays: '+cfg.checkpoints.map(p=>'('+p.join(', ')+')').join(' → '):'Activate '+cfg.checkpoints.length+' waypoints');if(cfg.arithmetic)notes.push('Use arithmetic');for(const note of notes){const span=document.createElement('span');span.textContent=note;flags.append(span)}
-decorateWorld(cfg);resetLevel();updateLevelProgress()}
+decorateWorld(cfg);addLogicDevices(cfg);resetLevel();renderEditor();updateLevelProgress()}
 function openMissions(){
   const picker=$('missionPicker');
   const next=levels.findIndex((_,i)=>i<classicCount&&!completed.has(i));
-  const recommended=level>=classicCount?(levels.findIndex((_,i)=>i>=classicCount&&!completed.has(i))) : next;
+  const recommended=level>=logicStart?levels.findIndex((_,i)=>i>=logicStart&&!completed.has(i)):level>=classicCount?levels.findIndex((_,i)=>i>=classicCount&&i<logicStart&&!completed.has(i)):next;
   $('missionHero').textContent=hero.name.trim()||heroDefaults.name;
   $('missionProgress').textContent=completed.size+' of '+levels.length+' missions complete';
   const list=$('levelList');
@@ -218,6 +307,8 @@ function openMissions(){
     if(i===0)addRegion('Meadow Trail','Movement variables · 12 rooms');
     if(i===classicCount)addRegion('Sunstone Heights','Terraces and phase gates');
     if(i===classicCount+2)addRegion('Aether Reach','Flight range and ordered relays');
+    if(i===logicStart)addRegion('Signal Grove','Conditions, sensors and prism locks');
+    if(i===logicStart+2)addRegion('Clockwork Bastion','Sentinels, shields and nested decisions');
     const available=isAvailable(i);
     const button=document.createElement('button');
     button.type='button';
@@ -297,8 +388,9 @@ async function animateMove(plan,direction,mode,runId){
       const progress=mode==='dash'?1-(1-p)**2:mode==='walk'?p:eased;
       const arc=Math.sin(Math.PI*p);
       actor.position.lerpVectors(from,to,progress);
-      if(mode==='jump')actor.position.y+=1.25*arc;
-      if(mode==='fly')actor.position.y+=1.9*Math.sin(Math.PI*eased)**.65;
+      if(mode==='jump')actor.position.y+=1.55*arc;
+      if(mode==='fly')actor.position.y+=1.9*Math.sin(Math.PI*eased)**.65+.09*arc*Math.sin(p*24);
+      actor.rotation.z=mode==='fly'?Math.sin(p*Math.PI*2)*.2:mode==='jump'?Math.sin(p*Math.PI*2)*.1:0;
       if(mode==='walk')actor.position.y+=.07*Math.sin(Math.PI*2*p)**2;
       actor.rotation.y=initial+turn*Math.min(p*5,1);
       actor.rotation.x=arc*({walk:.12,jump:-.17,dash:.55,fly:.6}[mode]);
@@ -344,6 +436,7 @@ function makeMotionTrail(mode){
 }
 function clearPose(){
   actor.rotation.x=0;
+  actor.rotation.z=0;
   $('cameraStage').dataset.motion='';
   for(const limb of [...actor.userData.legs,...actor.userData.arms]){
     limb.rotation.x=0;
@@ -353,28 +446,158 @@ function clearPose(){
 }
 
 function collectCrystal(){const cfg=levels[level];const index=cfg.crystals.findIndex(([x,z])=>x===positions.x&&z===positions.z);if(index<0||collected.has(index))return;collected.add(index);crystalMeshes[index].visible=false;updateHud();banner('CRYSTAL FOUND · '+collected.size+'/'+cfg.crystals.length);log('Crystal '+(index+1)+' collected')}
-function validateSuccess(program){const cfg=levels[level],atGoal=positions.x===cfg.goal[0]&&positions.z===cfg.goal[1],gotItems=collected.size===cfg.crystals.length,gotWaypoints=visited.size===cfg.checkpoints.length,mathOk=!cfg.arithmetic||hasArithmetic;if(atGoal&&gotItems&&gotWaypoints&&mathOk)return true;const reasons=[];if(!atGoal)reasons.push('Reach ('+cfg.goal.join(', ')+'); currently ('+positions.x+', '+positions.z+')');if(!gotItems)reasons.push('Walk over every crystal');if(!gotWaypoints)reasons.push('Visit all waypoints');if(!mathOk)reasons.push('Use a calculation in a direction value');log('MISSION NOT COMPLETE · '+reasons.join(' · '));message(reasons.join(' · '));return false}
-async function run(){if(running)return;resetLevel(true);stopped=false;const runId=activeRun;running=true;$('runCode').disabled=true;status('EXECUTING');let program;try{program=compile($('editor').value,levels[level].powers);if(!program.length)throw Error('Write at least one movement variable.');for(const instruction of program){if(stopped||runId!==activeRun)break;status('LINE '+instruction.line);const count=evaluate(instruction.value,variables);if(!Number.isInteger(count)||count<0||count>12)throw Error('Line '+instruction.line+': distance must be a whole number from 0 to 12');if(instruction.kind==='direction')variables[instruction.name]=count;if(/[+*/-]/.test(instruction.value))hasArithmetic=true;$('variableView').textContent=Object.entries(variables).map(([k,v])=>k+' = '+v).join('\n');log('Line '+instruction.line+' · '+(instruction.kind==='direction'?instruction.name+' = '+count:instruction.kind+'('+instruction.name+', '+count+')'));const cfg=levels[level];
-if(instruction.kind!=='direction'){
-  const plan=planMove(cfg,positions,instruction.name,count,instruction.kind,flightFuel);
-  if(++actions>75)throw Error('Too many movements (limit 75)');
-  await animateMove(plan,instruction.name,instruction.kind,runId);
-}else for(let n=0;n<count&&!stopped&&runId===activeRun;n++){
-  if(++actions>75)throw Error('Too many movements (limit 75)');
-  if(cfg.surfaces){
-    await animateMove(planMove(cfg,positions,instruction.name,1,'walk',flightFuel),instruction.name,'walk',runId);
-  }else await moveStep(...directions[instruction.name],instruction.name,runId);
-}if(count===0)await sleep(90)}if(stopped||runId!==activeRun)return;success=validateSuccess(program);if(success){completed.add(level);store();banner(level===levels.length-1?'CHAPTER COMPLETE!':'LEVEL COMPLETE!');status('MISSION COMPLETE');message('Excellent! Every objective was verified.');$('nextLevel').hidden=level===levels.length-1;updateLevelProgress()}else status('TRY AGAIN')}catch(err){if(runId===activeRun){status('FIX YOUR CODE');log('ERROR · '+err.message);message(err.message)}}finally{if(runId===activeRun){running=false;$('runCode').disabled=false}}}
+function validateSuccess(program){const cfg=levels[level],atGoal=positions.x===cfg.goal[0]&&positions.z===cfg.goal[1],gotItems=collected.size===cfg.crystals.length,gotWaypoints=visited.size===cfg.checkpoints.length,mathOk=!cfg.arithmetic||hasArithmetic;if(atGoal&&gotItems&&gotWaypoints&&mathOk&&(!cfg.conditional||conditionUsed))return true;const reasons=[];if(cfg.conditional&&!conditionUsed)reasons.push('Run at least one if condition');if(!atGoal)reasons.push('Reach ('+cfg.goal.join(', ')+'); currently ('+positions.x+', '+positions.z+')');if(!gotItems)reasons.push('Walk over every crystal');if(!gotWaypoints)reasons.push('Visit all waypoints');if(!mathOk)reasons.push('Use a calculation in a direction value');log('MISSION NOT COMPLETE · '+reasons.join(' · '));message(reasons.join(' · '));return false}
+async function executeBlock(program,cfg,runId){
+  for(const instruction of program){
+    if(stopped||runId!==activeRun)return;
+    traceLine(instruction.line);
+    status('LINE '+instruction.line);
+    const {kind,name,value,line}=instruction;
+    if(kind==='if'){
+      conditionUsed=true;
+      const reading=sense(cfg,logicState,positions,instruction.sensor,instruction.direction);
+      const pass=reading!==instruction.negate;
+      log('Line '+line+' · '+instruction.sensor+'('+instruction.direction+') → '+reading+' · '+(pass?'if':'else'));
+      await sleep(170);
+      await executeBlock(pass?instruction.yes:instruction.no,cfg,runId);
+      continue;
+    }
+    if(kind==='pulse'||kind==='shield'){
+      if(kind==='pulse')pulse(cfg,logicState,positions);
+      else logicState.shield=true;
+      syncLogic();
+      log('Line '+line+' · '+kind+'()');
+      await powerEffect(kind==='pulse'?'#b899ff':'#78e8fc',runId);
+      continue;
+    }
+    const count=evaluate(value,variables);
+    if(!Number.isInteger(count)||count<0||count>12)throw Error('Line '+line+': distance must be a whole number from 0 to 12');
+    const walk=kind==='direction';
+    if(walk)variables[name]=count;
+    if(/[+*/-]/.test(value))hasArithmetic=true;
+    $('variableView').textContent=Object.entries(variables).map(([key,value])=>key+' = '+value).join('\n');
+    log('Line '+line+' · '+(walk?name+' = '+count:kind+'('+name+', '+count+')'));
+    for(let n=0;n<(walk?count:1)&&!stopped&&runId===activeRun;n++){
+      if(++actions>75)throw Error('Too many movements (limit 75)');
+      if(!cfg.surfaces){
+        await moveStep(...directions[name],name,runId);
+        continue;
+      }
+      const plan=(cfg.conditional?logicMove.bind(null,cfg,logicState):planMove.bind(null,cfg))(positions,name,walk?1:count,walk?'walk':kind,flightFuel);
+      await animateMove(plan,name,walk?'walk':kind,runId);
+      if(runId!==activeRun||stopped)return;
+      logicState.shield=false;
+      syncLogic();
+    }
+  }
+}
+async function run(){
+  if(running)return;
+  resetLevel(true);
+  const runId=activeRun,cfg=levels[level];
+  stopped=false;
+  running=true;
+  $('runCode').disabled=true;
+  $('editor').readOnly=true;
+  status('EXECUTING');
+  try{
+    const program=compileRoom($('editor').value,cfg);
+    if(!program.length)throw Error('Write at least one instruction.');
+    await executeBlock(program,cfg,runId);
+    if(stopped||runId!==activeRun)return;
+    success=validateSuccess();
+    if(success){
+      completed.add(level);
+      store();
+      banner('LEVEL COMPLETE!');
+      status('MISSION COMPLETE');
+      message('All objectives verified.');
+      $('nextLevel').hidden=level===levels.length-1;
+      updateLevelProgress();
+    }else status('TRY AGAIN');
+  }catch(error){
+    if(runId===activeRun){
+      status('FIX YOUR CODE');
+      log('ERROR · '+error.message);
+      message(error.message);
+    }
+  }finally{
+    if(runId===activeRun){
+      running=false;
+      $('editor').readOnly=false;
+      $('runCode').disabled=false;
+    }
+  }
+}
 function updateLevelProgress(){
   $('progressFill').style.width=(100*completed.size/levels.length)+'%';
   $('progressText').textContent=completed.size+' of '+levels.length+' complete';
 }
 
-$('runCode').onclick=run;$('stopCode').onclick=()=>{stopped=true;activeRun++;running=false;setActorPosition(positions.x,positions.z);clearPose();status('STOPPED');message('Program stopped. Reset or run again.');$('runCode').disabled=false};$('resetWorld').onclick=()=>resetLevel(true);$('nextLevel').onclick=()=>{if(level<levels.length-1&&completed.has(level)){level++;updateLevelUI();store();recenterCamera()}};
+$('runCode').onclick=run;$('stopCode').onclick=()=>{stopped=true;activeRun++;running=false;setActorPosition(positions.x,positions.z);clearPose();traceLine(0);$('editor').readOnly=false;status('STOPPED');message('Program stopped. Reset or run again.');$('runCode').disabled=false};$('resetWorld').onclick=()=>resetLevel(true);$('nextLevel').onclick=()=>{if(level<levels.length-1&&completed.has(level)){level++;updateLevelUI();store();recenterCamera()}};
 $('toggleHint').onclick=()=>{const element=$('hintText');element.hidden=!element.hidden;$('toggleHint').textContent=element.hidden?'Show a clue':'Hide clue'};
-$('editor').addEventListener('input',()=>{$('editorLines').textContent=$('editor').value.split('\n').length+' lines'});
-$('editor').addEventListener('keydown',e=>{if(e.key==='Tab'){e.preventDefault();const t=$('editor'),a=t.selectionStart,b=t.selectionEnd;t.value=t.value.slice(0,a)+'    '+t.value.slice(b);t.selectionStart=t.selectionEnd=a+4}});
-document.querySelectorAll('[data-addcmd]').forEach(button=>button.addEventListener('click',()=>{const textarea=$('editor'),cmd=button.dataset.addcmd;textarea.setRangeText((textarea.value.endsWith('\n')?'':'\n')+cmd,textarea.selectionStart,textarea.selectionEnd,'end');textarea.focus();textarea.dispatchEvent(new Event('input'))}));
+const editor=$('editor');
+const gutter=$('lineGutter');
+function traceLine(line){
+  for(const row of gutter.children)row.classList.toggle('current',Number(row.textContent)===line);
+  if(line){
+    const row=gutter.children[line-1];
+    if(row){
+      const target=row.offsetTop-gutter.firstElementChild.offsetTop;
+      if(target<editor.scrollTop||target+row.offsetHeight>editor.scrollTop+editor.clientHeight){
+        editor.scrollTop=target;
+        gutter.scrollTop=target;
+      }
+    }
+  }
+}
+function updateLines(){
+  const count=editor.value.split('\n').length;
+  $('editorLines').textContent=count+' lines';
+  gutter.replaceChildren(...Array.from({length:count},(_,i)=>{
+    const number=document.createElement('span');
+    number.textContent=i+1;
+    return number;
+  }));
+  gutter.scrollTop=editor.scrollTop;
+}
+function renderEditor(){
+  const cfg=levels[level],palette=$('commandPalette');
+  palette.replaceChildren();
+  const snippets=[['↑ Up','up = '],['→ Right','right = '],['↓ Down','down = '],['← Left','left = ']];
+  for(const power of cfg.powers??[])snippets.push([power,['pulse','shield'].includes(power)?power+'()':power+'(direction, distance)']);
+  if(cfg.conditional)snippets.push(['if / else','if clear(right):\n    # action\nelse:\n    # alternate action']);
+  for(const [label,code] of snippets){
+    const button=document.createElement('button');
+    button.type='button';
+    button.textContent=label;
+    button.onclick=()=>{
+      if(editor.readOnly)return;
+      const before=editor.value.slice(0,editor.selectionStart);
+      const after=editor.value.slice(editor.selectionEnd);
+      editor.setRangeText((before&&!before.endsWith('\n')?'\n':'')+code+(after&&!after.startsWith('\n')?'\n':''),editor.selectionStart,editor.selectionEnd,'end');
+      editor.focus();
+      updateLines();
+    };
+    palette.append(button);
+  }
+  $('logicGuide').hidden=!cfg.conditional;
+  updateLines();
+}
+editor.addEventListener('input',updateLines);
+editor.addEventListener('scroll',()=>{gutter.scrollTop=editor.scrollTop});
+editor.addEventListener('keydown',event=>{
+  if(event.key==='Enter'&&(event.ctrlKey||event.metaKey)){
+    event.preventDefault();
+    run();
+  }else if(event.key==='Enter'&&!editor.readOnly){
+    const line=editor.value.slice(0,editor.selectionStart).split('\n').at(-1);
+    event.preventDefault();
+    editor.setRangeText('\n'+line.match(/^ */)[0]+(line.trimEnd().endsWith(':')?'    ':''),editor.selectionStart,editor.selectionEnd,'end');
+    updateLines();
+  }
+});
+$('editorActions').replaceWith($('programActions'));
 function openGuide(){const intro=$('intro');if(!intro.hidden)intro.hidden=true;$('guideOverlay').hidden=false}
 $('openGuide').onclick=openGuide;$('navGuide').onclick=openGuide;$('closeGuide').onclick=()=>{$('guideOverlay').hidden=true};$('guideDone').onclick=()=>{$('guideOverlay').hidden=true};
 $('navLevels').onclick=openMissions;
@@ -419,4 +642,8 @@ function resize(){
 }
 recenterCamera();
 new ResizeObserver(resize).observe($('cameraStage'));
-const clock=new THREE.Clock();function animate(){requestAnimationFrame(animate);const t=clock.getElapsedTime();if(actor&&!running){actor.position.y=(levels[level].surfaces?surfaceAt(levels[level],positions.x,positions.z):0)+.035*Math.sin(t*(hero.personality==='playful'?4:2));actor.userData.cape.rotation.x=.12+.035*Math.sin(t*2)}if(goalMesh){goalMesh.children[0].rotation.z+=.008;goalMesh.children[goalMesh.children.length-1].position.y=.97+.08*Math.sin(t*2)}for(const c of crystalMeshes)if(c.visible){c.rotation.y+=.015;c.position.y=c.userData.baseY+.075*Math.sin(t*3+c.userData.i)}controls.update();renderer.render(scene,camera);if(previewRenderer&&!$('heroOverlay').hidden){const host=$('heroPreview'),w=host.clientWidth,h=host.clientHeight;if(w&&h){previewRenderer.setSize(w,h,false);previewCamera.aspect=w/h;previewCamera.updateProjectionMatrix();if(previewActor)previewActor.rotation.y+=.012;previewRenderer.render(previewScene,previewCamera)}}}animate();
+const clock=new THREE.Clock();function animate(){requestAnimationFrame(animate);const t=clock.getElapsedTime();
+for(const device of devices){
+  device.rotor.rotation.y=t*(device.kind==='sentry'?2:.8);
+  device.rotor.position.y=.68+Math.sin(t*2+device.x)*.15;
+}if(actor&&!running){actor.position.y=(levels[level].surfaces?surfaceAt(levels[level],positions.x,positions.z):0)+.035*Math.sin(t*(hero.personality==='playful'?4:2));actor.userData.cape.rotation.x=.12+.035*Math.sin(t*2)}if(goalMesh){goalMesh.children[0].rotation.z+=.008;goalMesh.children[goalMesh.children.length-1].position.y=.97+.08*Math.sin(t*2)}for(const c of crystalMeshes)if(c.visible){c.rotation.y+=.015;c.position.y=c.userData.baseY+.075*Math.sin(t*3+c.userData.i)}controls.update();renderer.render(scene,camera);if(previewRenderer&&!$('heroOverlay').hidden){const host=$('heroPreview'),w=host.clientWidth,h=host.clientHeight;if(w&&h){previewRenderer.setSize(w,h,false);previewCamera.aspect=w/h;previewCamera.updateProjectionMatrix();if(previewActor)previewActor.rotation.y+=.012;previewRenderer.render(previewScene,previewCamera)}}}animate();
