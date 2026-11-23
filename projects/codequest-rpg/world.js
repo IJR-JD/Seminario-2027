@@ -552,6 +552,29 @@ function openMissions(){
   cameraToggle.textContent='Island map';
   $('islandZoomIn').onclick=()=>{overworld?.adjustCamera(0,1/1.18);$('overworldCanvas').focus();};
   $('islandZoomOut').onclick=()=>{overworld?.adjustCamera(0,1.18);$('overworldCanvas').focus();};
+  document.querySelectorAll('#islandDpad [data-walk]').forEach(button=>{
+    const key=button.dataset.walk;
+    const release=()=>{overworld?.setMovementKey(key,false);button.dataset.active='false';};
+    button.addEventListener('pointerdown',event=>{
+      if(event.button!==0)return;
+      event.preventDefault();
+      button.setPointerCapture(event.pointerId);
+      overworld?.setMovementKey(key,true);
+      button.dataset.active='true';
+    });
+    button.addEventListener('pointerup',release);
+    button.addEventListener('pointercancel',release);
+    button.addEventListener('lostpointercapture',release);
+    button.addEventListener('keydown',event=>{
+      if((event.key==='Enter'||event.key===' ')&&!event.repeat){
+        event.preventDefault();overworld?.setMovementKey(key,true);
+      }
+    });
+    button.addEventListener('keyup',event=>{
+      if(event.key==='Enter'||event.key===' '){event.preventDefault();release();}
+    });
+    button.addEventListener('blur',release);
+  });
   document.querySelectorAll('[data-traversal]').forEach(button=>{
     button.onclick=()=>{overworld?.action(button.dataset.traversal);$('overworldCanvas').focus();};
   });
