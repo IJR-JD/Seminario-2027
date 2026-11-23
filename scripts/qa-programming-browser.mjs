@@ -150,6 +150,14 @@ try{
  await page.setViewportSize({width:320,height:720});
  await visit('while-loops');
  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+3));
+ const mobileDiagram=page.locator('#diagramGrid .diagram-card-v2').first();
+ const scrollBefore=await mobileDiagram.locator('.pc27-stage').evaluate(el=>el.scrollLeft);
+ await mobileDiagram.getByRole('button',{name:'Next explanation step'}).click();
+ await page.waitForFunction(()=>document.querySelector('#diagramGrid .pc27-stage')?.scrollLeft>35,
+  null,{timeout:5000});
+ const scrollAfter=await mobileDiagram.locator('.pc27-stage').evaluate(el=>el.scrollLeft);
+ assert.ok(scrollAfter>scrollBefore+30,'Animated focus must auto-pan inside narrow diagrams');
+ console.log('PASS mobile animated figure automatically pans to the active state');
  assert.deepEqual(pageErrors,[],'Uncaught errors in programming browser QA');
  console.log('PASS PROGRAMMING_BROWSER_QA',{topics:17,stages:204,playback:true,livePython:5,archive:true});
 }finally{await browser.close();}
