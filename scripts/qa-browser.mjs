@@ -113,6 +113,30 @@ try{
   console.log('PASS standalone-workshop-visual',slug,'12/12 stages with figures');
  }
 
+
+ // Validate the upgraded entry page (17 topics and real category/search controls).
+ await page.goto(BASE+'/learning/',{waitUntil:'domcontentloaded',timeout:30000});
+ await page.waitForFunction(()=>document.querySelectorAll('.topic-card').length===17,
+  null,{timeout:12000});
+ assert.equal(await page.locator('.topic-card:visible').count(),17);
+ assert.equal(await page.evaluate(()=>window.IJR_2027_CATALOG?.topics),17);
+ await page.getByRole('button',{name:'Python foundations'}).click();
+ assert.equal(await page.locator('.topic-card:visible').count(),5);
+ await page.getByRole('button',{name:'Data science'}).click();
+ assert.equal(await page.locator('.topic-card:visible').count(),11);
+ await page.getByRole('button',{name:'Project',exact:true}).click();
+ assert.equal(await page.locator('.topic-card:visible').count(),1);
+ await page.getByRole('button',{name:'All topics'}).click();
+ await page.locator('#topicSearch').fill('percentiles');
+ assert.equal(await page.locator('.topic-card:visible').count(),1);
+ assert.ok((await page.locator('.topic-card:visible h3').textContent()).includes('percentiles'));
+ await page.locator('#topicSearch').fill('nonsense-absent-term');
+ assert.equal(await page.locator('.topic-card:visible').count(),0);
+ assert.equal(await page.locator('#topicEmpty').isVisible(),true);
+ await page.locator('#topicSearch').fill('');
+ assert.equal(await page.locator('.topic-card:visible').count(),17);
+ console.log('PASS learning hub: 17 catalog cards, 5 foundations, 11 data, 1 project, search, empty state');
+
  assert.deepEqual(errors,[],'Uncaught browser errors while navigating 17 topics');
 
 
