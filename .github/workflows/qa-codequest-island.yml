@@ -1,0 +1,28 @@
+name: CodeQuest Island QA
+on:
+  pull_request:
+    paths:
+      - 'projects/codequest-rpg/**'
+      - 'scripts/qa-codequest*.mjs'
+      - '.github/workflows/qa-codequest-island.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check browser source syntax
+        run: |
+          node --check projects/codequest-rpg/world.js
+          node --check projects/codequest-rpg/overworld.mjs
+          node --check projects/codequest-rpg/island-exploration.mjs
+      - name: Test all CodeQuest room and island mechanics
+        run: |
+          node scripts/qa-codequest.mjs
+          node scripts/qa-codequest-skills.mjs
+          node scripts/qa-codequest-island.mjs
