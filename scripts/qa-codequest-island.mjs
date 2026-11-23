@@ -36,6 +36,10 @@ verifyRoute({x:90,z:43},{x:22,z:-62});
 verifyRoute({x:-60,z:28},{x:-93,z:66});
 verifyRoute({x:0,z:0},{x:40,z:25});
 verifyRoute({x:-20,z:-29},{x:0,z:0});
+verifyRoute({x:-76,z:0},{x:76,z:0});
+verifyRoute({x:76,z:0},{x:-80,z:-42});
+verifyRoute({x:90,z:55},{x:76,z:0});
+verifyRoute({x:76,z:0},{x:90,z:55});
 assert.throws(()=>planIslandRoute({x:153,z:124},{x:0,z:50}),/outside walkable/);
 
 const root=resolve(import.meta.dirname,'..');
