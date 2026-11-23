@@ -1,10 +1,10 @@
 (()=>{"use strict";
 const course=window.SEMINAR_2027_COURSE||[];
-const params=new URLSearchParams(location.search);const aliases={variables:"types"};
+const params=new URLSearchParams(location.search);const aliases=window.SEMINAR_2027_TRACK==="statistics"?{variables:"types"}:{};
 const requested=aliases[params.get("topic")]||params.get("topic")||"algoritmos";
 const idx=Math.max(0,course.findIndex(t=>t.slug===requested));
 const topic=course[idx];if(!topic){document.querySelector("main").textContent="No se pudo cargar el programa.";return;}
-if(topic.slug==="operations")document.body.classList.add("source-operations-parity");
+if(topic.slug==="operations"&&window.SEMINAR_2027_TRACK==="statistics")document.body.classList.add("source-operations-parity");
 const $=id=>document.getElementById(id);
 const esc=v=>String(v??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
 function set(id,v){if($(id))$(id).textContent=String(v??"")}
@@ -18,7 +18,7 @@ set("theoryStatus","12 guided problems follow the theory");
 set("workshopIntro",topic.workshopIntro||"Aplica lo aprendido en 12 problemas desde una celda vacía.");
 ["theoryWorkshopLink","workshopHeader"].forEach(id=>{if($(id))$(id).href=goWorkshop;});
 $("theoryProgress").style.width=Math.round((idx+1)*100/course.length)+"%";
-if(topic.slug==="operations"&&Array.isArray(topic.resources)&&topic.resources.length){
+if(topic.slug==="operations"&&window.SEMINAR_2027_TRACK==="statistics"&&Array.isArray(topic.resources)&&topic.resources.length){
  const resourceSection=document.createElement("section");
  resourceSection.className="source-operations-resources theory-section-v2";
  resourceSection.id="sourceOperationsResources";
@@ -126,7 +126,7 @@ const snippets={
  visualization:'import matplotlib.pyplot as plt\nfig,ax=plt.subplots()\nax.bar(["A","B"],[2,4])\nprint(len(ax.patches))\nplt.close(fig)',
  "analyst-project":'import pandas as pd\nfrom io import StringIO\ndf=pd.read_csv(StringIO("group,score\\nA,70\\nB,80"))\nprint(df.shape)'
 };
-const code=$("theoryCode");const original=snippets[topic.slug]||"print('Hello Python')";
+const code=$("theoryCode");const original=topic.demo||snippets[topic.slug]||"print('Hello Python')";
 code.value=original;set("labPurpose",topic.definition);
 function renderRunFiles(containerId,files){
  const target=$(containerId);if(!target)return;
