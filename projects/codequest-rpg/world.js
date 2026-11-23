@@ -1,5 +1,5 @@
 import {insertCommand} from './command-editor.mjs';
-import {logicRooms,compileLogic,sense,pulse,logicMove,cellKey,RouteHazard} from './logic.mjs';
+import {logicRooms,compileLogic,sense,pulse,logicMove,cellKey,RouteHazard} from './logic.mjs?v=foundry1';
 import * as THREE from 'three';
 import {directions,expedition,planMove,surfaceAt} from './expedition.mjs';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
