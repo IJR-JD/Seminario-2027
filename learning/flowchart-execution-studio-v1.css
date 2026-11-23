@@ -128,6 +128,7 @@
 }
 #flowchartExecutionStudio .fc28-svg .fc28-edge.is-current .fc28-edge-label{fill:#000}
 #flowchartExecutionStudio .fc28-svg .fc28-token{
+ opacity:0;transition:opacity .15s ease;
  fill:#fff;stroke:#111;stroke-width:3;vector-effect:non-scaling-stroke;
  pointer-events:none;filter:drop-shadow(0 2px 3px rgba(0,0,0,.12))
 }
@@ -299,4 +300,12 @@
   animation-duration:.01ms!important;animation-iteration-count:1!important;transition:none!important;scroll-behavior:auto!important
  }
  #flowchartExecutionStudio .fc28-control:hover{transform:none}
+}
+
+/* Ensure a sticky navigation header never covers the trace workspace during anchor navigation. */
+#flowchartExecutionStudio .fc28-workspace,
+#flowchartExecutionStudio .fc28-panel{scroll-margin-top:94px}
+@media(max-width:700px){
+ #flowchartExecutionStudio .fc28-workspace,
+ #flowchartExecutionStudio .fc28-panel{scroll-margin-top:78px}
 }
