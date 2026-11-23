@@ -100,19 +100,32 @@ function enhanceStageRail(){
 function enhanceScrollRegions(){
  const areas=[...document.querySelectorAll(".p60-mini-table,.diagram-stage")];
  for(const el of areas){
-  if(!el.dataset.qaScrollRegion){
-   el.dataset.qaScrollRegion="1";
+  const isTable=el.classList.contains("p60-mini-table");
+  const scrolling=el.scrollWidth>el.clientWidth+5;
+  if(isTable||scrolling){
    el.tabIndex=0;
    el.setAttribute("role","region");
-   el.setAttribute("aria-label",el.classList.contains("p60-mini-table")?"Tabla de datos desplazable":"Diagrama desplazable horizontalmente");
+   el.setAttribute("aria-label",isTable?"Tabla de datos desplazable":"Diagrama: desplázate horizontalmente para ver la figura completa");
+  }else{
+   el.removeAttribute("tabindex");
+   el.removeAttribute("role");
+   el.removeAttribute("aria-label");
   }
-  if(el.classList.contains("p60-mini-table")){
-   const exists=el.previousElementSibling?.classList?.contains("p60-table-hint");
-   if(!exists){
+  if(isTable){
+   if(!el.previousElementSibling?.classList?.contains("p60-table-hint")){
     const hint=document.createElement("p");
-    hint.className="p60-table-hint";hint.textContent="Tabla de cinco variables. En pantallas pequeñas, desplázala horizontalmente para ver todas las columnas.";
+    hint.className="p60-table-hint";
+    hint.textContent="Tabla de cinco variables. Si no caben todas las columnas, desplázala horizontalmente.";
     el.parentNode.insertBefore(hint,el);
    }
+  }else{
+   const card=el.closest(".diagram-card-v2");
+   let cue=card?.querySelector(".diagram-scroll-cue");
+   if(scrolling&&!cue&&card){
+    cue=document.createElement("p");cue.className="diagram-scroll-cue";
+    cue.textContent="↔ Desliza horizontalmente para consultar toda la figura.";
+    el.insertAdjacentElement("afterend",cue);
+   }else if(!scrolling&&cue)cue.remove();
   }
  }
 }
@@ -133,6 +146,8 @@ function start(){
  enhanceEditor("theoryCode","theoryRun");
  enhanceEditor("codeEditor","runButton");
  enhanceStageRail();enhanceScrollRegions();enhanceProgress();
+ window.addEventListener("resize",()=>requestAnimationFrame(enhanceScrollRegions),{passive:true});
+ setTimeout(enhanceScrollRegions,300);
  // The Pandas theory renders its tables after the initial DOM-ready event.
  if(document.querySelector("#main")){
   let scheduled=false;
