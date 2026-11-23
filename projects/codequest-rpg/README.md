@@ -1,30 +1,29 @@
-# CodeQuest · World of Code — Seminario 2027
+# CodeQuest Skill Studio — Three.js motion laboratory
 
-## Chapter 01 — Movement through variables
+Integrated in the institutional Seminario 2027 project.
 
-The interface emphasizes an expansive 3D world and a tall coding workspace. There are 12 increasingly complex missions with obstacles, collectible crystals (automatically picked up by walking across them), checkpoints, and a final destination.
+- **Adventure:** https://ijr-jd.github.io/Seminario-2027/projects/codequest-rpg/
+- **Animation preview:** https://ijr-jd.github.io/Seminario-2027/projects/codequest-rpg/skills.html
 
-**Student syntax is deliberately restricted to four directional variables:**
+## Skill families
 
-```text
-up = 1
-right = 1
-left = 1
-down = 1
-```
+**Warrior (Guardian class):** Triple Slash (three consecutive timed sword strokes), Cyclone Blade (spinning attack), Earthbreaker (jumping overhead strike plus impact wave).
 
-Every line is executed immediately and in sequence, so repeating an assignment to a direction creates another movement. Values must be whole numbers between 0 and 12. From the world coordinate view, right increases X, left decreases X, up decreases Z, and down increases Z. Arithmetic expressions using +, -, *, / and ** can appear in values in later missions.
+**Wizard (Mage class):** Fireball (charge, launch, impact), Frost Nova (expanding cold wave), Meteor Shower (three staggered projectiles).
 
-The introduction guide explains the interface, the coordinate system, and a generic syntax example. **No level supplies a completed route**, and its hint does not disclose a solution. Students must independently plan their route.
+**Scout:** Shadow Dash (evade and strike), Triple Arrow (three staggered shots), Afterimage Step (multi-direction evasive motion).
 
-## Start / deployment
+**All classes:** Quick Dash and Barrier Pulse.
 
-https://ijr-jd.github.io/Seminario-2027/projects/codequest-rpg/
+The studio uses a separate Three.js scene and deterministic animation timelines. The player can change classes, replay or pause the current skill, adjust speed, orbit the camera and customize appearance. The character shares the same stored colors and style as the movement adventure. The previews are procedural motion effects, not skeletal rigged animations; skills currently have **no collision, damage or AI logic**, and they do not run inside the first 12 movement levels.
 
-The site also works on a local HTTP server once GitHub source is cloned, but current Three.js imports load from a CDN and therefore require an Internet connection. No student identity or official grade records are stored. Avatar appearance and chapter completion remain only in local browser storage.
+## Learning progression
 
-## Validation
+Chapter 01 remains unchanged: students program movement using only \`up = 1\`, \`right = 1\`, \`left = 1\`, \`down = 1\`. The Skill Studio is a separate demonstration of possible later chapters. The displayed function signatures are **future lesson examples**, not executable in the intro editor.
 
-`node scripts/qa-codequest.mjs` tests source syntax, strict variable-only instruction parsing, arithmetic, hidden solutions, and BFS reachability of all twelve levels, including all crystals and checkpoints. The repository GitHub Pages workflow runs this check before deploying.
+## Quality assurance
 
-Full browser performance and usability testing remains separate from those automated source and path checks.
+\`node scripts/qa-codequest.mjs\` validates the initial movement chapter.
+\`node scripts/qa-codequest-skills.mjs\` validates studio source, navigation, skill availability and JavaScript syntax.
+
+Three.js is imported from a CDN. Real-browser visual motion and mobile performance tests are still needed.
