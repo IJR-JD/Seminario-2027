@@ -39,6 +39,7 @@ try{
   assert.equal(await desktop.locator('#islandTrailList .islandTrailEntry').count(),5,'Five Atlas entries');
   await desktop.locator('#islandTrailList button').first().click();
   assert.equal(await desktop.locator('#islandTrailList button').first().getAttribute('aria-pressed'),'true');
+  assert.equal(await desktop.locator('#islandTrailPanel').isVisible(),false,'Selected waypoint should reveal the world');
   await desktop.waitForFunction(()=>document.querySelector('#islandTrailDistance')?.textContent.includes('Variable Spring'));
   await desktop.locator('#islandCamera').click();
   assert.equal(await desktop.locator('#islandCamera').getAttribute('aria-pressed'),'true','Map mode toggles');
