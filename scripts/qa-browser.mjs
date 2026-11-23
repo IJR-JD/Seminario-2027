@@ -32,6 +32,37 @@ try{
   assert.equal(details.cards,details.expectedSections,slug+' conceptual cards mismatch: '+JSON.stringify(details));
   assert.equal(details.figures,details.expectedFigures,slug+' figure count mismatch: '+JSON.stringify(details));
   assert.equal(details.stages,12,slug+' guided practice failed: '+JSON.stringify(details));
+
+  const art=await page.evaluate(()=>{
+   const cards=[...document.querySelectorAll('#diagramGrid .diagram-card-v2')];
+   const vectors=cards.filter(card=>card.querySelector('.sv27-stage .sv27-figure svg')).length;
+   const origins=cards.filter(card=>card.querySelector('.v9-stage,.arr34-figure')).length;
+   const panel=document.querySelector('.sv27-workshop-panel');
+   return {
+    vectors,origins,workshopFigures:panel?.querySelectorAll('.sv27-figure svg').length||0,
+    workshopCaption:panel?.querySelector('.sv27-workshop-footer')?.textContent||'',
+    specialized:window.IJR_2027_VISUAL_COVERAGE?.diagramsEnhanced??-1,
+    themeLoaded:document.querySelector('link[href="lesson-figures-v1.css"]')!==null,
+    placeholders:cards.filter(card=>card.querySelector('.sv27-stage')&&
+      card.textContent.includes('concept process result')).length
+   };
+  });
+  assert.equal(art.workshopFigures,1,slug+' missing contextual workshop figure');
+  assert.equal(art.themeLoaded,true,slug+' vector figure styling missing');
+  assert.equal(art.placeholders,0,slug+' still displays generic placeholders');
+  if(slug!=='operations'&&slug!=='arrays'){
+   assert.equal(art.vectors,details.expectedFigures,
+    slug+' not all theoretical figures have a dedicated vector');
+   assert.equal(art.specialized,details.expectedFigures,
+    slug+' missing some content-specific illustration factories');
+  }else{
+   assert.equal(art.origins,details.expectedFigures,
+    slug+' original 2026 animated diagrams were replaced');
+  }
+  assert.ok(art.workshopCaption.includes('ETAPA 01'),slug+' first workshop visual missing label');
+  console.log('PASS topic-visual',slug,'original',art.origins,'specific',art.vectors,
+   'workshop',art.workshopFigures);
+
   if(slug==='operations'){
    await page.waitForFunction(()=>document.querySelectorAll('#diagramGrid .v9-stage').length===8);
    assert.equal(await page.locator('#sourceOperationsResources .source-resource-card').count(),4);
@@ -44,6 +75,24 @@ try{
   }
   console.log('PASS theory route',slug,'concepts',details.cards,'figures',details.figures,'stages',details.stages);
  }
+
+ // Audit the independent workshop URL as well: all 17 topics, all 12 stages.
+ for(const slug of topics){
+  await page.goto(BASE+'/learning/workshop.html?topic='+slug,
+   {waitUntil:'domcontentloaded',timeout:30000});
+  await page.waitForFunction(()=>document.querySelectorAll('#stageList .stage').length===12,
+   null,{timeout:12000});
+  assert.equal(await page.locator('.sv27-workshop-panel .sv27-figure svg').count(),1,
+   slug+' standalone workshop lacks its scientific diagram');
+  await page.locator('#stageList .stage').last().click();
+  await page.waitForFunction(()=>
+   document.querySelector('.sv27-workshop-footer')?.textContent.includes('ETAPA 12'),
+   null,{timeout:5000});
+  assert.equal(await page.locator('.sv27-workshop-panel .sv27-figure svg').count(),1,
+   slug+' final stage lost its visual');
+  console.log('PASS standalone-workshop-visual',slug,'12 stages');
+ }
+
  assert.deepEqual(errors,[],'Uncaught browser errors while navigating 17 topics');
 
  await visit('operations');
