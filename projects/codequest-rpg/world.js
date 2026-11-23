@@ -1,3 +1,5 @@
+import {createOverworld} from './overworld.mjs';
+import {starTargets,starsFor,starsText} from './room-stars.mjs';
 import {insertCommand} from './command-editor.mjs';
 import {logicRooms,compileLogic,sense,pulse,logicMove,cellKey,RouteHazard} from './logic.mjs?v=edgefall1';
 import * as THREE from 'three';
@@ -13,7 +15,9 @@ const logicStart=classicCount+expedition.length;
 const foundryStart=logicStart+4;
 const heroDefaults={name:'Code Explorer',style:'guardian',personality:'brave',skin:'#d7a880',armor:'#48796b',hair:'#292b31',cape:'#b4a27f',hairStyle:'short',accessory:'satchel',height:100,build:100};
 let hero={...heroDefaults},completed=new Set(),level=0,worldGroup,actor,actorParts,goalMesh,crystalMeshes=[],checkpointMeshes=[],tileMeshes=[],activeRun=0,running=false,stopped=false,positions={x:0,z:0},variables={},collected=new Set(),visited=new Set(),actions=0,hasArithmetic=false,success=false,previewActor;
-try{const saved=JSON.parse(localStorage.getItem(STORAGE)||'{}');completed=new Set((saved.completed||[]).filter(i=>Number.isInteger(i)&&i>=0&&i<levels.length));level=clamp(saved.level||0,0,levels.length-1);if(!isAvailable(level))level=0}catch{}
+const bestSteps=new Map();
+let overworld,portalChanged,portalEntered;
+try{const saved=JSON.parse(localStorage.getItem(STORAGE)||'{}');completed=new Set((saved.completed||[]).filter(i=>Number.isInteger(i)&&i>=0&&i<levels.length));for(const [id,steps] of Object.entries(saved.bestSteps??{})){const index=Number(id);if(completed.has(index)&&Number.isInteger(steps)&&steps>0&&steps<=75)bestSteps.set(index,steps);}level=clamp(saved.level||0,0,levels.length-1);if(!isAvailable(level))level=0}catch{}
 try{hero={...hero,...JSON.parse(localStorage.getItem(HERO)||'{}')}}catch{}
 function isAvailable(i){
   return i===0||i===classicCount||i===logicStart||i===foundryStart||completed.has(i)||completed.has(i-1);
@@ -285,9 +289,16 @@ function coordinateText(cfg,x,z){
   return 'X '+x+' · Z '+z+(cfg.surfaces?' · H '+surfaceAt(cfg,x,z):'');
 }
 function setActorPosition(x,z){positions={x,z};const cfg=levels[level];actor.position.set(x,cfg.surfaces?surfaceAt(cfg,x,z):0,z);$('coordinateLabel').textContent=coordinateText(cfg,x,z);}
-function resetLevel(preserveEditor=false){$('conditionCue').hidden=true;conditionUsed=false;logicState={open:new Set(),shield:false};syncLogic();traceLine(0);stopped=true;activeRun++;running=false;$('editor').readOnly=false;const cfg=levels[level];flightFuel=cfg.flightBudget??0;variables={};collected.clear();visited.clear();hasArithmetic=false;actions=0;success=false;setActorPosition(...cfg.start);actor.rotation.y=Math.PI/2;clearPose();actor.visible=true;if(!preserveEditor)$('editor').value=cfg.powers?'# Plan a route with movement and the available abilities.\n\n':'# Write your own movement variables below\n# Each line makes your hero move.\n\n';updateLines();for(const mesh of crystalMeshes)mesh.visible=true;for(const mesh of checkpointMeshes){mesh.traverse(o=>{if(o.material?.color)o.material.color.set('#6887af')})}updateHud();$('variableView').textContent='No variables defined';$('consoleView').textContent='Ready · '+cfg.title;$('nextLevel').hidden=true;$('runCode').disabled=false;status('READY');message('Write code and press Run program.');$('toggleHint').textContent='Show a clue';$('hintText').hidden=true}
+function resetLevel(preserveEditor=false){updateRating();$('conditionCue').hidden=true;conditionUsed=false;logicState={open:new Set(),shield:false};syncLogic();traceLine(0);stopped=true;activeRun++;running=false;$('editor').readOnly=false;const cfg=levels[level];flightFuel=cfg.flightBudget??0;variables={};collected.clear();visited.clear();hasArithmetic=false;actions=0;success=false;setActorPosition(...cfg.start);actor.rotation.y=Math.PI/2;clearPose();actor.visible=true;if(!preserveEditor)$('editor').value=cfg.powers?'# Plan a route with movement and the available abilities.\n\n':'# Write your own movement variables below\n# Each line makes your hero move.\n\n';updateLines();for(const mesh of crystalMeshes)mesh.visible=true;for(const mesh of checkpointMeshes){mesh.traverse(o=>{if(o.material?.color)o.material.color.set('#6887af')})}updateHud();$('variableView').textContent='No variables defined';$('consoleView').textContent='Ready · '+cfg.title;$('nextLevel').hidden=true;$('runCode').disabled=false;status('READY');message('Write code and press Run program.');$('toggleHint').textContent='Show a clue';$('hintText').hidden=true}
 function updateHud(){const cfg=levels[level];$('setbackHud').hidden=false;$('setbackCount').textContent=setbacks.get(level)??0;$('flightHud').hidden=!cfg.flightBudget;$('flightRange').textContent=flightFuel+' / '+(cfg.flightBudget??0);$('itemHud').hidden=cfg.crystals.length===0;$('itemCount').textContent=collected.size+' / '+cfg.crystals.length}
-function updateLevelUI(){const cfg=levels[level];$('zoneLabel').textContent=(cfg.conditional?'LOGIC WORLDS · ':cfg.powers?'EXPEDITION · ':'CHAPTER 01 · ')+cfg.zone.toUpperCase();$('worldTitle').textContent=cfg.title;$('worldDesc').textContent=cfg.description;$('levelIndex').textContent=String(level+1).padStart(2,'0')+' / '+levels.length;$('missionLabel').textContent=cfg.objective;$('objective').textContent=cfg.objective;$('instruction').textContent=cfg.instruction;$('hintText').textContent=cfg.hint;$('concept').textContent=cfg.concept;
+function updateRating(steps){
+  const best=bestSteps.get(level);
+  const {three,two}=starTargets(level);
+  $('roomRating').textContent=(steps===undefined?'':starsText(starsFor(level,steps))+' · '+steps+' steps. ')+
+    '3★ ≤ '+three+' · 2★ ≤ '+two+' · 1★ above '+two+
+    (best===undefined?'':' · Best: '+starsText(starsFor(level,best))+' in '+best+' steps');
+}
+function updateLevelUI(){updateRating();const cfg=levels[level];$('zoneLabel').textContent=(cfg.conditional?'LOGIC WORLDS · ':cfg.powers?'EXPEDITION · ':'CHAPTER 01 · ')+cfg.zone.toUpperCase();$('worldTitle').textContent=cfg.title;$('worldDesc').textContent=cfg.description;$('levelIndex').textContent=String(level+1).padStart(2,'0')+' / '+levels.length;$('missionLabel').textContent=cfg.objective;$('objective').textContent=cfg.objective;$('instruction').textContent=cfg.instruction;$('hintText').textContent=cfg.hint;$('concept').textContent=cfg.concept;
 $('editorContext').textContent=cfg.conditional?'LOGIC · SENSORS':cfg.powers?'EXPEDITION · '+cfg.powers.join(' / '):'CHAPTER 01 · VARIABLES';
 $('abilityPanel').hidden=!cfg.powers?.length;
 $('abilityPanel').textContent=cfg.powers?.map(mode=>['pulse','shield'].includes(mode)?mode+'()':mode+'(direction, distance)').join('  ·  ')??'';
@@ -305,6 +316,8 @@ function openMissions(){
   regions.replaceChildren();
   let region;
   const zones=[];
+  const zoneForRoom=new Map();
+  const enter=$('enterPortal');
   let activeZone;
   function selectZone(zone,focus=false){
     for(const entry of zones){
@@ -324,7 +337,7 @@ function openMissions(){
     label.textContent=name;
     const progress=document.createElement('small');
     button.append(label,progress);
-    const zone={button,section,progress,done:0,total:0};
+    const zone={name,button,section,progress,done:0,total:0,rooms:[]};
     zones.push(zone);
     button.onclick=()=>selectZone(zone);
     button.onkeydown=event=>{
@@ -370,17 +383,19 @@ function openMissions(){
     state.className='missionState';
     state.textContent=completed.has(i)?'Complete':!available?'Locked':i===recommended?'Play next':'Available';
     if(i===level)state.textContent+=' · Current';
-    details.append(title,concept,state);
+    const rating=document.createElement('small');
+    const {three}=starTargets(i);
+    rating.textContent=bestSteps.has(i)?starsText(starsFor(i,bestSteps.get(i)))+' · '+bestSteps.get(i)+' steps':'3★ target: '+three+' steps';
+    details.append(title,concept,state,rating);
     button.append(number,details);
     button.addEventListener('click',()=>{
-      if(i!==level){
-        level=i;
-        updateLevelUI();
-        store();
-        recenterCamera();
-      }
-      picker.close('play');
+      if(overworld){
+        overworld.travel(i);
+        $('overworldCanvas').focus();
+      }else portalEntered(i);
     });
+    region.zone.rooms.push(i);
+    zoneForRoom.set(i,region.zone);
     region.zone.total++;
     if(completed.has(i))region.zone.done++;
     if(i===level)activeZone=region.zone;
@@ -389,7 +404,44 @@ function openMissions(){
   for(const zone of zones)zone.progress.textContent=zone.done+' / '+zone.total+' complete';
   picker.returnValue='';
   picker.showModal();
-  selectZone(activeZone??zones[0],true);
+  selectZone(activeZone??zones[0]);
+  let nearby;
+  portalEntered=i=>{
+    if(!isAvailable(i))return;
+    if(i!==level){
+      level=i;
+      updateLevelUI();
+      store();
+      recenterCamera();
+    }
+    picker.close('play');
+  };
+  portalChanged=i=>{
+    nearby=i;
+    enter.disabled=i===undefined||!isAvailable(i);
+    $('portalStatus').textContent=i===undefined?'Walk to a numbered portal.':
+      (i+1)+' · '+levels[i].title+(isAvailable(i)?'':' · Locked');
+    if(i!==undefined)selectZone(zoneForRoom.get(i));
+  };
+  enter.onclick=()=>{if(nearby!==undefined)portalEntered(nearby);};
+  if(!overworld){
+    try{
+      overworld=createOverworld({canvas:$('overworldCanvas'),stage:$('overworldStage'),makeHero:createHero,
+        onNear:i=>portalChanged(i),onEnter:i=>portalEntered(i)});
+      overworld.addZones(zones);
+    }catch(error){
+      overworld=null;
+      $('overworldStage').hidden=true;
+    }
+  }
+  portalChanged(undefined);
+  if(overworld){
+    overworld.visit(level,isAvailable,bestSteps);
+    $('overworldCanvas').focus();
+  }else{
+    $('portalStatus').textContent='3D map unavailable. Select a room below.';
+    (activeZone??zones[0]).button.focus();
+  }
 }
 $('missionPicker').addEventListener('close',()=>{
   if($('missionPicker').returnValue==='play'||!document.activeElement.closest('button')){
@@ -397,7 +449,7 @@ $('missionPicker').addEventListener('close',()=>{
   }
 });
 
-function store(){try{localStorage.setItem(STORAGE,JSON.stringify({completed:[...completed],level}))}catch{}}
+function store(){try{localStorage.setItem(STORAGE,JSON.stringify({completed:[...completed],level,bestSteps:Object.fromEntries(bestSteps)}))}catch{}}
 function checkWaypoint(){const cfg=levels[level];cfg.checkpoints.forEach(([x,z],i)=>{if(x===positions.x&&z===positions.z&&!visited.has(i)){if(cfg.ordered&&i!==visited.size){log('Relay '+(i+1)+' is out of order. Visit relay '+(visited.size+1)+' first.');return;}visited.add(i);checkpointMeshes[i].traverse(o=>{if(o.material?.color)o.material.color.set('#66bd89')});banner('WAYPOINT ACTIVATED');log('Waypoint '+(i+1)+' activated')}})}
 async function moveStep(dx,dz,token,runId){
   const x=positions.x+dx,z=positions.z+dz;
@@ -559,6 +611,7 @@ async function executeBlock(program,cfg,runId){
       continue;
     }
     if(kind==='pulse'||kind==='shield'){
+      if(++actions>75)throw Error('Too many actions (limit 75)');
       if(kind==='pulse')pulse(cfg,logicState,positions);
       else logicState.shield=true;
       syncLogic();
@@ -604,10 +657,12 @@ async function run(){
     success=validateSuccess();
     if(success){
       completed.add(level);
+      if(!bestSteps.has(level)||actions<bestSteps.get(level))bestSteps.set(level,actions);
+      updateRating(actions);
       store();
       banner('LEVEL COMPLETE!');
       status('MISSION COMPLETE');
-      message('All objectives verified.');
+      message(starsText(starsFor(level,actions))+' · '+actions+' steps. All objectives verified.');
       $('nextLevel').hidden=level===levels.length-1;
       updateLevelProgress();
     }else status('TRY AGAIN');
@@ -797,6 +852,7 @@ function resize(){
 recenterCamera();
 new ResizeObserver(resize).observe($('cameraStage'));
 const clock=new THREE.Clock();function animate(){requestAnimationFrame(animate);const t=clock.getElapsedTime();
+if($('missionPicker').open&&overworld)overworld.frame(performance.now());
 for(const device of devices){
   device.rotor.rotation.y=t*(device.kind==='sentry'?2:.8);
   device.rotor.position.y=.68+Math.sin(t*2+device.x)*.15;
