@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
-const bounds={x:92,z:76};
-const crossings=[-47,0,47];
+const bounds={x:153,z:124};
+const crossings=[-76,0,76];
 const river=z=>Math.abs(z)<3.3;
 const bridge=x=>crossings.some(center=>Math.abs(x-center)<2.1);
 const walkable=(x,z)=>shore(x,z)<.91&&(!river(z)||bridge(x));
@@ -13,7 +13,14 @@ const landmarks=[
 const summits=[{x:25,z:-53,h:13,r:16},{x:-33,z:52,h:10,r:15},{x:68,z:-22,h:7,r:13}];
 const towers=[{x:23,z:24,h:8},{x:25,z:-53,h:6}];
 const passage={x:14,z:46};
+const guides=[
+  {name:'Ivo, the ferryman',x:-76,z:11,color:'#a16b35',line:'Three bridges cross the river. The western bridge leads to Meadow Trail.'},
+  {name:'Mara, the cartographer',x:24,z:-44,color:'#576d9c',line:'Look for ladders at the watchtowers. The northern summit hides an old survey.'},
+  {name:'Nia, the gardener',x:-33,z:66,color:'#5d874d',line:'Follow the southern trail to the orchard. Try crouching beneath low stone arches.'},
+];
 const secrets=[
+  {id:'orchard',x:-38,z:77,name:'Orchard Waymark',note:'A carved arrow marks the route toward the western bridge.'},
+  {id:'coast',x:126,z:29,name:'East Cape Log',note:'The lookout recorded a light across the river at dusk.'},
   {id:'summit',x:25,z:-55,name:'The Sky Ledger',note:'The island survey ends at this lookout.',tower:1},
   {id:'grotto',x:14,z:46,name:'The Echo Seal',note:'A tiny seal rests beneath the stone arch.'},
   {id:'tide',x:-65,z:-7,name:'The Tide Almanac',note:'A mariner marked the route to the old observatory in the margin.'},
@@ -30,12 +37,12 @@ const elevation=(x,z)=>river(z)&&bridge(x)?1.15:terrain(x,z);
 const colors=['#528665','#b08656','#528baa','#618850','#71628f','#9b5d47'];
 const controls={ArrowUp:[0,-1],w:[0,-1],ArrowDown:[0,1],s:[0,1],ArrowLeft:[-1,0],a:[-1,0],ArrowRight:[1,0],d:[1,0]};
 
-export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscovery,onTraversal}){
+export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscovery,onTraversal,onPrompt,onDialogue}){
   const scene=new THREE.Scene();
   scene.background=new THREE.Color('#b6dfe8');
   scene.fog=new THREE.FogExp2('#b6dfe8',.006);
   const follow=new THREE.PerspectiveCamera(49,1,.1,260);
-  const survey=new THREE.OrthographicCamera(-1,1,1,-1,.1,240);
+  const survey=new THREE.OrthographicCamera(-1,1,1,-1,.1,400);
   let mapMode=false;
   let camera=follow;
   const look=new THREE.Vector3();
@@ -58,7 +65,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   water.rotation.x=-Math.PI/2;
   water.position.y=-1;
   scene.add(water);
-  const ground=new THREE.PlaneGeometry(194,162,162,135);
+  const ground=new THREE.PlaneGeometry(318,260,212,174);
   ground.rotateX(-Math.PI/2);
   const vertices=ground.attributes.position;
   const shades=[];
@@ -163,7 +170,21 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     if(Math.abs(z)<7||crossings.some(center=>Math.abs(x-center)<18&&Math.abs(Math.abs(z)-27)<18))continue;
     tree(x,z,.62+(i%5)*.12,i%2?'#38694a':'#497953');
   }
+  const actors=guides.map(guide=>{
+    const model=makeHero({name:guide.name,style:'guardian',personality:'calm',skin:'#b68969',armor:guide.color,hair:'#302c2c',cape:'#8d7b60',hairStyle:'short',accessory:'satchel',height:97,build:94});
+    scene.add(model);
+    return {...guide,model};
+  });
+  const grain=material('#ad854e'), stonework=material('#758088');
+  for(let i=0;i<16;i++)tree(-52+(i%4)*4.5,72+Math.floor(i/4)*4.5,.9,'#638754');
+  for(let i=0;i<7;i++)box(1.4,.38,1.2,stonework,118+i*1.8,terrain(118+i*1.8,25)+.17,25);
+  for(let i=0;i<5;i++){
+    const x=-80+i*2,z=7.25;
+    box(1.7,.82,1.5,grain,x,terrain(x,z)+.41,z);
+  }
   const pickables=[],portals=new Map(),keys=new Set();
+  const projected=new THREE.Vector3();
+  let nearbyGuide;
   const position=new THREE.Vector3();
   const trail=new THREE.Vector3();
   let hero,target,near,last=0,waypoints=[],gait=0,pace=0;
@@ -211,9 +232,9 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   }
   function addZones(zones){
     for(const [zoneIndex,zone] of zones.entries()){
-      const x0=crossings[zoneIndex%3],z0=zoneIndex<3?-27:27;
+      const x0=crossings[zoneIndex%3],z0=zoneIndex<3?-46:46;
       const banner=label(zone.name,true);
-      const entrance=z0+(z0<0?13:-13),height=elevation(x0,entrance);
+      const entrance=z0+(z0<0?25:-25),height=elevation(x0,entrance);
       banner.position.set(x0,height+3.4,entrance);
       scene.add(banner);
       const stone=material(colors[zoneIndex]);
@@ -226,13 +247,13 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
       }
       for(const [j,index] of zone.rooms.entries()){
         const [dx,dz]=landmarks[zoneIndex][j];
-        const x=x0+dx,z=z0+dz;
+        const x=x0+dx*1.72,z=z0+dz*1.72;
         const y=elevation(x,z);
         const base=box(2.45,.32,2.3,stone,x,y+.13,z);
         const height=2.8+(j%3)*.5+(zoneIndex===4?1.0:0);
         const hallZ=z-2.8;
         const floor=elevation(x,hallZ);
-        box(3.45,height,2.6,stone,x,floor+height/2,hallZ);
+        const hall=box(3.45,height,2.6,stone,x,floor+height/2,hallZ);
         const roof=new THREE.Mesh(new THREE.ConeGeometry(2.65,1.55,4),roofMats[zoneIndex]);
         roof.rotation.y=Math.PI/4;
         roof.position.set(x,floor+height+.62,hallZ);
@@ -261,11 +282,8 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
         const ring=new THREE.Mesh(new THREE.TorusGeometry(.85,.12,10,28),new THREE.MeshStandardMaterial({emissiveIntensity:.5}));
         ring.position.set(x,y+1.12,z);
         scene.add(ring);
-        const sign=label(String(index+1).padStart(2,'0'));
-        sign.position.set(x,y+2.35,z);
-        scene.add(sign);
         portals.set(index,{index,x,z,y,ring});
-        for(const mesh of [base,ring,sign]){
+        for(const mesh of [base,ring,hall]){
           mesh.userData.room=index;
           pickables.push(mesh);
         }
@@ -274,7 +292,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   }
   const ray=new THREE.Raycaster();
   canvas.addEventListener('pointerdown',event=>{
-    if(event.pointerType==='touch'||event.button!==0)return;
+    if(event.button!==0)return;
     drag={id:event.pointerId,x:event.clientX,y:event.clientY,moved:false};
   });
   canvas.addEventListener('pointermove',event=>{
@@ -310,22 +328,24 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   });
   canvas.addEventListener('keydown',event=>{
     const key=event.key.length===1?event.key.toLowerCase():event.key;
-    if([' ','c','f','q','e','+','=','-'].includes(key)){
+    if([' ','c','f','q','e','r','+','=','-'].includes(key)){
       event.preventDefault();
       if(event.repeat)return;
       if(key==='q'||key==='e')adjustCamera(key==='q'?.3:-.3);
       else if(['+','=','-'].includes(key))adjustCamera(0,key==='-'?1.18:1/1.18);
+      else if(key==='r'){if(nearbyGuide)onDialogue?.(nearbyGuide);}
       else action({' ':'jump',c:'crouch',f:'climb'}[key]);
       return;
     }
+    if(key==='Shift'){keys.add(key);return;}
     if(controls[key]){
       event.preventDefault();
       target=null;
       waypoints=[];
       keys.add(key);
-    }else if(key==='Enter'&&near!==undefined){
+    }else if(key==='Enter'&&(near!==undefined||nearbyGuide)){
       event.preventDefault();
-      onEnter(near);
+      interact();
     }
   });
   canvas.addEventListener('keyup',event=>keys.delete(event.key.length===1?event.key.toLowerCase():event.key));
@@ -390,6 +410,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     last=now;
     trail.set(0,0,0);
     for(const key of keys){
+      if(key==='Shift')continue;
       const [x,z]=controls[key];
       trail.x+=x*Math.cos(yaw)+z*Math.sin(yaw);
       trail.z+=z*Math.cos(yaw)-x*Math.sin(yaw);
@@ -405,7 +426,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     if(distance>.025){
       const heading=Math.atan2(trail.x,trail.z);
       hero.rotation.y+=Math.atan2(Math.sin(heading-hero.rotation.y),Math.cos(heading-hero.rotation.y))*Math.min(1,delta*14);
-      const speed=crouched?3.5:target?9:8;
+      const speed=crouched?3.5:target?14:keys.has('Shift')?15:8;
       const stride=target?Math.min(distance,delta*speed):delta*speed;
       trail.normalize();
       const nextX=position.x+trail.x*stride,nextZ=position.z+trail.z*stride;
@@ -438,10 +459,10 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     }
     onTraversal?.(climb?'Climbing':ladder()>=0?'Ladder nearby · F':lowCeiling(position.x,position.z)?'Low passage · C':crouched?'Crouching':air>0?'Jumping':'');
     if(mapMode){
-      const extent=Math.max(82,99/aspect)*zoom;
+      const extent=Math.max(132,163/aspect)*zoom;
       survey.left=-extent*aspect;survey.right=extent*aspect;
       survey.top=extent;survey.bottom=-extent;
-      survey.position.set(0,155,.01);
+      survey.position.set(0,222,.01);
       survey.up.set(Math.sin(yaw),0,-Math.cos(yaw));
       survey.lookAt(0,0,0);
     }else{
@@ -454,7 +475,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     camera.updateProjectionMatrix();
     camera.updateMatrixWorld();
     pace+=(Number(distance>.025)-pace)*Math.min(1,delta*12);
-    gait+=delta*pace*14;
+    gait+=delta*pace*(keys.has('Shift')&&!crouched?21:14);
     const swing=climb?Math.sin(climb.time*45)*.62:Math.sin(gait)*pace*.54;
     hero.position.y+=Math.abs(Math.sin(gait))*.09*pace;
     hero.userData.cape.rotation.x=.13+Math.cos(gait)*.13*pace;
@@ -472,10 +493,19 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     }
     hero.userData.legs.forEach((part,i)=>{part.rotation.x=air>0?(i?-.7:-.4):i?swing:-swing});
     hero.userData.arms.forEach((part,i)=>{part.rotation.x=climb?-1.6+(i?swing:-swing):air>0?-.72:i?-swing*.5:swing*.5});
-    let closest,best=2.15;
+    nearbyGuide=undefined;
+    for(const [i,guide] of actors.entries()){
+      const t=now*.0008+i*2;
+      const gx=guide.x+Math.sin(t)*1.8,gz=guide.z+Math.cos(t)*1.1;
+      guide.model.position.set(gx,elevation(gx,gz)+Math.abs(Math.sin(t*7))*.05,gz);
+      guide.model.rotation.y=Math.atan2(Math.cos(t)*1.8,-Math.sin(t)*1.1);
+      guide.model.userData.legs.forEach((part,j)=>{part.rotation.x=Math.sin(t*7)*(j?.34:-.34);});
+      if(Math.hypot(position.x-gx,position.z-gz)<3.15)nearbyGuide=guide;
+    }
+    let closest,best=2.9;
     for(const item of portals.values()){
-      const distance=Math.hypot(position.x-item.x,position.z-item.z);
-      if(distance<best){best=distance;closest=item.index;}
+      const distance=Math.hypot(position.x-item.x,position.z-(item.z+1.15));
+      if(distance<best&&deck===null&&!climb){best=distance;closest=item.index;}
       item.ring.position.y=item.y+1.12+.12*Math.sin(now*.002+item.index);
       item.ring.rotation.z=now*.00065;
       item.ring.material.emissiveIntensity=distance<2.15?.92:.45+.17*Math.sin(now*.003+item.index);
@@ -484,11 +514,27 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
       near=closest;
       onNear(near);
     }
+    if(onPrompt){
+      let point;
+      if(near!==undefined){
+        const door=portals.get(near);
+        point=projected.set(door.x,door.y+2.8,door.z).project(camera);
+      }else if(nearbyGuide){
+        const loc=nearbyGuide.model.position;
+        point=projected.set(loc.x,loc.y+2.35,loc.z).project(camera);
+      }
+      onPrompt(point&&Math.abs(point.x)<.94&&Math.abs(point.y)<.92&&Math.abs(point.z)<1?
+        {room:near,guide:nearbyGuide?.name,x:(point.x+1)*50,y:(1-point.y)*50}:null);
+    }
     renderer.render(scene,camera);
   }
   function setMapMode(enabled){
     mapMode=enabled;
     camera=enabled?survey:follow;
   }
-  return {addZones,visit,travel,frame,setMapMode,adjustCamera,action,discoveries:()=>[discovered.size,secrets.length]};
+  function interact(){
+    if(near!==undefined)onEnter(near);
+    else if(nearbyGuide)onDialogue?.(nearbyGuide);
+  }
+  return {addZones,visit,travel,frame,setMapMode,adjustCamera,action,interact,discoveries:()=>[discovered.size,secrets.length]};
 }
