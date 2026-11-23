@@ -63,7 +63,7 @@ async function perform(code){
 async function sendFile(id,name){
  if(typeof name!=="string"||!FILE_NAME.test(name))throw Error("Nombre de archivo no permitido.");
  const py=await pythonRuntime();
- const bytes=py.FS.readFile(name);
+ const bytes=new Uint8Array(py.FS.readFile(name));
  if(bytes.byteLength>10*1024*1024)throw Error("Archivo demasiado grande para descargar.");
  self.postMessage({id,status:"file",name,bytes},[bytes.buffer]);
 }
