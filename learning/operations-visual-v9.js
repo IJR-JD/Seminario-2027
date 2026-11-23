@@ -1,5 +1,6 @@
 (() => {
   'use strict';
+  if(window.SEMINAR_2027_TRACK==='programming')return;
   const topic=new URLSearchParams(location.search).get('topic')||'operations';
   if(topic!=='operations') return;
 
