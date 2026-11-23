@@ -1,4 +1,4 @@
-import {createOverworld} from './overworld.mjs?v=pythontrail1';
+import {createOverworld} from './overworld.mjs?v=twostorey1';
 import {pythonWaystations} from './island-exploration.mjs';
 import {allRoomLocations} from './island-villages.mjs';
 import {starTargets,starsFor,starsText} from './room-stars.mjs';
