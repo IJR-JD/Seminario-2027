@@ -491,3 +491,36 @@
   .appWide .side {display:flex;flex-direction:column}
   .appWide .world {height:clamp(380px,65vh,720px)}
 }
+
+/* Optional Python Trail: compact atlas, readable on touch screens and independent of room code. */
+#islandTrailProgress {display:inline;font-size:.78rem;color:#ffe1a4}
+#islandTrailProgress:not(:empty)::before {content:" · "}
+.islandTrailPanel {
+  position:absolute;z-index:4;top:66px;right:12px;bottom:78px;
+  width:min(405px,calc(100% - 24px));box-sizing:border-box;overflow:auto;
+  padding:17px;border:1px solid #e2c27c;border-radius:12px;
+  background:#152d39f7;color:#f5f4ea;box-shadow:0 15px 40px #07161b99;
+  overscroll-behavior:contain;
+}
+.islandTrailPanel[hidden],#islandTrailToggle[hidden],.islandTrailDistance:empty {display:none}
+.islandTrailPanel h3 {margin:0 0 8px;font-size:1.08rem;color:#ffe2a4}
+.islandTrailPanel>p,.islandTrailPanel>small {display:block;line-height:1.5;color:#d1e1df;font-size:.82rem}
+.islandTrailList {display:grid;gap:10px;margin:14px 0}
+.islandTrailEntry {padding:12px;border:1px solid #65848a;border-radius:9px;background:#203b46}
+.islandTrailEntry[data-found="true"] {border-color:#cbae6e;background:#293e41}
+.islandTrailEntry h4 {font-size:.93rem;margin:0 0 5px}
+.islandTrailEntry p {font-size:.79rem;line-height:1.45;margin:4px 0 8px}
+.islandTrailEntry small {display:block;color:#d1e1df;line-height:1.45;margin:4px 0}
+.islandTrailEntry code {display:block;margin:9px 0;padding:8px;white-space:pre-wrap;overflow-wrap:anywhere;border-radius:6px;background:#0f2431;color:#fbe3a7;font:12px/1.5 ui-monospace,monospace}
+.islandTrailEntry button {border:1px solid #ebce8d;background:#dfb96e;color:#182d35;border-radius:7px;min-height:40px;padding:7px 12px;font:inherit;font-weight:700}
+.islandTrailEntry button[aria-pressed="true"] {background:#395a61;color:#fff3cf}
+.islandTrailDistance {position:absolute;bottom:81px;right:12px;z-index:2;max-width:min(380px,calc(100% - 24px));
+  border:1px solid #e6ce96;background:#142d39e8;color:#fff5da;border-radius:8px;padding:8px 12px;
+  font:700 .80rem ui-monospace,monospace;pointer-events:none}
+@media(max-width:700px) {
+  .islandTools {flex-wrap:wrap;justify-content:flex-end;max-width:calc(100% - 24px)}
+  .islandTools button {font-size:.72rem;padding:7px}
+  .islandTrailPanel {top:124px;bottom:116px}
+  .islandTrailDistance {bottom:137px;left:12px;right:auto}
+  .islandTraversal {bottom:78px}
+}
