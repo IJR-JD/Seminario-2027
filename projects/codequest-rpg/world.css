@@ -524,3 +524,17 @@
   .islandTrailDistance {bottom:137px;left:12px;right:auto}
   .islandTraversal {bottom:78px}
 }
+
+/* Touch traversal: direction buttons send the same movement keys as the keyboard. */
+.islandDpad {display:none;position:absolute;left:12px;bottom:155px;z-index:3;
+  grid-template-columns:repeat(3,44px);grid-template-rows:repeat(2,44px);gap:4px}
+.islandDpad button {touch-action:none;user-select:none;min-width:44px;min-height:44px;
+  border:1px solid #ebca84;border-radius:9px;background:#142b3be8;color:#fff4d6;
+  font-size:1.3rem;font-weight:800;box-shadow:0 3px 12px #0919238c}
+.islandDpad button[data-active="true"],.islandDpad button:active {background:#e9c67f;color:#18303c}
+.islandDpad button:nth-child(1) {grid-column:2;grid-row:1}
+.islandDpad button:nth-child(2) {grid-column:1;grid-row:2}
+.islandDpad button:nth-child(3) {grid-column:2;grid-row:2}
+.islandDpad button:nth-child(4) {grid-column:3;grid-row:2}
+@media(pointer:coarse){.islandDpad {display:grid}}
+@media(max-width:550px){.islandDpad {bottom:150px;grid-template-columns:repeat(3,42px);grid-template-rows:repeat(2,42px)}}
