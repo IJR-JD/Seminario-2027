@@ -392,3 +392,28 @@
   #missionPicker .islandHelp {top:62px;max-width:calc(100% - 24px);font-size:.75rem}
   #islandDirectory {top:62px}
 }
+
+#missionPicker .missionHeader {
+  background:#142634;
+  color:#fff4db;
+  border-bottom:1px solid #a78654;
+}
+#missionPicker .missionHeader h2 {font-family:Georgia,serif;letter-spacing:.01em}
+#missionPicker .missionHeader p {color:#d9e8e6}
+#missionProgress,#islandDiscoveries {display:inline;font-size:.78rem}
+#islandDiscoveries:not(:empty)::before {content:" · "}
+#missionPicker .missionHeader button,.islandTools button {
+  background:#213948;
+  border:1px solid #c1a776;
+  color:#fff3d7;
+}
+.islandTools button[aria-pressed="true"] {background:#f3ce79;color:#213540}
+#missionPicker .islandHelp,#missionPicker .portalControls {background:#142634ee;border:1px solid #b49a6b}
+.islandDiscovery {
+  position:absolute;top:70px;left:50%;transform:translateX(-50%);
+  z-index:4;max-width:calc(100% - 28px);
+  padding:12px 16px;border:1px solid #e5c47e;border-radius:8px;
+  background:#162935;color:#fff1ce;text-align:center;pointer-events:none;
+}
+.islandDiscovery[hidden] {display:none}
+@media(max-width:650px){.islandDiscovery {top:126px;width:calc(100% - 55px)}}
