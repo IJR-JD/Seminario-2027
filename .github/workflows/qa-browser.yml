@@ -1,0 +1,35 @@
+name: Seminario 2027 · Browser functional QA
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'learning/**'
+      - 'scripts/qa-browser.mjs'
+      - '.github/workflows/qa-browser.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: seminario-browser-qa
+  cancel-in-progress: true
+jobs:
+  browser:
+    name: Test Theory / Practice / Pyodide in Chromium
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install isolated test browser dependencies
+        run: |
+          npm install --no-save --no-audit --no-fund playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Execute full browser QA against the local production files
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/seminario-browser-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" || true' EXIT
+          sleep 2
+          node scripts/qa-browser.mjs
