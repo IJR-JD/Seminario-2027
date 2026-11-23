@@ -176,7 +176,7 @@ function renderGraph(ex){
  '<pattern id="fc28-paper-grid" width="22" height="22" patternUnits="userSpaceOnUse"><path d="M22 0H0V22" fill="none" stroke="#dededa" stroke-width=".8"/></pattern></defs>'+
  '<rect x="4" y="4" width="812" height="691" rx="13" fill="white" stroke="#d7d7d3"/>'+
  '<rect x="7" y="7" width="806" height="683" rx="12" fill="url(#fc28-paper-grid)" opacity=".45"/>'+
- '<text class="fc28-svg-heading" x="410" y="30" text-anchor="middle">IJR / FLOWCHART EXECUTION TRACE</text>'+
+ '<text class="fc28-svg-heading" x="410" y="19" text-anchor="middle">IJR / FLOWCHART EXECUTION TRACE</text>'+
  arrows+g.nodes.map(renderNode).join("")+
  '<circle class="fc28-token" r="9" cx="'+g.nodes[0].x+'" cy="'+g.nodes[0].y+'" aria-hidden="true"/>'+
  '</svg>';
