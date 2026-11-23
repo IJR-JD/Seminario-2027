@@ -37,7 +37,8 @@ const controls={ArrowUp:[0,-1],w:[0,-1],ArrowDown:[0,1],s:[0,1],ArrowLeft:[-1,0]
 export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscovery,onTraversal,onPrompt,onDialogue,onWaystation,onTrailChange,onWayfinder}){
   const scene=new THREE.Scene();
   scene.background=new THREE.Color('#b6dfe8');
-  scene.fog=new THREE.FogExp2('#b6dfe8',.006);
+  const landscapeFog=new THREE.FogExp2('#b6dfe8',.006);
+  scene.fog=landscapeFog;
   const follow=new THREE.PerspectiveCamera(49,1,.1,260);
   const survey=new THREE.OrthographicCamera(-1,1,1,-1,.1,400);
   let mapMode=false;
@@ -596,6 +597,9 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   function setMapMode(enabled){
     mapMode=enabled;
     camera=enabled?survey:follow;
+    // An overhead camera is far above the terrain: keeping distance fog here
+    // obscures the entire island and makes the survey view unusable.
+    scene.fog=enabled?null:landscapeFog;
   }
   function interact(){
     if(near!==undefined)onEnter(near);
