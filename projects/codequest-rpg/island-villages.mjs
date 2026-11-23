@@ -35,7 +35,7 @@ export const islandDistricts=[
 // changing the mission count, grading, or portal identifiers.
 export const villageHouses=[
   {x:-44,z:-69,zone:0},{x:-42,z:-52,zone:0},{x:-44,z:-34,zone:0},
-  {x:26,z:-76,zone:1},{x:100,z:-76,zone:2},
+  {x:26,z:-76,zone:1},{x:100,z:-72,zone:2},
   {x:-49,z:57,zone:3},{x:30,z:75,zone:4},{x:111,z:59,zone:5},
 ];
 export const secondFloorHeight=3.35;
