@@ -157,6 +157,11 @@ try{
  assert.equal(await explainer.locator('.sv27-figure').getAttribute('data-motion-step'),'1');
  await sequence.getByRole('button',{name:'Play animation',exact:true}).click();
  assert.equal(await explainer.locator('.sv27-figure').getAttribute('data-motion-step'),'2');
+ for(let i=0;i<4;i++)await sequence.getByRole('button',{name:'Next explanation step'}).click();
+ assert.equal(await explainer.locator('.sv27-figure').getAttribute('data-motion-step'),'6');
+ await sequence.getByRole('button',{name:'Replay sequence from start'}).click();
+ assert.equal(await explainer.locator('.sv27-figure').getAttribute('data-motion-step'),'1');
+ assert.equal(await sequence.locator('[role="progressbar"]').getAttribute('aria-valuenow'),'1');
  assert.equal(await page.locator('.sv28-iqr-bracket').count(),2,
   'IQR visual overlay should be available in Theory and guided Practice');
  console.log('PASS narrated motion: speed, next, replay, reduced-motion manual step, IQR overlay');
