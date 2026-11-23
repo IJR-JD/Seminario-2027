@@ -1,7 +1,7 @@
 import {insertCommand} from './command-editor.mjs';
-import {logicRooms,compileLogic,sense,pulse,logicMove,cellKey,RouteHazard} from './logic.mjs?v=foundry1';
+import {logicRooms,compileLogic,sense,pulse,logicMove,cellKey,RouteHazard} from './logic.mjs?v=edgefall1';
 import * as THREE from 'three';
-import {directions,expedition,planMove,surfaceAt} from './expedition.mjs';
+import {directions,expedition,surfaceAt} from './expedition.mjs';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 const $=id=>document.getElementById(id), clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
 const STORAGE='ijr-codequest-world-v2',HERO='ijr-codequest-world-hero-v1';
@@ -19,7 +19,7 @@ function isAvailable(i){
   return i===0||i===classicCount||i===logicStart||i===foundryStart||completed.has(i)||completed.has(i-1);
 }
 const setbacks=new Map();
-let flightFuel=0, logicState, conditionUsed=false, devices=[];
+let flightFuel=0, logicState, conditionUsed=false, devices=[], spikeTraps=[];
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const log=m=>{const pre=$('consoleView');pre.textContent=(pre.textContent==='Choose a path to begin.'?'':pre.textContent+'\n')+m;pre.scrollTop=pre.scrollHeight;};
 const status=m=>{$('executionStatus').textContent=m;};
@@ -192,6 +192,7 @@ function compileRoom(source,cfg){
 
 function addLogicDevices(cfg){
   devices=[];
+  spikeTraps=[];
   if(cfg.conditional){
     const grove=cfg.zone==='Signal Grove';
     const stone=makeMat(grove?'#3f665e':'#343c60',.55);
@@ -213,10 +214,18 @@ function addLogicDevices(cfg){
     const spike=makeMat('#ff916d',.3);
     for(const [x,z] of cfg.traps){
       const y=surfaceAt(cfg,x,z);
-      addBox(worldGroup,.94,.14,.94,base,x,y+.08,z);
+      const plate=addBox(worldGroup,.94,.14,.94,base,x,y+.08,z);
+      const bolts=new THREE.Group();
+      bolts.position.set(x,y+.09,z);
       for(const dx of [-.25,.25])for(const dz of [-.25,.25]){
-        addCyl(worldGroup,.015,.13,.38,spike,x+dx,y+.26,z+dz,4);
+        addCyl(bolts,.015,.13,.46,spike,dx,0,dz,4);
       }
+      worldGroup.add(bolts);
+      const marker=new THREE.Mesh(new THREE.TorusGeometry(.30,.027,8,24),new THREE.MeshBasicMaterial({color:'#ffb276'}));
+      marker.rotation.x=-Math.PI/2;
+      marker.position.set(x,y+.155,z);
+      worldGroup.add(marker);
+      spikeTraps.push({x,z,y,plate,bolts,marker});
     }
   }
   for(const [kind,cells,color] of [['lock',cfg.locks,'#bb81ff'],['sentry',cfg.sentries,'#ff765e']]){
@@ -277,7 +286,7 @@ function coordinateText(cfg,x,z){
 }
 function setActorPosition(x,z){positions={x,z};const cfg=levels[level];actor.position.set(x,cfg.surfaces?surfaceAt(cfg,x,z):0,z);$('coordinateLabel').textContent=coordinateText(cfg,x,z);}
 function resetLevel(preserveEditor=false){conditionUsed=false;logicState={open:new Set(),shield:false};syncLogic();traceLine(0);stopped=true;activeRun++;running=false;$('editor').readOnly=false;const cfg=levels[level];flightFuel=cfg.flightBudget??0;variables={};collected.clear();visited.clear();hasArithmetic=false;actions=0;success=false;setActorPosition(...cfg.start);actor.rotation.y=Math.PI/2;clearPose();actor.visible=true;if(!preserveEditor)$('editor').value=cfg.powers?'# Plan a route with movement and the available abilities.\n\n':'# Write your own movement variables below\n# Each line makes your hero move.\n\n';updateLines();for(const mesh of crystalMeshes)mesh.visible=true;for(const mesh of checkpointMeshes){mesh.traverse(o=>{if(o.material?.color)o.material.color.set('#6887af')})}updateHud();$('variableView').textContent='No variables defined';$('consoleView').textContent='Ready · '+cfg.title;$('nextLevel').hidden=true;$('runCode').disabled=false;status('READY');message('Write code and press Run program.');$('toggleHint').textContent='Show a clue';$('hintText').hidden=true}
-function updateHud(){const cfg=levels[level];$('setbackHud').hidden=!cfg.hazards&&!cfg.sentries?.length;$('setbackCount').textContent=setbacks.get(level)??0;$('flightHud').hidden=!cfg.flightBudget;$('flightRange').textContent=flightFuel+' / '+(cfg.flightBudget??0);$('itemHud').hidden=cfg.crystals.length===0;$('itemCount').textContent=collected.size+' / '+cfg.crystals.length}
+function updateHud(){const cfg=levels[level];$('setbackHud').hidden=false;$('setbackCount').textContent=setbacks.get(level)??0;$('flightHud').hidden=!cfg.flightBudget;$('flightRange').textContent=flightFuel+' / '+(cfg.flightBudget??0);$('itemHud').hidden=cfg.crystals.length===0;$('itemCount').textContent=collected.size+' / '+cfg.crystals.length}
 function updateLevelUI(){const cfg=levels[level];$('zoneLabel').textContent=(cfg.conditional?'LOGIC WORLDS · ':cfg.powers?'EXPEDITION · ':'CHAPTER 01 · ')+cfg.zone.toUpperCase();$('worldTitle').textContent=cfg.title;$('worldDesc').textContent=cfg.description;$('levelIndex').textContent=String(level+1).padStart(2,'0')+' / '+levels.length;$('missionLabel').textContent=cfg.objective;$('objective').textContent=cfg.objective;$('instruction').textContent=cfg.instruction;$('hintText').textContent=cfg.hint;$('concept').textContent=cfg.concept;
 $('editorContext').textContent=cfg.conditional?'LOGIC · SENSORS':cfg.powers?'EXPEDITION · '+cfg.powers.join(' / '):'CHAPTER 01 · VARIABLES';
 $('abilityPanel').hidden=!cfg.powers?.length;
@@ -371,7 +380,7 @@ function checkWaypoint(){const cfg=levels[level];cfg.checkpoints.forEach(([x,z],
 async function moveStep(dx,dz,token,runId){
   const x=positions.x+dx,z=positions.z+dz;
   const cfg=levels[level];
-  if(x<0||x>=W||z<0||z>=H)throw Error('World boundary at ('+x+', '+z+')');
+  if(x<0||x>=W||z<0||z>=H)throw new RouteHazard('fall',x,z,'You walked off the platform at ('+x+', '+z+').');
   if(cfg.obstacles.some(([bx,bz])=>bx===x&&bz===z))throw Error('Obstacle blocks ('+x+', '+z+')');
   await animateMove({x,z,start:0,end:0,cost:0,contacts:[{x,z}]},token,'walk',runId);
 }
@@ -452,6 +461,11 @@ function makeMotionTrail(mode){
 function clearPose(){
   actor.rotation.x=0;
   actor.rotation.z=0;
+  for(const trap of spikeTraps){
+    trap.plate.position.y=trap.y+.08;
+    trap.bolts.position.y=trap.y+.09;
+    trap.marker.scale.setScalar(1);
+  }
   $('cameraStage').dataset.motion='';
   for(const limb of [...actor.userData.legs,...actor.userData.arms]){
     limb.rotation.x=0;
@@ -486,7 +500,7 @@ async function executeBlock(program,cfg,runId){
       continue;
     }
     const count=evaluate(value,variables);
-    if(!Number.isInteger(count)||count<0||count>12)throw Error('Line '+line+': distance must be a whole number from 0 to 12');
+    if(!Number.isSafeInteger(count)||count<0)throw Error('Line '+line+': distance must be a nonnegative whole number.');
     const walk=kind==='direction';
     if(walk)variables[name]=count;
     if(/[+*/-]/.test(value))hasArithmetic=true;
@@ -498,7 +512,7 @@ async function executeBlock(program,cfg,runId){
         await moveStep(...directions[name],name,runId);
         continue;
       }
-      const plan=(cfg.conditional?logicMove.bind(null,cfg,logicState):planMove.bind(null,cfg))(positions,name,walk?1:count,walk?'walk':kind,flightFuel);
+      const plan=logicMove(cfg,logicState,positions,name,walk?1:count,walk?'walk':kind,flightFuel);
       await animateMove(plan,name,walk?'walk':kind,runId);
       if(runId!==activeRun||stopped)return;
       logicState.shield=false;
@@ -549,21 +563,43 @@ async function run(){
 async function resolveHazard(hazard,runId){
   setbacks.set(level,(setbacks.get(level)??0)+1);
   updateHud();
-  status(hazard.kind==='fall'?'FALL':'TRAP HIT');
+  const fall=hazard.kind==='fall';
+  status(fall?'FALL':'TRAP HIT');
   message(hazard.message);
   const origin=actor.position.clone();
-  const landing=new THREE.Vector3(hazard.x,origin.y,hazard.z);
+  const destination=new THREE.Vector3(hazard.x,origin.y,hazard.z);
+  const dx=destination.x-origin.x,dz=destination.z-origin.z;
+  actor.rotation.y=Math.atan2(dx,dz);
+  const trap=spikeTraps.find(item=>item.x===hazard.x&&item.z===hazard.z);
   const start=performance.now();
   const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
   $('cameraStage').dataset.motion='setback';
   while(runId===activeRun&&!stopped){
-    const t=Math.min(1,(performance.now()-start)/(reduced?140:700));
+    const t=Math.min(1,(performance.now()-start)/(reduced?160:920));
+    const impact=Math.max(0,(t-.28)/.72);
+    if(trap){
+      const extension=reduced?1:Math.min(1,impact*9)*(1-Math.max(0,impact-.7)/.3);
+      trap.plate.position.y=trap.y+.08-.055*extension;
+      trap.bolts.position.y=trap.y+.09+.48*extension;
+      trap.marker.scale.setScalar(1+.25*extension);
+    }
     if(!reduced){
-      actor.position.lerpVectors(origin,landing,Math.min(1,t*2));
-      actor.position.y+=hazard.kind==='fall'?-4.8*t*t:Math.sin(Math.PI*t)*.95;
-      actor.rotation.z=t*(hazard.kind==='fall'?2.6:1.55);
-      actor.rotation.x=t*1.25;
-      for(const arm of actor.userData.arms)arm.rotation.z=t*1.15;
+      if(fall){
+        actor.position.lerpVectors(origin,destination,Math.min(1,t/.34));
+        actor.position.y+=Math.sin(Math.PI*Math.min(1,t/.34))*.10-6.2*impact**2;
+        actor.rotation.x=impact*4.8;
+        actor.rotation.z=Math.sin(impact*Math.PI)*.85;
+      }else{
+        const approach=Math.min(1,t/.28);
+        actor.position.lerpVectors(origin,destination,approach);
+        actor.position.x-=dx*.38*impact;
+        actor.position.z-=dz*.38*impact;
+        actor.position.y+=Math.sin(Math.PI*impact)*.95;
+        actor.rotation.x=-impact*1.35;
+        actor.rotation.z=impact*.55;
+      }
+      for(const [i,arm] of actor.userData.arms.entries())arm.rotation.z=(i?1:-1)*impact*1.35;
+      actor.userData.cape.rotation.x=.13+.65*impact;
     }
     if(t===1)break;
     await new Promise(resolve=>requestAnimationFrame(resolve));
