@@ -28,6 +28,7 @@ jobs:
           node --check learning/programming-topics-2027.js
           node --check learning/programming-workshops-2027.js
           node --check learning/programming-visuals-2027.js
+          node --check learning/flowchart-execution-studio-v1.js
           node --check learning/track-navigation-2027.js
           node --check learning/python-worker.js
           node --check learning/python-runner.js
