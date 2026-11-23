@@ -1,5 +1,6 @@
 (()=>{"use strict";
 const course=window.SEMINAR_2027_COURSE||[],target=document.getElementById("topicGrid");
+const suffix=window.SEMINAR_2027_TRACK==="statistics"?"&track=statistics":"";
 if(!target)return;
 const safe=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function previewStages(slug){try{return JSON.parse(sessionStorage.getItem("ijr2027_preview_"+slug)||"[]")}catch{return []}}
@@ -9,7 +10,7 @@ for(const [i,t] of course.entries()){
  el.innerHTML='<div class="topline"><span>TOPIC '+String(t.order).padStart(2,"0")+' · '+safe(t.nav.toUpperCase())+'</span><span class="topic-count">0 / 12</span></div>'+
  '<h3>'+safe(t.title)+'</h3><p>'+safe(t.lead)+'</p>'+
  '<div class="bar"><span style="width:0%"></span></div>'+
- '<div class="links"><a class="button button-dark" href="theory.html?topic='+encodeURIComponent(t.slug)+'">Open Theory + 12 guided exercises →</a></div>';
+ '<div class="links"><a class="button button-dark" href="theory.html?topic='+encodeURIComponent(t.slug)+suffix+'">Open Theory + 12 guided exercises →</a></div>';
  cards.set(t.slug,el);target.appendChild(el);
 }
 const count=document.getElementById("globalCount"), percent=document.getElementById("globalPercent"),bar=document.getElementById("globalBar");
