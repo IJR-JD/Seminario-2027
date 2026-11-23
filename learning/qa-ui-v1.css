@@ -231,3 +231,21 @@ body.source-operations-parity .theory-section-v2{margin-top:clamp(44px,5vw,68px)
  .integrated-practice .stage-list{display:flex;width:100%;min-width:0;max-width:100%;overflow-x:auto;overflow-y:hidden}
  .integrated-practice .stage{flex-shrink:0}
 }
+
+
+/* Keep the 2026 animation content, but its stacked arrows must read horizontally. */
+@media(max-width:1200px){
+ body.source-operations-parity .v9-arrow{
+  width:min(100%,300px);max-width:300px;height:52px;min-height:52px;
+  justify-self:center;transform:none;display:flex;align-items:center;justify-content:center;
+ }
+ body.source-operations-parity .v9-arrow i{left:50%;right:auto;top:0;bottom:0;width:2px;height:100%}
+ body.source-operations-parity .v9-arrow i::after{
+  content:"↓";left:-10px;right:auto;top:auto;bottom:-13px;font-size:24px;line-height:1;
+ }
+ body.source-operations-parity .v9-arrow span{transform:none;animation:none;white-space:nowrap;font-size:11px}
+}
+/* Arrays' anatomy graphic needs a full editorial column at desktop sizes. */
+@media(min-width:1151px){
+ html.arrays-theory-v34-root .diagram-grid-v2 .diagram-card-v2:first-child{grid-column:1/-1}
+}
