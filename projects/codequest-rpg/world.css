@@ -331,3 +331,64 @@
 .portalControls button {border:0;border-radius:7px;padding:7px 12px;background:#f3ce79;color:#233747;font-weight:700}
 .portalControls button:disabled {opacity:.55}
 #roomRating {color:#57461d;font-size:.83rem;font-weight:700}
+
+#missionPicker[open] {
+  inset:0;
+  width:100vw;
+  height:100dvh;
+  max-width:none;
+  max-height:none;
+  display:grid;
+  grid-template-rows:auto minmax(0,1fr);
+  margin:0;
+  padding:0;
+  border:0;
+  border-radius:0;
+  overflow:hidden;
+  background:#192f3d;
+}
+#missionPicker .missionHeader {padding:8px clamp(12px,3vw,36px)}
+#missionPicker .missionHeader h2 {font-size:clamp(20px,2.3vw,32px);margin:0}
+#missionPicker .missionHeader button {min-height:42px;white-space:nowrap}
+#missionPicker .overworld {position:relative;padding:0;min-height:0}
+#missionPicker #overworldStage {position:absolute;inset:0;height:100%;border:0;border-radius:0}
+#overworldCanvas {touch-action:manipulation}
+.islandTools {position:absolute;top:12px;right:12px;display:flex;gap:8px;z-index:3}
+.islandTools button {
+  min-height:42px;
+  padding:8px 12px;
+  border:1px solid #688993;
+  border-radius:8px;
+  background:#193442;
+  color:#fff;
+  font-weight:700;
+}
+.islandTools button[aria-pressed="true"] {background:#f3ce79;color:#213540}
+#missionPicker .islandHelp {
+  position:absolute;left:12px;top:12px;
+  max-width:min(48%,440px);
+  margin:0;padding:8px 12px;border-radius:8px;
+  background:#193442;color:white;
+  pointer-events:none;
+}
+#missionPicker .portalControls {
+  position:absolute;bottom:14px;left:50%;transform:translateX(-50%);
+  width:min(560px,calc(100% - 28px));box-sizing:border-box;
+  padding:8px 12px;margin:0;border-radius:10px;
+  background:#193442;color:white;z-index:2;
+}
+#missionPicker .portalControls p {margin:0}
+#missionPicker .portalControls button {min-height:42px;white-space:nowrap}
+#islandDirectory {
+  position:absolute;top:66px;bottom:79px;right:12px;
+  width:min(410px,calc(100% - 24px));
+  overflow:auto;overscroll-behavior:contain;
+  background:#203947;border:1px solid #758f93;border-radius:10px;
+  padding:10px;box-sizing:border-box;z-index:3;
+}
+#islandDirectory[hidden],#missionPicker #overworldStage[hidden] {display:none}
+#islandDirectory .missionGrid {padding:8px 0;gap:6px}
+@media(max-width:650px) {
+  #missionPicker .islandHelp {top:62px;max-width:calc(100% - 24px);font-size:.75rem}
+  #islandDirectory {top:62px}
+}
