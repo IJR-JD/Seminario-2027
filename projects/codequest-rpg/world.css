@@ -201,3 +201,68 @@
 }
 .mapRegion {scroll-margin-top:115px}
 .mapRegion:focus {outline:3px solid #4b7160;outline-offset:2px}
+
+:root {background:#e9edf3;color:#162435}
+.topbar {background:#f8fafc}
+.worldHeadline h1 {font-family:Georgia,serif;font-weight:700;letter-spacing:-.045em}
+.editorPanel {
+  background:#131f31;
+  color:#e6eefb;
+  border:1px solid #415574;
+  border-radius:18px;
+  box-shadow:0 16px 36px #26365027;
+}
+.editorPanel .eyebrow {color:#adbed8}
+.editorHead {padding-bottom:12px}
+.editorHead p {color:#c7d4e7}
+.editorHead strong {display:flex;align-items:flex-start;flex-wrap:wrap;gap:7px}
+.syntaxPill {background:#2a3d58;color:#e2edff}
+.editorTools,.palette {
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+}
+.editorTools {padding:0 16px 12px}
+.editorTools button,.regionLinks button {min-height:36px}
+.editorTools button {
+  border:1px solid #607795;
+  border-radius:7px;
+  padding:7px 10px;
+  background:#263955;
+  color:#f3f6ff;
+  font-size:12px;
+  font-weight:700;
+}
+.editorTools button:hover {background:#365477}
+.editorPanel .codeArea {margin-bottom:9px;border:1px solid #455b78;background:#0d192a}
+.codeWorkspace {display:grid;grid-template-columns:3rem minmax(0,1fr)}
+#lineGutter {
+  position:relative;
+  height:clamp(245px,37vh,385px);
+  overflow:hidden;
+  padding:14px 4px;
+  background:#16243a;
+  color:#a9bfdc;
+  text-align:center;
+  font:14px/25px Consolas,monospace;
+}
+#lineGutter span {display:block;border-radius:5px}
+#lineGutter span.current {background:#edcc77;color:#1d2b3f;font-weight:800}
+.editorPanel #editor {
+  height:clamp(245px,37vh,385px);
+  min-height:0;
+  margin:0;
+  padding:14px 12px;
+  resize:none;
+  font:14px/25px Consolas,monospace;
+  background:#0d192a;
+  color:#edf4ff;
+}
+#programActions {justify-content:flex-start;padding:8px 16px 16px}
+.editorPanel .inspector {border-top:1px solid #415574;background:#1b2a41}
+.editorPanel .inspector pre {color:#e0ebfb}
+.editorPanel .inspector>div {border-color:#415574}
+.mapRegion:nth-child(4) {background:#e1eddc;border-color:#709279}
+.mapRegion:nth-child(5) {background:#e5e1f2;border-color:#8275aa}
+.logicGuide {background:#eef2f9;border-radius:10px;padding:12px 16px;margin-bottom:14px}
+.logicGuide h3 {margin:0}
