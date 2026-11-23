@@ -180,3 +180,11 @@ html.sv27-visual-system .choice-option:hover{border-color:#333;background:#f5f5f
  html.sv27-visual-system .concept-card-v2,.sv28-button{transition:none!important;animation:none!important}
  html.sv27-visual-system .concept-card-v2:hover,.sv28-button:hover{transform:none}
 }
+
+/* Preserve title visibility when programmatically scrolling to figures below the sticky toolbar. */
+html.sv27-visual-system .diagram-card-v2,
+html.sv27-visual-system .sv27-workshop-panel{scroll-margin-top:108px}
+@media(max-width:650px){
+ html.sv27-visual-system .diagram-card-v2,
+ html.sv27-visual-system .sv27-workshop-panel{scroll-margin-top:22px}
+}
