@@ -56,6 +56,27 @@ try{
     await page.locator('.integrated-practice .editor-cell').screenshot({path:screenshotsDir+'/'+topic+'-mobile-editor.png'});
    }
   }
+  // Capture richer diagrams with the semantic animation at a meaningful frame.
+  if(size.name==='desktop'){
+   for(const topic of ['position-outliers','data-cleaning','visualization']){
+    await page.goto(base+'/learning/theory.html?topic='+topic,{waitUntil:'domcontentloaded'});
+    const card=page.locator('#diagramGrid .diagram-card-v2').first();
+    await card.locator('.sv28-dock button[aria-label="Next explanation step"]').click();
+    await card.locator('.sv28-dock button[aria-label="Next explanation step"]').click();
+    await card.screenshot({path:screenshotsDir+'/'+topic+'-desktop-motion-stage3.png'});
+   }
+  }
+  // The learning-hub catalog is part of the same responsive learning experience.
+  await page.goto(base+'/learning/',{waitUntil:'domcontentloaded',timeout:45000});
+  await page.waitForFunction(()=>document.querySelectorAll('#topicGrid .topic-card').length===17,
+   null,{timeout:10000});
+  const hubWidth=await page.evaluate(()=>document.documentElement.scrollWidth);
+  console.log('HUB_VISUAL',JSON.stringify({size:size.name,width:hubWidth,viewport:size.width}));
+  if(hubWidth>size.width+3)problems.push('HUB_OVERFLOW '+size.name+' '+hubWidth+'/'+size.width);
+  if(size.name==='desktop'||size.name==='mobile'){
+   await page.locator('.hub-overview').screenshot({path:screenshotsDir+'/hub-'+size.name+'-hero.png'});
+   await page.locator('#topicGrid .topic-card').first().screenshot({path:screenshotsDir+'/hub-'+size.name+'-first-card.png'});
+  }
   await page.close();
  }
  fs.writeFileSync(screenshotsDir+'/audit.json',JSON.stringify({version:'2027',records:report,problems},null,2));
