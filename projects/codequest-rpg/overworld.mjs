@@ -1,10 +1,8 @@
 import * as THREE from 'three';
+import {islandBounds as bounds,islandCrossings as crossings,shore,isIslandWalkable as walkable,pythonWaystations,planIslandRoute,trailDirection} from './island-exploration.mjs';
 
-const bounds={x:153,z:124};
-const crossings=[-76,0,76];
 const river=z=>Math.abs(z)<3.3;
 const bridge=x=>crossings.some(center=>Math.abs(x-center)<2.1);
-const walkable=(x,z)=>shore(x,z)<.91&&(!river(z)||bridge(x));
 const landmarks=[
   [[-13,7],[-6,5],[4,6],[13,7],[14,-1],[7,-4],[-2,-2],[-12,-1],[-14,-10],[-5,-14],[5,-14],[13,-10]],
   [[-11,5],[10,-8]], [[-10,6],[8,-10]],
@@ -28,7 +26,6 @@ const secrets=[
   {id:'bell',x:-14,z:-46,name:'The Buried Bell',note:'Its inscription reads: Every journey begins with a single instruction.'},
   {id:'glass',x:63,z:11,name:'Glass Compass',note:'The needle points toward the furnaces, even when cold.'},
 ];
-const shore=(x,z)=>Math.hypot(x/bounds.x,z/bounds.z);
 const terrain=(x,z)=>.85+1.05*Math.sin(x*.09)*Math.sin(z*.15)+.55*Math.cos(z*.17)+
   summits.reduce((height,peak)=>height+peak.h*Math.max(0,1-Math.hypot(x-peak.x,z-peak.z)/peak.r)**1.45,0);
 const lowCeiling=(x,z)=>Math.abs(x-passage.x)<1.7&&Math.abs(z-passage.z)<2.2;
@@ -37,10 +34,11 @@ const elevation=(x,z)=>river(z)&&bridge(x)?1.15:terrain(x,z);
 const colors=['#528665','#b08656','#528baa','#618850','#71628f','#9b5d47'];
 const controls={ArrowUp:[0,-1],w:[0,-1],ArrowDown:[0,1],s:[0,1],ArrowLeft:[-1,0],a:[-1,0],ArrowRight:[1,0],d:[1,0]};
 
-export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscovery,onTraversal,onPrompt,onDialogue}){
+export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscovery,onTraversal,onPrompt,onDialogue,onWaystation,onTrailChange,onWayfinder}){
   const scene=new THREE.Scene();
   scene.background=new THREE.Color('#b6dfe8');
-  scene.fog=new THREE.FogExp2('#b6dfe8',.006);
+  const landscapeFog=new THREE.FogExp2('#b6dfe8',.006);
+  scene.fog=landscapeFog;
   const follow=new THREE.PerspectiveCamera(49,1,.1,260);
   const survey=new THREE.OrthographicCamera(-1,1,1,-1,.1,400);
   let mapMode=false;
@@ -54,9 +52,15 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   const light=new THREE.DirectionalLight('#fff8de',2.15);
   light.position.set(-7,16,10);
   scene.add(light);
-  const material=color=>new THREE.MeshStandardMaterial({color});
+  const materialCache=new Map(),boxGeometryCache=new Map();
+  const material=color=>{
+    if(!materialCache.has(color))materialCache.set(color,new THREE.MeshStandardMaterial({color}));
+    return materialCache.get(color);
+  };
   function box(width,height,depth,mat,x,y,z){
-    const mesh=new THREE.Mesh(new THREE.BoxGeometry(width,height,depth),mat);
+    const key=width+','+height+','+depth;
+    if(!boxGeometryCache.has(key))boxGeometryCache.set(key,new THREE.BoxGeometry(width,height,depth));
+    const mesh=new THREE.Mesh(boxGeometryCache.get(key),mat);
     mesh.position.set(x,y,z);
     scene.add(mesh);
     return mesh;
@@ -77,7 +81,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     const path=Math.abs(Math.abs(z)-7)<1.2||crossings.some(center=>Math.abs(x-center-1.1*Math.sin(z*.22))<1.25);
     color.copy(path?rock:green).lerp(sand,THREE.MathUtils.smoothstep(edge,.76,.96));
     color.lerp(granite,THREE.MathUtils.smoothstep(vertices.getY(i),3.7,9));
-    color.multiplyScalar(.94+.10*Math.sin(x*1.16+z*.73));
+    color.multiplyScalar(.97+.045*Math.sin(x*.19+z*.13)*Math.cos(x*.29-z*.21));
     shades.push(color.r,color.g,color.b);
   }
   ground.setAttribute('color',new THREE.Float32BufferAttribute(shades,3));
@@ -86,6 +90,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   scene.add(island);
   const wood=material('#a07750'), timber=material('#503c34'), ivory=material('#ddc398');
   const roofMats=['#885d49','#ab7346','#54678d','#526956','#534e6b','#763f3c'].map(material);
+  const roofGeometry=new THREE.ConeGeometry(2.65,1.55,4);
   const glow=new THREE.MeshBasicMaterial({color:'#ffd79a'});
   const lampGeo=new THREE.OctahedronGeometry(.25);
   const waterFoam=new THREE.MeshBasicMaterial({color:'#bce8e9',transparent:true,opacity:.44,depthWrite:false});
@@ -157,10 +162,12 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     return {...secret,gem,y};
   });
   const trunk=material('#645044');
+  const crownGeometryCache=new Map();
   function tree(x,z,scale,tint){
     const y=elevation(x,z);
     box(.31*scale,1.65*scale,.31*scale,trunk,x,y+.8*scale,z);
-    const crown=new THREE.Mesh(new THREE.ConeGeometry(1.1*scale,2.6*scale,6),material(tint));
+    if(!crownGeometryCache.has(scale))crownGeometryCache.set(scale,new THREE.ConeGeometry(1.1*scale,2.6*scale,6));
+    const crown=new THREE.Mesh(crownGeometryCache.get(scale),material(tint));
     crown.position.set(x,y+2.15*scale,z);
     scene.add(crown);
   }
@@ -182,7 +189,49 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     const x=-80+i*2,z=7.25;
     box(1.7,.82,1.5,grain,x,terrain(x,z)+.41,z);
   }
+  const trailDone=new Set();
+  try{
+    const saved=JSON.parse(localStorage.getItem('cq-island-python-trail-v1')||'[]');
+    if(Array.isArray(saved))for(const id of saved){
+      if(pythonWaystations.some(station=>station.id===id))trailDone.add(id);
+    }
+  }catch{}
+  const trailStone=material('#647d85'),trailGold=material('#e9c879');
+  const trailMarkers=pythonWaystations.map((station,index)=>{
+    const y=elevation(station.x,station.z);
+    const pedestal=box(1.85,.44,1.85,trailStone,station.x,y+.20,station.z);
+    box(.92,2.7,.92,trailStone,station.x,y+1.58,station.z);
+    const cap=new THREE.Mesh(new THREE.OctahedronGeometry(.66),new THREE.MeshStandardMaterial({
+      color:trailDone.has(station.id)?'#6a8491':'#ffe19c',emissive:'#a87432',emissiveIntensity:trailDone.has(station.id)?.12:.75
+    }));
+    cap.position.set(station.x,y+3.4,station.z);
+    scene.add(cap);
+    const numeral=label(String(index+1));
+    numeral.position.set(station.x,y+4.9,station.z);
+    scene.add(numeral);
+    pedestal.userData.waystation=station.id;
+    cap.userData.waystation=station.id;
+    return {...station,y,cap,pedestal};
+  });
+  const guideBeam=new THREE.Mesh(new THREE.CylinderGeometry(.12,.12,10,8),
+    new THREE.MeshBasicMaterial({color:'#ffe6a6',transparent:true,opacity:.42,depthWrite:false}));
+  guideBeam.visible=false;
+  scene.add(guideBeam);
+  let activeTrail=null,lastWayfinder='';
+  function trailState(){
+    return {ids:[...trailDone],total:pythonWaystations.length,waypoint:activeTrail?.id??null};
+  }
+  function setWaypoint(id){
+    const station=pythonWaystations.find(item=>item.id===id);
+    activeTrail=station&&activeTrail?.id!==id?station:null;
+    guideBeam.visible=Boolean(activeTrail);
+    if(activeTrail)guideBeam.position.set(activeTrail.x,elevation(activeTrail.x,activeTrail.z)+5,activeTrail.z);
+    if(!activeTrail){lastWayfinder='';onWayfinder?.('');}
+    onTrailChange?.(trailState());
+    return activeTrail?.id??null;
+  }
   const pickables=[],portals=new Map(),keys=new Set();
+  pickables.push(...trailMarkers.flatMap(marker=>[marker.pedestal,marker.cap]));
   const projected=new THREE.Vector3();
   let nearbyGuide;
   const position=new THREE.Vector3();
@@ -209,6 +258,11 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
       target=null;
       waypoints=[];
     }
+  }
+  function setMovementKey(key,pressed){
+    if(!Object.hasOwn(controls,key))return;
+    if(pressed){target=null;waypoints=[];keys.add(key);}
+    else keys.delete(key);
   }
   function adjustCamera(turn=0,scale=1){
     yaw+=turn;
@@ -254,7 +308,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
         const hallZ=z-2.8;
         const floor=elevation(x,hallZ);
         const hall=box(3.45,height,2.6,stone,x,floor+height/2,hallZ);
-        const roof=new THREE.Mesh(new THREE.ConeGeometry(2.65,1.55,4),roofMats[zoneIndex]);
+        const roof=new THREE.Mesh(roofGeometry,roofMats[zoneIndex]);
         roof.rotation.y=Math.PI/4;
         roof.position.set(x,floor+height+.62,hallZ);
         scene.add(roof);
@@ -322,6 +376,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
       if(groundHit&&walkable(groundHit.point.x,groundHit.point.z))routeTo(groundHit.point.x,groundHit.point.z);
       return;
     }
+    if(hit.object.userData.waystation){setWaypoint(hit.object.userData.waystation);return;}
     const room=hit.object.userData.room;
     if(near===room)onEnter(room);
     else travel(room);
@@ -352,18 +407,12 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   canvas.addEventListener('blur',()=>keys.clear());
   function routeTo(x,z){
     waypoints=[];
-    const differentBank=Math.sign(z)!==Math.sign(position.z)&&Math.abs(z)>3.3&&Math.abs(position.z)>3.3;
-    if(Math.abs(position.z)<=3.3){
-      const crossing=crossings.reduce((best,current)=>Math.abs(position.x-current)<Math.abs(position.x-best)?current:best);
-      waypoints.push(new THREE.Vector3(crossing,0,Math.sign(z)*5));
-    }else if(differentBank){
-      const crossing=crossings.reduce((best,current)=>
-        Math.abs(current-position.x)+Math.abs(current-x)<Math.abs(best-position.x)+Math.abs(best-x)?current:best);
-      waypoints.push(new THREE.Vector3(crossing,0,Math.sign(position.z)*5),new THREE.Vector3(crossing,0,Math.sign(z)*5));
+    try{
+      waypoints=planIslandRoute({x:position.x,z:position.z},{x,z}).map(point=>new THREE.Vector3(point.x,0,point.z));
+      target=waypoints.shift()??null;
+    }catch{
+      target=null;
     }
-    if(Math.abs(z)<3.3&&Math.abs(position.z)>3.3)waypoints.push(new THREE.Vector3(x,0,Math.sign(position.z)*5));
-    waypoints.push(new THREE.Vector3(x,0,z));
-    target=waypoints.shift();
   }
   function travel(index){
     const portal=portals.get(index);
@@ -387,6 +436,8 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     baseHeight=hero.scale.y;
     keys.clear();
     near=undefined;
+    activeTrail=null;guideBeam.visible=false;
+    lastWayfinder='';onWayfinder?.('');
     yaw=0;pitch=.62;zoom=1;
     last=0;
     for(const item of portals.values()){
@@ -394,6 +445,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
       item.ring.material.color.set(color);
       item.ring.material.emissive.set(color);
     }
+    onTrailChange?.(trailState());
     look.copy(position).setY(elevation(position.x,position.z));
     frame(performance.now());
   }
@@ -491,6 +543,29 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
         onDiscovery?.(relic,discovered.size,secrets.length);
       }
     }
+    for(const marker of trailMarkers){
+      const found=trailDone.has(marker.id);
+      if(!found){
+        marker.cap.rotation.y=now*.0013;
+        marker.cap.position.y=marker.y+3.4+.13*Math.sin(now*.002+marker.x);
+        if(deck===null&&!climb&&Math.hypot(position.x-marker.x,position.z-marker.z)<2.4&&
+           Math.abs(hero.position.y-marker.y)<1.3){
+          trailDone.add(marker.id);
+          marker.cap.material.color.set('#6a8491');
+          marker.cap.material.emissiveIntensity=.12;
+          try{localStorage.setItem('cq-island-python-trail-v1',JSON.stringify([...trailDone]));}catch{}
+          if(activeTrail?.id===marker.id)setWaypoint(marker.id);
+          onWaystation?.(marker,trailDone.size,pythonWaystations.length);
+          onTrailChange?.(trailState());
+        }
+      }
+    }
+    if(activeTrail){
+      const hint=trailDirection(position,activeTrail);
+      const label=activeTrail.name+' · '+hint.distance+' units · '+hint.bearing;
+      if(label!==lastWayfinder){lastWayfinder=label;onWayfinder?.(label);}
+      guideBeam.material.opacity=.28+.14*Math.sin(now*.0025);
+    }
     hero.userData.legs.forEach((part,i)=>{part.rotation.x=air>0?(i?-.7:-.4):i?swing:-swing});
     hero.userData.arms.forEach((part,i)=>{part.rotation.x=climb?-1.6+(i?swing:-swing):air>0?-.72:i?-swing*.5:swing*.5});
     nearbyGuide=undefined;
@@ -531,10 +606,13 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   function setMapMode(enabled){
     mapMode=enabled;
     camera=enabled?survey:follow;
+    // An overhead camera is far above the terrain: keeping distance fog here
+    // obscures the entire island and makes the survey view unusable.
+    scene.fog=enabled?null:landscapeFog;
   }
   function interact(){
     if(near!==undefined)onEnter(near);
     else if(nearbyGuide)onDialogue?.(nearbyGuide);
   }
-  return {addZones,visit,travel,frame,setMapMode,adjustCamera,action,interact,discoveries:()=>[discovered.size,secrets.length]};
+  return {addZones,visit,travel,frame,setMapMode,adjustCamera,action,setMovementKey,interact,trailState,setWaypoint,discoveries:()=>[discovered.size,secrets.length]};
 }

@@ -1,0 +1,55 @@
+name: CodeQuest Island QA
+on:
+  pull_request:
+    paths:
+      - 'projects/codequest-rpg/**'
+      - 'scripts/qa-codequest*.mjs'
+      - '.github/workflows/qa-codequest-island.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check browser source syntax
+        run: |
+          node --check projects/codequest-rpg/world.js
+          node --check projects/codequest-rpg/overworld.mjs
+          node --check projects/codequest-rpg/island-exploration.mjs
+      - name: Test all CodeQuest room and island mechanics
+        run: |
+          node scripts/qa-codequest.mjs
+          node scripts/qa-codequest-skills.mjs
+          node scripts/qa-codequest-island.mjs
+  browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned browser dependencies
+        run: |
+          npm install --no-save --no-audit --no-fund playwright@1.56.1 three@0.170.0
+          npx playwright install chromium
+      - name: Exercise the actual WebGL adventure
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/codequest-browser.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" || true' EXIT
+          sleep 2
+          node scripts/qa-codequest-browser.mjs
+      - name: Save desktop and mobile visual evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: codequest-island-qa
+          path: qa-codequest/
+          if-no-files-found: ignore
+          retention-days: 7

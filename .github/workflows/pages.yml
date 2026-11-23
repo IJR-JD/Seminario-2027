@@ -52,6 +52,7 @@ jobs:
           node scripts/qa-programming-data.mjs
           node scripts/qa-codequest.mjs
           node scripts/qa-codequest-skills.mjs
+          node scripts/qa-codequest-island.mjs
       - name: Probe original ManimCE MP4 URLs (external availability)
         continue-on-error: true
         run: node scripts/qa-video-urls.mjs
