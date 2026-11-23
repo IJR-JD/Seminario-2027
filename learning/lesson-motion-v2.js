@@ -253,6 +253,7 @@ function mount(fig){
   next.disabled=position===scene.beats.length-1;
   if(position===scene.beats.length-1){finished=true;inst.finished=true;}
   if(!playing||manual)narrated.setAttribute("aria-live",manual?"polite":"off");
+  refreshPlay();
  }
  function refreshPlay(){
   playButton.innerHTML=icon(playing?ic.pause:ic.play)+"<span>"+(playing?"Pause":position===scene.beats.length-1?"Replay":"Play")+"</span>";
