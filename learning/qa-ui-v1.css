@@ -249,3 +249,7 @@ body.source-operations-parity .theory-section-v2{margin-top:clamp(44px,5vw,68px)
 @media(min-width:1151px){
  html.arrays-theory-v34-root .diagram-grid-v2 .diagram-card-v2:first-child{grid-column:1/-1}
 }
+
+/* Multi-part badges in the Pandas module must wrap rather than extend the page. */
+.integrated-practice .problem-topline{display:flex;flex-wrap:wrap;justify-content:flex-start;gap:8px;min-width:0}
+.integrated-practice .problem-topline .badge{white-space:normal;min-width:0;max-width:100%;overflow-wrap:anywhere;line-height:1.45}
