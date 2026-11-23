@@ -285,7 +285,7 @@ function coordinateText(cfg,x,z){
   return 'X '+x+' · Z '+z+(cfg.surfaces?' · H '+surfaceAt(cfg,x,z):'');
 }
 function setActorPosition(x,z){positions={x,z};const cfg=levels[level];actor.position.set(x,cfg.surfaces?surfaceAt(cfg,x,z):0,z);$('coordinateLabel').textContent=coordinateText(cfg,x,z);}
-function resetLevel(preserveEditor=false){conditionUsed=false;logicState={open:new Set(),shield:false};syncLogic();traceLine(0);stopped=true;activeRun++;running=false;$('editor').readOnly=false;const cfg=levels[level];flightFuel=cfg.flightBudget??0;variables={};collected.clear();visited.clear();hasArithmetic=false;actions=0;success=false;setActorPosition(...cfg.start);actor.rotation.y=Math.PI/2;clearPose();actor.visible=true;if(!preserveEditor)$('editor').value=cfg.powers?'# Plan a route with movement and the available abilities.\n\n':'# Write your own movement variables below\n# Each line makes your hero move.\n\n';updateLines();for(const mesh of crystalMeshes)mesh.visible=true;for(const mesh of checkpointMeshes){mesh.traverse(o=>{if(o.material?.color)o.material.color.set('#6887af')})}updateHud();$('variableView').textContent='No variables defined';$('consoleView').textContent='Ready · '+cfg.title;$('nextLevel').hidden=true;$('runCode').disabled=false;status('READY');message('Write code and press Run program.');$('toggleHint').textContent='Show a clue';$('hintText').hidden=true}
+function resetLevel(preserveEditor=false){$('conditionCue').hidden=true;conditionUsed=false;logicState={open:new Set(),shield:false};syncLogic();traceLine(0);stopped=true;activeRun++;running=false;$('editor').readOnly=false;const cfg=levels[level];flightFuel=cfg.flightBudget??0;variables={};collected.clear();visited.clear();hasArithmetic=false;actions=0;success=false;setActorPosition(...cfg.start);actor.rotation.y=Math.PI/2;clearPose();actor.visible=true;if(!preserveEditor)$('editor').value=cfg.powers?'# Plan a route with movement and the available abilities.\n\n':'# Write your own movement variables below\n# Each line makes your hero move.\n\n';updateLines();for(const mesh of crystalMeshes)mesh.visible=true;for(const mesh of checkpointMeshes){mesh.traverse(o=>{if(o.material?.color)o.material.color.set('#6887af')})}updateHud();$('variableView').textContent='No variables defined';$('consoleView').textContent='Ready · '+cfg.title;$('nextLevel').hidden=true;$('runCode').disabled=false;status('READY');message('Write code and press Run program.');$('toggleHint').textContent='Show a clue';$('hintText').hidden=true}
 function updateHud(){const cfg=levels[level];$('setbackHud').hidden=false;$('setbackCount').textContent=setbacks.get(level)??0;$('flightHud').hidden=!cfg.flightBudget;$('flightRange').textContent=flightFuel+' / '+(cfg.flightBudget??0);$('itemHud').hidden=cfg.crystals.length===0;$('itemCount').textContent=collected.size+' / '+cfg.crystals.length}
 function updateLevelUI(){const cfg=levels[level];$('zoneLabel').textContent=(cfg.conditional?'LOGIC WORLDS · ':cfg.powers?'EXPEDITION · ':'CHAPTER 01 · ')+cfg.zone.toUpperCase();$('worldTitle').textContent=cfg.title;$('worldDesc').textContent=cfg.description;$('levelIndex').textContent=String(level+1).padStart(2,'0')+' / '+levels.length;$('missionLabel').textContent=cfg.objective;$('objective').textContent=cfg.objective;$('instruction').textContent=cfg.instruction;$('hintText').textContent=cfg.hint;$('concept').textContent=cfg.concept;
 $('editorContext').textContent=cfg.conditional?'LOGIC · SENSORS':cfg.powers?'EXPEDITION · '+cfg.powers.join(' / '):'CHAPTER 01 · VARIABLES';
@@ -303,28 +303,47 @@ function openMissions(){
   list.replaceChildren();
   const regions=$('regionLinks');
   regions.replaceChildren();
-  let suggestedButton;
   let region;
+  const zones=[];
+  let activeZone;
+  function selectZone(zone,focus=false){
+    for(const entry of zones){
+      entry.section.hidden=entry!==zone;
+      entry.button.setAttribute('aria-pressed',String(entry===zone));
+    }
+    if(focus)zone.button.focus();
+  }
   const addRegion=(name,description)=>{
     const section=document.createElement('section');
     section.className='mapRegion';
-    section.tabIndex=-1;
-    const shortcut=document.createElement('button');
-    shortcut.type='button';
-    shortcut.textContent=name;
-    shortcut.addEventListener('click',()=>{
-      section.focus({preventScroll:true});
-      section.scrollIntoView({block:'nearest'});
-    });
-    regions.append(shortcut);
+    section.hidden=true;
+    const index=zones.length;
+    const button=document.createElement('button');
+    button.type='button';
+    const label=document.createElement('strong');
+    label.textContent=name;
+    const progress=document.createElement('small');
+    button.append(label,progress);
+    const zone={button,section,progress,done:0,total:0};
+    zones.push(zone);
+    button.onclick=()=>selectZone(zone);
+    button.onkeydown=event=>{
+      const step={ArrowLeft:-1,ArrowRight:1,ArrowUp:-3,ArrowDown:3}[event.key];
+      if(!step)return;
+      event.preventDefault();
+      const next=zones[index+step];
+      if(next&&!(Math.abs(step)===1&&Math.floor(index/3)!==Math.floor((index+step)/3)))selectZone(next,true);
+    };
+    regions.append(button);
     const heading=document.createElement('h3');
     heading.textContent=name;
     const note=document.createElement('p');
     note.textContent=description;
-    region=document.createElement('div');
-    region.className='regionRooms';
-    section.append(heading,note,region);
+    const rooms=document.createElement('div');
+    rooms.className='regionRooms';
+    section.append(heading,note,rooms);
     list.append(section);
+    region={zone,rooms};
   };
   levels.forEach((mission,i)=>{
     if(i===0)addRegion('Meadow Trail','Movement variables · 12 rooms');
@@ -362,12 +381,15 @@ function openMissions(){
       }
       picker.close('play');
     });
-    if(available&&(i===recommended||(recommended<0&&i===level)))suggestedButton=button;
-    region.append(button);
+    region.zone.total++;
+    if(completed.has(i))region.zone.done++;
+    if(i===level)activeZone=region.zone;
+    region.rooms.append(button);
   });
+  for(const zone of zones)zone.progress.textContent=zone.done+' / '+zone.total+' complete';
   picker.returnValue='';
   picker.showModal();
-  suggestedButton?.focus();
+  selectZone(activeZone??zones[0],true);
 }
 $('missionPicker').addEventListener('close',()=>{
   if($('missionPicker').returnValue==='play'||!document.activeElement.closest('button')){
@@ -476,6 +498,49 @@ function clearPose(){
 
 function collectCrystal(){const cfg=levels[level];const index=cfg.crystals.findIndex(([x,z])=>x===positions.x&&z===positions.z);if(index<0||collected.has(index))return;collected.add(index);crystalMeshes[index].visible=false;updateHud();banner('CRYSTAL FOUND · '+collected.size+'/'+cfg.crystals.length);log('Crystal '+(index+1)+' collected')}
 function validateSuccess(program){const cfg=levels[level],atGoal=positions.x===cfg.goal[0]&&positions.z===cfg.goal[1],gotItems=collected.size===cfg.crystals.length,gotWaypoints=visited.size===cfg.checkpoints.length,mathOk=!cfg.arithmetic||hasArithmetic;if(atGoal&&gotItems&&gotWaypoints&&mathOk&&(!cfg.conditional||conditionUsed))return true;const reasons=[];if(cfg.conditional&&!conditionUsed)reasons.push('Run at least one if condition');if(!atGoal)reasons.push('Reach ('+cfg.goal.join(', ')+'); currently ('+positions.x+', '+positions.z+')');if(!gotItems)reasons.push('Walk over every crystal');if(!gotWaypoints)reasons.push('Visit all waypoints');if(!mathOk)reasons.push('Use a calculation in a direction value');log('MISSION NOT COMPLETE · '+reasons.join(' · '));message(reasons.join(' · '));return false}
+async function animateCondition(cfg,instruction,expression,pass,branch,runId){
+  const cue=$('conditionCue');
+  const result=$('conditionResult');
+  $('conditionExpression').textContent='Line '+instruction.line+' · '+expression;
+  result.textContent='Scanning…';
+  cue.dataset.result='scan';
+  cue.hidden=false;
+  const [dx,dz]=directions[instruction.direction];
+  const x=positions.x+dx,z=positions.z+dz;
+  const y=(surfaceAt(cfg,x,z)??actor.position.y)+.16;
+  const material=new THREE.MeshBasicMaterial({color:'#8edcff',transparent:true,opacity:.9,depthWrite:false});
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(.37,.035,8,32),material);
+  ring.rotation.x=-Math.PI/2;
+  ring.position.set(x,y,z);
+  scene.add(ring);
+  const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const start=performance.now();
+  try{
+    while(runId===activeRun&&!stopped){
+      const t=Math.min(1,(performance.now()-start)/(reduced?440:700));
+      if(t>=.32&&cue.dataset.result==='scan'){
+        cue.dataset.result=pass?'true':'false';
+        result.textContent=(pass?'TRUE':'FALSE')+' → '+branch;
+        material.color.set(pass?'#69ffb3':'#ffbc73');
+      }
+      if(!reduced){
+        const travel=Math.min(1,t/.32);
+        ring.scale.setScalar(.72+Math.sin(Math.PI*t)*.6);
+        ring.position.x=positions.x+dx*travel;
+        ring.position.z=positions.z+dz*travel;
+        ring.position.y=y+.26*Math.sin(Math.PI*t);
+        ring.material.opacity=.9-.52*t;
+      }
+      if(t===1)break;
+      await new Promise(resolve=>requestAnimationFrame(resolve));
+    }
+  }finally{
+    scene.remove(ring);
+    ring.geometry.dispose();
+    material.dispose();
+  }
+}
+
 async function executeBlock(program,cfg,runId){
   for(const instruction of program){
     if(stopped||runId!==activeRun)return;
@@ -486,8 +551,10 @@ async function executeBlock(program,cfg,runId){
       conditionUsed=true;
       const reading=sense(cfg,logicState,positions,instruction.sensor,instruction.direction);
       const pass=reading!==instruction.negate;
-      log('Line '+line+' · '+instruction.sensor+'('+instruction.direction+') → '+reading+' · '+(pass?'if':'else'));
-      await sleep(170);
+      const expression=(instruction.negate?'not ':'')+instruction.sensor+'('+instruction.direction+')';
+      const branch=pass?'IF':instruction.no.length?'ELSE':'SKIP';
+      log('Line '+line+' · '+expression+' → '+pass+' · '+branch);
+      await animateCondition(cfg,instruction,expression,pass,branch,runId);
       await executeBlock(pass?instruction.yes:instruction.no,cfg,runId);
       continue;
     }
@@ -616,7 +683,7 @@ function updateLevelProgress(){
   $('progressText').textContent=completed.size+' of '+levels.length+' complete';
 }
 
-$('runCode').onclick=run;$('stopCode').onclick=()=>{stopped=true;activeRun++;running=false;setActorPosition(positions.x,positions.z);clearPose();traceLine(0);$('editor').readOnly=false;status('STOPPED');message('Program stopped. Reset or run again.');$('runCode').disabled=false};$('resetWorld').onclick=()=>resetLevel(true);$('nextLevel').onclick=()=>{if(level<levels.length-1&&completed.has(level)){level++;updateLevelUI();store();recenterCamera()}};
+$('runCode').onclick=run;$('stopCode').onclick=()=>{stopped=true;activeRun++;running=false;setActorPosition(positions.x,positions.z);clearPose();traceLine(0);$('conditionCue').hidden=true;$('editor').readOnly=false;status('STOPPED');message('Program stopped. Reset or run again.');$('runCode').disabled=false};$('resetWorld').onclick=()=>resetLevel(true);$('nextLevel').onclick=()=>{if(level<levels.length-1&&completed.has(level)){level++;updateLevelUI();store();recenterCamera()}};
 $('toggleHint').onclick=()=>{const element=$('hintText');element.hidden=!element.hidden;$('toggleHint').textContent=element.hidden?'Show a clue':'Hide clue'};
 const editor=$('editor');
 const gutter=$('lineGutter');
