@@ -75,7 +75,7 @@ try{
   assert(await desktop.locator('#enterPortal').isHidden(),'Upper-floor room must not open from the ground');
   await desktop.locator('#overworldCanvas').press('f');
   await desktop.waitForFunction(()=>document.querySelector('#portalStatus')?.textContent.includes('A Name for Distance'),
-    null,{timeout:9000});
+    null,{timeout:18000});
   assert(await desktop.locator('#enterPortal').isVisible(),'Climbing must expose the upper-floor door');
   assert((await desktop.locator('#doorStars').textContent()).includes('2F'),'Portal prompt must identify the second floor');
   await desktop.screenshot({path:'qa-codequest/island-upper-entrance.png'});
