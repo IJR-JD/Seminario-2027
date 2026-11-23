@@ -275,3 +275,52 @@
   pointer-events:none;
 }
 .mapRegion:nth-child(6) {background:#f1e0d3;border-color:#a56a51}
+
+.overworld {
+  background:radial-gradient(ellipse at 13% 90%,#486c58 0%,transparent 46%),
+    radial-gradient(ellipse at 85% 12%,#38566f 0%,transparent 55%),#1e3640;
+  color:#eef6f6;
+  padding:10px clamp(14px,4vw,28px) 18px;
+}
+.overworld p {margin:.4rem 0 .7rem;font-size:.86rem}
+.overworld .regionLinks {
+  background:transparent;
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px;
+  padding:0;
+}
+.overworld .regionLinks button {
+  background:#ecf3ed;
+  color:#263e35;
+  padding:10px 8px;
+  min-height:66px;
+  border:2px solid transparent;
+}
+.overworld .regionLinks button:nth-child(2) {background:#f4e6c8}
+.overworld .regionLinks button:nth-child(3) {background:#daeaf6}
+.overworld .regionLinks button:nth-child(4) {background:#deeed7}
+.overworld .regionLinks button:nth-child(5) {background:#e9e2f5}
+.overworld .regionLinks button:nth-child(6) {background:#f3dfd5}
+.overworld .regionLinks button[aria-pressed="true"] {border-color:#f0c66f;box-shadow:inset 0 0 0 2px #2a4856}
+.overworld .regionLinks strong,.overworld .regionLinks small {display:block}
+.overworld .regionLinks small {margin-top:4px}
+.missionGrid .mapRegion[hidden],.conditionCue[hidden] {display:none}
+.conditionCue {
+  position:absolute;
+  right:12px;
+  top:12px;
+  display:grid;
+  gap:4px;
+  max-width:calc(100% - 24px);
+  border:1px solid #8edcff;
+  border-radius:8px;
+  background:#13233a;
+  color:#e9f4ff;
+  padding:8px 12px;
+  pointer-events:none;
+}
+.conditionCue[data-result="true"] {border-color:#69ffb3}
+.conditionCue[data-result="true"] strong {color:#69ffb3}
+.conditionCue[data-result="false"] {border-color:#ffbc73}
+.conditionCue[data-result="false"] strong {color:#ffbc73}
