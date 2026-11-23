@@ -460,3 +460,34 @@
 .doorPrompt[hidden] {display:none}
 .islandStatus {position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
 .islandStatus.visible {left:12px;bottom:12px;width:auto;height:auto;clip-path:none;color:white}
+
+.app.appWide {grid-template-columns:minmax(0,2.35fr) minmax(300px,1fr);gap:12px;padding:12px clamp(10px,1.5vw,24px) 30px}
+.appWide .world {height:clamp(525px,78vh,1040px);min-height:0}
+.appWide .worldHeadline {padding:4px 0 8px}
+.appWide .worldHeadline h1 {margin:3px 0;font-size:clamp(24px,3vw,38px)}
+.appWide .worldHud {padding:5px 8px}
+.roomCompass {
+  position:absolute;bottom:8px;left:8px;pointer-events:none;
+  display:grid;grid-template-columns:repeat(2,max-content);gap:4px 10px;
+  padding:7px 9px;border-radius:8px;background:#142634ed;color:#fff;
+  font:600 .72rem ui-monospace,monospace;
+}
+.roomCompass b {display:inline-block;color:#f5cd7d;text-align:center;width:1em}
+.appWide .editorHead {padding:13px 12px 6px}
+.appWide .editorHead strong {font-size:1.04rem}
+.appWide .editorTools {padding:5px 10px 8px}
+.appWide .editorTools button {font-size:.72rem;padding:5px 7px}
+.appWide .editorPanel .codeArea {margin:0 8px 5px}
+.appWide .codeWorkspace {grid-template-columns:2.25rem minmax(0,1fr)}
+.appWide #lineGutter,.appWide .editorPanel #editor {height:clamp(210px,34vh,390px);font-size:.83rem;line-height:22px;padding-top:9px;padding-bottom:9px}
+.appWide .editorPanel #editor {padding-inline:8px}
+.appWide #programActions {padding:6px 8px 7px;gap:5px;flex-wrap:wrap}
+.appWide #programActions button {padding:7px 8px;min-height:38px}
+.appWide .inspector pre {max-height:88px;overflow:auto}
+.roomReturn {padding:8px 12px;margin-top:5px;border-radius:7px}
+.roomReturn[hidden] {display:none}
+@media(max-width:900px){
+  .app.appWide {grid-template-columns:minmax(0,1fr)}
+  .appWide .side {display:flex;flex-direction:column}
+  .appWide .world {height:clamp(380px,65vh,720px)}
+}
