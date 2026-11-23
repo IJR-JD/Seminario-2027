@@ -3,7 +3,7 @@ const course=window.SEMINAR_2027_COURSE||[],target=document.getElementById("topi
 const suffix=window.SEMINAR_2027_TRACK==="statistics"?"&track=statistics":"";
 if(!target)return;
 const safe=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-function previewStages(slug){try{return JSON.parse(sessionStorage.getItem("ijr2027_preview_"+slug)||"[]")}catch{return []}}
+function previewStages(slug){try{return JSON.parse(sessionStorage.getItem("ijr2027_preview_"+(window.SEMINAR_2027_TRACK==="programming"?"coding_":"")+slug)||"[]")}catch{return []}}
 const cards=new Map();
 for(const [i,t] of course.entries()){
  const el=document.createElement("article");el.className="topic-card";el.id="topic-"+t.slug;
@@ -16,7 +16,7 @@ for(const [i,t] of course.entries()){
 const count=document.getElementById("globalCount"), percent=document.getElementById("globalPercent"),bar=document.getElementById("globalBar");
 function paint(items,sourceLabel){
  let total=0;for(const t of course){
- const n=new Set(items[t.slug]||[]).size;total+=n;
+ const valid=new Set(t.exercises.map(stage=>stage.key));const n=new Set((items[t.slug]||[]).filter(key=>valid.has(key))).size;total+=n;
  const card=cards.get(t.slug);card.querySelector(".topic-count").textContent=n+" / 12";
  card.querySelector(".bar span").style.width=Math.round(n/12*100)+"%";
  }
