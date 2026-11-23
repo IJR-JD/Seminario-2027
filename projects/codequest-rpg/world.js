@@ -1,4 +1,5 @@
-import {logicRooms,compileLogic,sense,pulse,logicMove,cellKey} from './logic.mjs';
+import {insertCommand} from './command-editor.mjs';
+import {logicRooms,compileLogic,sense,pulse,logicMove,cellKey,RouteHazard} from './logic.mjs';
 import * as THREE from 'three';
 import {directions,expedition,planMove,surfaceAt} from './expedition.mjs';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
@@ -9,13 +10,15 @@ const levels=[{"title":"The First Steps","zone":"Meadow of Beginnings","theme":"
 const classicCount=levels.length;
 levels.push(...expedition,...logicRooms);
 const logicStart=classicCount+expedition.length;
+const foundryStart=logicStart+4;
 const heroDefaults={name:'Code Explorer',style:'guardian',personality:'brave',skin:'#d7a880',armor:'#48796b',hair:'#292b31',cape:'#b4a27f',hairStyle:'short',accessory:'satchel',height:100,build:100};
 let hero={...heroDefaults},completed=new Set(),level=0,worldGroup,actor,actorParts,goalMesh,crystalMeshes=[],checkpointMeshes=[],tileMeshes=[],activeRun=0,running=false,stopped=false,positions={x:0,z:0},variables={},collected=new Set(),visited=new Set(),actions=0,hasArithmetic=false,success=false,previewActor;
 try{const saved=JSON.parse(localStorage.getItem(STORAGE)||'{}');completed=new Set((saved.completed||[]).filter(i=>Number.isInteger(i)&&i>=0&&i<levels.length));level=clamp(saved.level||0,0,levels.length-1);if(!isAvailable(level))level=0}catch{}
 try{hero={...hero,...JSON.parse(localStorage.getItem(HERO)||'{}')}}catch{}
 function isAvailable(i){
-  return i===0||i===classicCount||i===logicStart||completed.has(i)||completed.has(i-1);
+  return i===0||i===classicCount||i===logicStart||i===foundryStart||completed.has(i)||completed.has(i-1);
 }
+const setbacks=new Map();
 let flightFuel=0, logicState, conditionUsed=false, devices=[];
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const log=m=>{const pre=$('consoleView');pre.textContent=(pre.textContent==='Choose a path to begin.'?'':pre.textContent+'\n')+m;pre.scrollTop=pre.scrollHeight;};
@@ -113,7 +116,7 @@ if(worldGroup){
     if(object.material)materials.add(object.material);
   });
   for(const material of materials)material.dispose();
-}worldGroup=new THREE.Group();scene.add(worldGroup);const palette=colorThemes[cfg.theme];scene.background.set(cfg.conditional?(cfg.zone==='Signal Grove'?'#b7cfbb':'#a6aec9'):cfg.surfaces?(cfg.theme==='citadel'?'#a4cadb':'#daccac'):cfg.theme==='ruins'?'#d8d0bc':cfg.theme==='citadel'?'#c4d1c4':'#bed2ce');
+}worldGroup=new THREE.Group();scene.add(worldGroup);const palette=colorThemes[cfg.theme];scene.background.set(cfg.conditional?(cfg.hazards?'#cca38c':cfg.zone==='Signal Grove'?'#b7cfbb':'#a6aec9'):cfg.surfaces?(cfg.theme==='citadel'?'#a4cadb':'#daccac'):cfg.theme==='ruins'?'#d8d0bc':cfg.theme==='citadel'?'#c4d1c4':'#bed2ce');
 const base=makeMat(palette[2]),grass=[makeMat(palette[0]),makeMat(palette[1]),makeMat(palette[2])],path=makeMat(palette[3]),stone=makeMat('#77877c'),stoneTop=makeMat('#a6b3aa'),trunk=makeMat('#746b50'),leaf=makeMat(cfg.theme==='forest'?'#456c4d':'#57845d');if(!cfg.surfaces)addBox(worldGroup,12,.66,12,base,4,-.45,4);tileMeshes=[];const obstacleSet=new Set(cfg.obstacles.map(p=>key(...p)));const otherUsed=new Set([key(...cfg.start),key(...cfg.goal),...cfg.crystals.map(p=>key(...p)),...cfg.checkpoints.map(p=>key(...p))]);
 const heightAt=(x,z)=>cfg.surfaces?surfaceAt(cfg,x,z):0;
 const islandMaterials=[makeMat('#729589'),makeMat('#86aa9d'),makeMat('#9caa80'),makeMat('#d2b787'),makeMat('#e3cd9e')];
@@ -205,6 +208,17 @@ function addLogicDevices(cfg){
       }
     }
   }
+  if(cfg.traps){
+    const base=makeMat('#683b36',.44);
+    const spike=makeMat('#ff916d',.3);
+    for(const [x,z] of cfg.traps){
+      const y=surfaceAt(cfg,x,z);
+      addBox(worldGroup,.94,.14,.94,base,x,y+.08,z);
+      for(const dx of [-.25,.25])for(const dz of [-.25,.25]){
+        addCyl(worldGroup,.015,.13,.38,spike,x+dx,y+.26,z+dz,4);
+      }
+    }
+  }
   for(const [kind,cells,color] of [['lock',cfg.locks,'#bb81ff'],['sentry',cfg.sentries,'#ff765e']]){
     for(const [x,z] of cells??[]){
       const root=new THREE.Group();
@@ -263,9 +277,9 @@ function coordinateText(cfg,x,z){
 }
 function setActorPosition(x,z){positions={x,z};const cfg=levels[level];actor.position.set(x,cfg.surfaces?surfaceAt(cfg,x,z):0,z);$('coordinateLabel').textContent=coordinateText(cfg,x,z);}
 function resetLevel(preserveEditor=false){conditionUsed=false;logicState={open:new Set(),shield:false};syncLogic();traceLine(0);stopped=true;activeRun++;running=false;$('editor').readOnly=false;const cfg=levels[level];flightFuel=cfg.flightBudget??0;variables={};collected.clear();visited.clear();hasArithmetic=false;actions=0;success=false;setActorPosition(...cfg.start);actor.rotation.y=Math.PI/2;clearPose();actor.visible=true;if(!preserveEditor)$('editor').value=cfg.powers?'# Plan a route with movement and the available abilities.\n\n':'# Write your own movement variables below\n# Each line makes your hero move.\n\n';updateLines();for(const mesh of crystalMeshes)mesh.visible=true;for(const mesh of checkpointMeshes){mesh.traverse(o=>{if(o.material?.color)o.material.color.set('#6887af')})}updateHud();$('variableView').textContent='No variables defined';$('consoleView').textContent='Ready · '+cfg.title;$('nextLevel').hidden=true;$('runCode').disabled=false;status('READY');message('Write code and press Run program.');$('toggleHint').textContent='Show a clue';$('hintText').hidden=true}
-function updateHud(){const cfg=levels[level];$('flightHud').hidden=!cfg.flightBudget;$('flightRange').textContent=flightFuel+' / '+(cfg.flightBudget??0);$('itemHud').hidden=cfg.crystals.length===0;$('itemCount').textContent=collected.size+' / '+cfg.crystals.length}
+function updateHud(){const cfg=levels[level];$('setbackHud').hidden=!cfg.hazards&&!cfg.sentries?.length;$('setbackCount').textContent=setbacks.get(level)??0;$('flightHud').hidden=!cfg.flightBudget;$('flightRange').textContent=flightFuel+' / '+(cfg.flightBudget??0);$('itemHud').hidden=cfg.crystals.length===0;$('itemCount').textContent=collected.size+' / '+cfg.crystals.length}
 function updateLevelUI(){const cfg=levels[level];$('zoneLabel').textContent=(cfg.conditional?'LOGIC WORLDS · ':cfg.powers?'EXPEDITION · ':'CHAPTER 01 · ')+cfg.zone.toUpperCase();$('worldTitle').textContent=cfg.title;$('worldDesc').textContent=cfg.description;$('levelIndex').textContent=String(level+1).padStart(2,'0')+' / '+levels.length;$('missionLabel').textContent=cfg.objective;$('objective').textContent=cfg.objective;$('instruction').textContent=cfg.instruction;$('hintText').textContent=cfg.hint;$('concept').textContent=cfg.concept;
-$('editorContext').textContent=cfg.powers?'EXPEDITION · '+cfg.powers.join(' / '):'CHAPTER 01 · VARIABLES';
+$('editorContext').textContent=cfg.conditional?'LOGIC · SENSORS':cfg.powers?'EXPEDITION · '+cfg.powers.join(' / '):'CHAPTER 01 · VARIABLES';
 $('abilityPanel').hidden=!cfg.powers?.length;
 $('abilityPanel').textContent=cfg.powers?.map(mode=>['pulse','shield'].includes(mode)?mode+'()':mode+'(direction, distance)').join('  ·  ')??'';
 const flags=$('objectiveFlags');flags.innerHTML='';const notes=['Target ('+cfg.goal.join(', ')+')'];if(cfg.obstacles.length)notes.push('Avoid obstacles');if(cfg.crystals.length)notes.push('Collect '+cfg.crystals.length+' crystals');if(cfg.checkpoints.length)notes.push(cfg.ordered?'Relays: '+cfg.checkpoints.map(p=>'('+p.join(', ')+')').join(' → '):'Activate '+cfg.checkpoints.length+' waypoints');if(cfg.arithmetic)notes.push('Use arithmetic');for(const note of notes){const span=document.createElement('span');span.textContent=note;flags.append(span)}
@@ -273,7 +287,7 @@ decorateWorld(cfg);addLogicDevices(cfg);resetLevel();renderEditor();updateLevelP
 function openMissions(){
   const picker=$('missionPicker');
   const next=levels.findIndex((_,i)=>i<classicCount&&!completed.has(i));
-  const recommended=level>=logicStart?levels.findIndex((_,i)=>i>=logicStart&&!completed.has(i)):level>=classicCount?levels.findIndex((_,i)=>i>=classicCount&&i<logicStart&&!completed.has(i)):next;
+  const recommended=level>=foundryStart?levels.findIndex((_,i)=>i>=foundryStart&&!completed.has(i)):level>=logicStart?levels.findIndex((_,i)=>i>=logicStart&&i<foundryStart&&!completed.has(i)):level>=classicCount?levels.findIndex((_,i)=>i>=classicCount&&i<logicStart&&!completed.has(i)):next;
   $('missionHero').textContent=hero.name.trim()||heroDefaults.name;
   $('missionProgress').textContent=completed.size+' of '+levels.length+' missions complete';
   const list=$('levelList');
@@ -309,6 +323,7 @@ function openMissions(){
     if(i===classicCount+2)addRegion('Aether Reach','Flight range and ordered relays');
     if(i===logicStart)addRegion('Signal Grove','Conditions, sensors and prism locks');
     if(i===logicStart+2)addRegion('Clockwork Bastion','Sentinels, shields and nested decisions');
+    if(i===foundryStart)addRegion('Ember Foundry','Pressure spikes, gaps and guarded routes');
     const available=isAvailable(i);
     const button=document.createElement('button');
     button.type='button';
@@ -516,7 +531,9 @@ async function run(){
       updateLevelProgress();
     }else status('TRY AGAIN');
   }catch(error){
-    if(runId===activeRun){
+    if(runId===activeRun&&error instanceof RouteHazard){
+      await resolveHazard(error,runId);
+    }else if(runId===activeRun){
       status('FIX YOUR CODE');
       log('ERROR · '+error.message);
       message(error.message);
@@ -528,6 +545,35 @@ async function run(){
       $('runCode').disabled=false;
     }
   }
+}
+async function resolveHazard(hazard,runId){
+  setbacks.set(level,(setbacks.get(level)??0)+1);
+  updateHud();
+  status(hazard.kind==='fall'?'FALL':'TRAP HIT');
+  message(hazard.message);
+  const origin=actor.position.clone();
+  const landing=new THREE.Vector3(hazard.x,origin.y,hazard.z);
+  const start=performance.now();
+  const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  $('cameraStage').dataset.motion='setback';
+  while(runId===activeRun&&!stopped){
+    const t=Math.min(1,(performance.now()-start)/(reduced?140:700));
+    if(!reduced){
+      actor.position.lerpVectors(origin,landing,Math.min(1,t*2));
+      actor.position.y+=hazard.kind==='fall'?-4.8*t*t:Math.sin(Math.PI*t)*.95;
+      actor.rotation.z=t*(hazard.kind==='fall'?2.6:1.55);
+      actor.rotation.x=t*1.25;
+      for(const arm of actor.userData.arms)arm.rotation.z=t*1.15;
+    }
+    if(t===1)break;
+    await new Promise(resolve=>requestAnimationFrame(resolve));
+  }
+  if(runId!==activeRun||stopped)return;
+  resetLevel(true);
+  status('TRY AGAIN');
+  log('SETBACK · '+hazard.message);
+  message(hazard.message+' Returned to the room entrance. Your code is saved in the editor.');
+  banner('RETURNED TO START');
 }
 function updateLevelProgress(){
   $('progressFill').style.width=(100*completed.size/levels.length)+'%';
@@ -564,19 +610,24 @@ function updateLines(){
 function renderEditor(){
   const cfg=levels[level],palette=$('commandPalette');
   palette.replaceChildren();
-  const snippets=[['↑ Up','up = '],['→ Right','right = '],['↓ Down','down = '],['← Left','left = ']];
-  for(const power of cfg.powers??[])snippets.push([power,['pulse','shield'].includes(power)?power+'()':power+'(direction, distance)']);
-  if(cfg.conditional)snippets.push(['if / else','if clear(right):\n    # action\nelse:\n    # alternate action']);
+  const snippets=[['↑ Up','up = 1'],['→ Right','right = 1'],['↓ Down','down = 1'],['← Left','left = 1']];
+  for(const power of cfg.powers??[])snippets.push([power,['pulse','shield'].includes(power)?power+'()':power+'(right, 1)']);
+  if(cfg.conditional){
+    for(const sensor of ['clear','locked','danger'])snippets.push(['if '+sensor,'if '+sensor+'(right):\n    right = 0']);
+    snippets.push(['if / else','if clear(right):\n    right = 0\nelse:\n    down = 0']);
+  }
   for(const [label,code] of snippets){
     const button=document.createElement('button');
     button.type='button';
     button.textContent=label;
+    button.title=code;
+    button.addEventListener('pointerdown',event=>event.preventDefault());
     button.onclick=()=>{
       if(editor.readOnly)return;
-      const before=editor.value.slice(0,editor.selectionStart);
-      const after=editor.value.slice(editor.selectionEnd);
-      editor.setRangeText((before&&!before.endsWith('\n')?'\n':'')+code+(after&&!after.startsWith('\n')?'\n':''),editor.selectionStart,editor.selectionEnd,'end');
+      const result=insertCommand(editor.value,editor.selectionStart,editor.selectionEnd,code);
+      editor.setRangeText(result.value,0,editor.value.length,'end');
       editor.focus();
+      editor.setSelectionRange(result.start,result.end);
       updateLines();
     };
     palette.append(button);
