@@ -1,4 +1,4 @@
-import {createOverworld} from './overworld.mjs';
+import {createOverworld} from './overworld.mjs?v=island1';
 import {starTargets,starsFor,starsText} from './room-stars.mjs';
 import {insertCommand} from './command-editor.mjs';
 import {logicRooms,compileLogic,sense,pulse,logicMove,cellKey,RouteHazard} from './logic.mjs?v=edgefall1';
@@ -391,6 +391,7 @@ function openMissions(){
     button.addEventListener('click',()=>{
       if(overworld){
         overworld.travel(i);
+        setDirectory(false);
         $('overworldCanvas').focus();
       }else portalEntered(i);
     });
@@ -424,6 +425,23 @@ function openMissions(){
     if(i!==undefined)selectZone(zoneForRoom.get(i));
   };
   enter.onclick=()=>{if(nearby!==undefined)portalEntered(nearby);};
+  const directory=$('islandDirectory'),directoryToggle=$('islandDirectoryToggle');
+  const cameraToggle=$('islandCamera');
+  function setDirectory(open){
+    directory.hidden=!open;
+    directoryToggle.setAttribute('aria-expanded',String(open));
+  }
+  setDirectory(false);
+  directoryToggle.onclick=()=>setDirectory(directory.hidden);
+  cameraToggle.setAttribute('aria-pressed','false');
+  cameraToggle.textContent='Island map';
+  cameraToggle.onclick=()=>{
+    const map=cameraToggle.getAttribute('aria-pressed')!=='true';
+    overworld.setMapMode(map);
+    cameraToggle.setAttribute('aria-pressed',String(map));
+    cameraToggle.textContent=map?'Follow camera':'Island map';
+    $('overworldCanvas').focus();
+  };
   if(!overworld){
     try{
       overworld=createOverworld({canvas:$('overworldCanvas'),stage:$('overworldStage'),makeHero:createHero,
@@ -436,9 +454,13 @@ function openMissions(){
   }
   portalChanged(undefined);
   if(overworld){
+    cameraToggle.hidden=false;
+    overworld.setMapMode(false);
     overworld.visit(level,isAvailable,bestSteps);
     $('overworldCanvas').focus();
   }else{
+    cameraToggle.hidden=true;
+    setDirectory(true);
     $('portalStatus').textContent='3D map unavailable. Select a room below.';
     (activeZone??zones[0]).button.focus();
   }
