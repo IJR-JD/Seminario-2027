@@ -31,7 +31,7 @@ try{
    report.push(row);
    console.log('VISUAL',JSON.stringify({size:size.name,topic,doc:m.documentWidth,vw:m.vw,pageOverflow:m.pageHorizontalOverflow,topbarH:m.topbar?.height,heroW:m.hero?.width,stageH:m.editor?.height,figureScroll:m.figures.filter(x=>x.scrollOverflow).map(x=>x.index),workshopW:m.workshop?.width,sidebarW:m.sidebar?.width,buttonsShort:m.buttonShort.map(x=>x.name),tinyText:m.smallCount}));
    if(m.pageHorizontalOverflow){
-    const culprits=await page.evaluate(()=>[...document.querySelectorAll('body *')].map(e=>({el:e,rect:e.getBoundingClientRect()})).filter(({el,rect})=>rect.width>0&&rect.right>innerWidth+5&&getComputedStyle(el).display!=='none').map(({el,rect})=>({tag:el.tagName,cls:String(el.className||'').slice(0,90),id:el.id||'',right:Math.round(rect.right),left:Math.round(rect.left),width:Math.round(rect.width),scrollWidth:el.scrollWidth,clientWidth:el.clientWidth})).sort((a,b)=>b.right-a.right).slice(0,18));
+    const culprits=await page.evaluate(()=>[...document.querySelectorAll('body *')].map(e=>({el:e,rect:e.getBoundingClientRect()})).filter(({el,rect})=>rect.width>0&&rect.right>innerWidth+5&&getComputedStyle(el).display!=='none'&&!el.closest('.stage-list,.top-actions,.diagram-stage,.p60-mini-table,.p60-code pre')).map(({el,rect})=>({tag:el.tagName,cls:String(el.className||'').slice(0,90),id:el.id||'',right:Math.round(rect.right),left:Math.round(rect.left),width:Math.round(rect.width),scrollWidth:el.scrollWidth,clientWidth:el.clientWidth})).sort((a,b)=>a.right-b.right).slice(0,30));
     console.log('OVERFLOW_DEBUG',JSON.stringify({size:size.name,topic,culprits}));
     problems.push('PAGE_OVERFLOW '+size.name+' '+topic+' '+m.documentWidth+'/'+size.width);
    }
