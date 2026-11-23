@@ -52,9 +52,15 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   const light=new THREE.DirectionalLight('#fff8de',2.15);
   light.position.set(-7,16,10);
   scene.add(light);
-  const material=color=>new THREE.MeshStandardMaterial({color});
+  const materialCache=new Map(),boxGeometryCache=new Map();
+  const material=color=>{
+    if(!materialCache.has(color))materialCache.set(color,new THREE.MeshStandardMaterial({color}));
+    return materialCache.get(color);
+  };
   function box(width,height,depth,mat,x,y,z){
-    const mesh=new THREE.Mesh(new THREE.BoxGeometry(width,height,depth),mat);
+    const key=width+','+height+','+depth;
+    if(!boxGeometryCache.has(key))boxGeometryCache.set(key,new THREE.BoxGeometry(width,height,depth));
+    const mesh=new THREE.Mesh(boxGeometryCache.get(key),mat);
     mesh.position.set(x,y,z);
     scene.add(mesh);
     return mesh;
@@ -75,7 +81,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     const path=Math.abs(Math.abs(z)-7)<1.2||crossings.some(center=>Math.abs(x-center-1.1*Math.sin(z*.22))<1.25);
     color.copy(path?rock:green).lerp(sand,THREE.MathUtils.smoothstep(edge,.76,.96));
     color.lerp(granite,THREE.MathUtils.smoothstep(vertices.getY(i),3.7,9));
-    color.multiplyScalar(.94+.10*Math.sin(x*1.16+z*.73));
+    color.multiplyScalar(.97+.045*Math.sin(x*.19+z*.13)*Math.cos(x*.29-z*.21));
     shades.push(color.r,color.g,color.b);
   }
   ground.setAttribute('color',new THREE.Float32BufferAttribute(shades,3));
@@ -84,6 +90,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   scene.add(island);
   const wood=material('#a07750'), timber=material('#503c34'), ivory=material('#ddc398');
   const roofMats=['#885d49','#ab7346','#54678d','#526956','#534e6b','#763f3c'].map(material);
+  const roofGeometry=new THREE.ConeGeometry(2.65,1.55,4);
   const glow=new THREE.MeshBasicMaterial({color:'#ffd79a'});
   const lampGeo=new THREE.OctahedronGeometry(.25);
   const waterFoam=new THREE.MeshBasicMaterial({color:'#bce8e9',transparent:true,opacity:.44,depthWrite:false});
@@ -155,10 +162,12 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     return {...secret,gem,y};
   });
   const trunk=material('#645044');
+  const crownGeometryCache=new Map();
   function tree(x,z,scale,tint){
     const y=elevation(x,z);
     box(.31*scale,1.65*scale,.31*scale,trunk,x,y+.8*scale,z);
-    const crown=new THREE.Mesh(new THREE.ConeGeometry(1.1*scale,2.6*scale,6),material(tint));
+    if(!crownGeometryCache.has(scale))crownGeometryCache.set(scale,new THREE.ConeGeometry(1.1*scale,2.6*scale,6));
+    const crown=new THREE.Mesh(crownGeometryCache.get(scale),material(tint));
     crown.position.set(x,y+2.15*scale,z);
     scene.add(crown);
   }
@@ -299,7 +308,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
         const hallZ=z-2.8;
         const floor=elevation(x,hallZ);
         const hall=box(3.45,height,2.6,stone,x,floor+height/2,hallZ);
-        const roof=new THREE.Mesh(new THREE.ConeGeometry(2.65,1.55,4),roofMats[zoneIndex]);
+        const roof=new THREE.Mesh(roofGeometry,roofMats[zoneIndex]);
         roof.rotation.y=Math.PI/4;
         roof.position.set(x,floor+height+.62,hallZ);
         scene.add(roof);
