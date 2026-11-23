@@ -149,3 +149,9 @@ assert.throws(()=>logicMove(furnace,hazards,{x:12,z:7},'right',2,'jump',0),{kind
 hazards.shield=true;
 assert.equal(logicMove(furnace,hazards,{x:12,z:7},'right',2,'jump',0).x,14);
 console.log('PASS Foundry: command selection, indentation, safe jumps, spikes, falls and shield interactions.');
+
+assert.equal(interpreter.evaluate(interpreter.compile('right = 53')[0].value,{}),53);
+assert.throws(()=>logicMove(expedition[0],hazards,{x:4,z:6},'right',1,'walk',0),{kind:'fall',x:5,z:6});
+assert.throws(()=>logicMove(expedition[0],hazards,{x:4,z:6},'right',1,'jump',0),{kind:'fall',x:5,z:6});
+assert.throws(()=>logicMove(expedition[0],hazards,{x:4,z:6},'right',53,'jump',0),/distance/);
+console.log('PASS edge falls: long walking input, missing walk/jump landing, and ability range.');

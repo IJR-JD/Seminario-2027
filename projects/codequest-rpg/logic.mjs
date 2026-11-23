@@ -91,7 +91,7 @@ function locked(cfg,state,x,z){
 export function sense(cfg,state,position,sensor,direction){
   const [dx,dz]=directions[direction],x=position.x+dx,z=position.z+dz;
   if(sensor==='locked')return locked(cfg,state,x,z);
-  if(sensor==='danger')return matches(cfg.sentries,x,z)||matches(cfg.traps,x,z)||(cfg.hazards&&surfaceAt(cfg,x,z)===undefined);
+  if(sensor==='danger')return matches(cfg.sentries,x,z)||matches(cfg.traps,x,z)||surfaceAt(cfg,x,z)===undefined;
   try{
     logicMove(cfg,state,position,direction,1,'walk',0);
     return true;
@@ -113,8 +113,8 @@ export function logicMove(cfg,state,position,direction,distance,mode,fuel){
   const targetX=position.x+dx*distance,targetZ=position.z+dz*distance;
   const missing=surfaceAt(cfg,targetX,targetZ)===undefined;
   const inRange=Number.isInteger(distance)&&distance>=1&&distance<={walk:1,jump:3,dash:5,fly:6}[mode];
-  if(cfg.hazards&&missing&&inRange&&(mode==='walk'||(mode==='jump'&&cfg.powers.includes(mode)))){
-    throw new RouteHazard('fall',targetX,targetZ,'The landing is over a gap.');
+  if(missing&&inRange&&(mode==='walk'||(mode==='jump'&&cfg.powers.includes(mode)))){
+    throw new RouteHazard('fall',targetX,targetZ,'No ground at ('+targetX+', '+targetZ+').');
   }
   const path=planMove(cfg,position,direction,distance,mode,fuel);
   for(let step=1;step<=distance;step++){
