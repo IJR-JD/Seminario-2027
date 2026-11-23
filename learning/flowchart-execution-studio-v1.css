@@ -210,7 +210,7 @@
 }
 #flowchartExecutionStudio .fc28-speed select{
  min-width:77px;min-height:39px;padding:7px 8px;border:1px solid #bcbcb7;border-radius:8px;
- background:#fff;color:#171717;font:800 13px/1.3 inherit
+ background:#fff;color:#171717;font-family:inherit;font-size:13px;font-weight:800;line-height:1.3
 }
 #flowchartExecutionStudio .fc28-sequence{display:flex;align-items:center;gap:14px;padding:4px 15px 13px}
 #flowchartExecutionStudio #fc28-step-counter{
