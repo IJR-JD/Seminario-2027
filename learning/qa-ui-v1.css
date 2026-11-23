@@ -202,3 +202,20 @@ body.source-operations-parity .theory-section-v2{margin-top:clamp(44px,5vw,68px)
 @media(prefers-reduced-motion:reduce){
  .code-surface *,.integrated-practice *{scroll-behavior:auto!important;transition:none!important}
 }
+
+/* Pandas 5-column example must never set the document's intrinsic width. */
+.p60-page,.p60-section,.p60-intro,.p60-real,.p60-real-grid,.p60-module,
+.p60-app-grid,.p60-app-card,.p60-compare-grid,.p60-route-grid,.p60-code,
+.p60-mini-table{min-width:0;max-width:100%;box-sizing:border-box}
+.p60-page{width:100%;grid-template-columns:minmax(0,1fr)}
+.p60-mini-table{width:100%;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain}
+.p60-mini-table>div{min-width:650px}
+@media(max-width:1050px){
+ .p60-intro,.p60-module,.p60-real-grid{grid-template-columns:minmax(0,1fr)}
+ .p60-app-grid,.p60-compare-grid,.p60-route-grid{min-width:0}
+}
+@media(max-width:800px){
+ .p60-app-grid,.p60-route-grid,.p60-compare-grid{grid-template-columns:minmax(0,1fr)}
+ .p60-intro-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .p60-real{padding:16px}
+}
