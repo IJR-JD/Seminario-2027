@@ -147,6 +147,23 @@ try{
  await page.waitForFunction(()=>document.querySelectorAll('#diagramGrid .sv27-figure').length===2);
  assert.ok((await page.locator('#theoryTitle').textContent()).includes('Quartiles'));
  console.log('PASS legacy Statistics & Data Science archive retained');
+
+ // Previously completed stages from the archived statistics track must not
+ // inflate programming progress when both curricula reuse a familiar slug.
+ await page.evaluate(()=>{
+  sessionStorage.setItem('ijr2027_preview_algoritmos',JSON.stringify(['alg-01','alg-02']));
+  sessionStorage.setItem('ijr2027_preview_coding_algoritmos',JSON.stringify(['prog-algoritmos-01']));
+ });
+ await visit('algoritmos');
+ await page.waitForFunction(()=>document.querySelector('#topicCount')?.textContent.startsWith('1 / 12'));
+ await page.goto(BASE+'/learning/theory.html?topic=algoritmos&track=statistics',{waitUntil:'domcontentloaded'});
+ await page.waitForFunction(()=>document.querySelector('#topicCount')?.textContent.startsWith('2 / 12'));
+ await page.goto(BASE+'/learning/',{waitUntil:'domcontentloaded'});
+ await page.waitForFunction(()=>document.querySelector('#topic-algoritmos .topic-count')?.textContent==='1 / 12');
+ await page.goto(BASE+'/learning/?track=statistics',{waitUntil:'domcontentloaded'});
+ await page.waitForFunction(()=>document.querySelector('#topic-algoritmos .topic-count')?.textContent==='2 / 12');
+ console.log('PASS archive-programming progress isolation in practice and course catalog');
+
  await page.setViewportSize({width:320,height:720});
  await visit('while-loops');
  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+3));
