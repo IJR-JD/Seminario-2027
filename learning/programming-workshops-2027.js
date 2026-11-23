@@ -80,17 +80,17 @@ variables:[
 ],
 booleans:[
  C("Greater than","Store x=7 and y=4; print whether x>y.","True"),
- C("Equal comparison","Store a=5 and b=8; print a==b.","False"),
+ C("Equal comparison","Define a=5 and b=8, compare them using the equality operator == and print the resulting Boolean.","False"),
  C("Not equal","Print whether 10!=9 using Python.","True"),
  C("AND truth","Set age=19 and has_id=True; print age>=18 and has_id.","True"),
  C("OR truth","Set weekend=False and holiday=True; print weekend or holiday.","True"),
  C("NOT truth","Set ready=False and print not ready.","True"),
  C("Both false","Print the Boolean result of (4>9) and (3<5).","False"),
- C("Chained comparison","Set n=8 and print 1<n<10.","True"),
+ C("Chained comparison","Store n=8, use a chained comparison to check whether it is strictly between 1 and 10, and print the Boolean.","True"),
  C("Membership condition","Set word='Python' and print whether 'th' is in word.","True"),
  C("De Morgan example","Set a=True and b=False and print not(a and b).","True"),
- Q("AND rule","When is a and b True?",["If a alone is True","If at least one value is True","Only when both are True"],2),
- Q("OR rule","When is a or b False?",["When both are False","When either is True","Only when both are True"],0)
+ Q("AND rule","For Boolean variables a and b, in which circumstances does the expression a and b evaluate to True?",["If a alone is True","If at least one value is True","Only when both are True"],2),
+ Q("OR rule","For Boolean variables a and b, in which circumstances does the expression a or b evaluate to False?",["When both are False","When either is True","Only when both are True"],0)
 ],
 conditionals:[
  C("Positive branch","Store n=9 and use if/else to print Positive if n>0, otherwise Non-positive.","Positive"),
