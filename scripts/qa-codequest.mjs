@@ -155,3 +155,15 @@ assert.throws(()=>logicMove(expedition[0],hazards,{x:4,z:6},'right',1,'walk',0),
 assert.throws(()=>logicMove(expedition[0],hazards,{x:4,z:6},'right',1,'jump',0),{kind:'fall',x:5,z:6});
 assert.throws(()=>logicMove(expedition[0],hazards,{x:4,z:6},'right',53,'jump',0),/distance/);
 console.log('PASS edge falls: long walking input, missing walk/jump landing, and ability range.');
+
+const {starTargets,starsFor,starsText}=await import('../projects/codequest-rpg/room-stars.mjs');
+for(let i=0;i<levels.length+expedition.length+logicRooms.length;i++){
+ const {three,two}=starTargets(i);
+ assert(Number.isInteger(three)&&three>0&&two>three);
+ assert.equal(starsFor(i,three),3);
+ assert.equal(starsFor(i,three+1),2);
+ assert.equal(starsFor(i,two),2);
+ assert.equal(starsFor(i,two+1),1);
+}
+assert.equal(starsText(starsFor(0,6)),'★☆☆');
+console.log('PASS room ratings: thresholds for all 22 rooms and all three ratings.');

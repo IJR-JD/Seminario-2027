@@ -324,3 +324,10 @@
 .conditionCue[data-result="true"] strong {color:#69ffb3}
 .conditionCue[data-result="false"] {border-color:#ffbc73}
 .conditionCue[data-result="false"] strong {color:#ffbc73}
+
+#overworldStage {height:clamp(245px,47vh,465px);border:1px solid #729596;border-radius:12px;overflow:hidden;background:#122837}
+#overworldCanvas {width:100%;height:100%;display:block;outline-offset:-3px}
+.portalControls {display:flex;justify-content:space-between;align-items:center;gap:10px;min-height:42px;margin:6px 0}
+.portalControls button {border:0;border-radius:7px;padding:7px 12px;background:#f3ce79;color:#233747;font-weight:700}
+.portalControls button:disabled {opacity:.55}
+#roomRating {color:#57461d;font-size:.83rem;font-weight:700}
