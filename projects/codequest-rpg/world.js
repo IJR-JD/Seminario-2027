@@ -1,4 +1,5 @@
-import {createOverworld} from './overworld.mjs?v=trails1';
+import {createOverworld} from './overworld.mjs?v=pythontrail1';
+import {pythonWaystations} from './island-exploration.mjs';
 import {starTargets,starsFor,starsText} from './room-stars.mjs';
 import {insertCommand} from './command-editor.mjs';
 import {logicRooms,compileLogic,sense,pulse,logicMove,cellKey,RouteHazard} from './logic.mjs?v=edgefall1';
@@ -493,13 +494,60 @@ function openMissions(){
   enter.hidden=true;
   enter.onclick=()=>{overworld?.interact();if(picker.open)$('overworldCanvas').focus();};
   const directory=$('islandDirectory'),directoryToggle=$('islandDirectoryToggle');
+  const trailPanel=$('islandTrailPanel'),trailToggle=$('islandTrailToggle');
+  const trailList=$('islandTrailList');
+  function renderPythonTrail(){
+    if(!overworld)return;
+    const progress=overworld.trailState();
+    const discovered=new Set(progress.ids);
+    $('islandTrailProgress').textContent=discovered.size+' / '+progress.total+' Python Trail';
+    trailList.replaceChildren();
+    for(const station of pythonWaystations){
+      const found=discovered.has(station.id);
+      const entry=document.createElement('article');
+      entry.className='islandTrailEntry';
+      entry.dataset.found=String(found);
+      const heading=document.createElement('h4');
+      heading.textContent=(found?'✓ ':'◇ ')+station.name+' · '+station.concept;
+      const clue=document.createElement('p');
+      clue.textContent=found?station.note:station.clue;
+      const coords=document.createElement('small');
+      coords.textContent='X '+station.x+' · Z '+station.z+(found?' · Discovered':' · Unexplored');
+      const button=document.createElement('button');
+      button.type='button';
+      const selected=progress.waypoint===station.id;
+      button.setAttribute('aria-pressed',String(selected));
+      button.textContent=selected?'Clear waypoint':'Set waypoint';
+      button.onclick=()=>{
+        overworld.setWaypoint(station.id);
+        renderPythonTrail();
+        $('overworldCanvas').focus();
+      };
+      entry.append(heading,clue,coords);
+      if(found){
+        const example=document.createElement('code');
+        example.textContent=station.example;
+        entry.append(example);
+      }
+      entry.append(button);
+      trailList.append(entry);
+    }
+  }
   const cameraToggle=$('islandCamera');
   function setDirectory(open){
     directory.hidden=!open;
     directoryToggle.setAttribute('aria-expanded',String(open));
+    if(open){trailPanel.hidden=true;trailToggle.setAttribute('aria-expanded','false');}
+  }
+  function setTrailPanel(open){
+    trailPanel.hidden=!open;
+    trailToggle.setAttribute('aria-expanded',String(open));
+    if(open){setDirectory(false);renderPythonTrail();}
   }
   setDirectory(false);
+  setTrailPanel(false);
   directoryToggle.onclick=()=>setDirectory(directory.hidden);
+  trailToggle.onclick=()=>setTrailPanel(trailPanel.hidden);
   cameraToggle.setAttribute('aria-pressed','false');
   cameraToggle.textContent='Island map';
   $('islandZoomIn').onclick=()=>{overworld?.adjustCamera(0,1/1.18);$('overworldCanvas').focus();};
@@ -524,6 +572,12 @@ function openMissions(){
         },
         onPrompt:prompt=>portalPrompt(prompt),
         onDialogue:guide=>showIslandToast(guide.name+' · '+guide.line),
+        onTrailChange:()=>renderPythonTrail(),
+        onWayfinder:hint=>{$('islandTrailDistance').textContent=hint;},
+        onWaystation:(station,found,total)=>{
+          showIslandToast('Python Trail '+found+' / '+total+' · '+station.name+' · '+station.note);
+          renderPythonTrail();
+        },
         onDiscovery:(relic,found,total)=>{
           $('islandDiscoveries').textContent=found+' / '+total+' discoveries';
           showIslandToast(relic.name+' · '+relic.note);
@@ -537,14 +591,17 @@ function openMissions(){
   portalChanged(undefined);
   if(overworld){
     cameraToggle.hidden=false;
+    trailToggle.hidden=false;
     const [found,total]=overworld.discoveries();
     $('islandDiscoveries').textContent=found+' / '+total+' discoveries';
     $('islandDiscoveryToast').hidden=true;
     overworld.setMapMode(false);
     overworld.visit(level,isAvailable,bestSteps);
+    renderPythonTrail();
     $('overworldCanvas').focus();
   }else{
     cameraToggle.hidden=true;
+    trailToggle.hidden=true;
     setDirectory(true);
     $('portalStatus').classList.add('visible');
     $('portalStatus').textContent='3D map unavailable. Select a room below.';
