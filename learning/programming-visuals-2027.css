@@ -4,6 +4,8 @@ html.pc27-coding-track .pc27-stage{padding:clamp(13px,2.1vw,25px);background:lin
 html.pc27-coding-track .pc27-figure{width:100%;min-width:0;max-width:100%;background:#fff;border-radius:7px}
 html.pc27-coding-track .pc27-figure svg{max-height:470px;min-height:240px;width:100%;height:auto;border:1px solid #d9d9d6;border-radius:8px;overflow:visible}
 html.pc27-coding-track .pc27-figure svg text{font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;paint-order:stroke fill}
+html.pc27-coding-track .pc27-figure svg text[fill="#dedede"]{fill:#dedede}
+html.pc27-coding-track .pc27-figure svg text[fill="#fff"]{fill:#fff}
 html.pc27-coding-track .pc27-figure .pc27-mono{font-family:ui-monospace,"SFMono-Regular",Consolas,monospace;letter-spacing:.005em}
 html.pc27-coding-track .pc27-figure .sv27-box{transform-origin:center;animation:pc27-introduce .62s cubic-bezier(.2,.8,.25,1) both}
 html.pc27-coding-track .pc27-figure .sv27-box:nth-of-type(2){animation-delay:.16s}
