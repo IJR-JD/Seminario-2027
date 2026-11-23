@@ -276,7 +276,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     ctx.textAlign='center';
     ctx.textBaseline='middle';
     ctx.fillText(text,image.width/2,33);
-    const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(image),depthTest:false}));
+    const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(image),depthTest:zone?false:true}));
     sprite.scale.set(zone?6.4:1.28,.70,1);
     return sprite;
   }
@@ -342,6 +342,8 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
       deck:upper?ladderIndex:null,upper:!!upper,topic,storeys});
     const roomNumber=label(String(roomIndex+1).padStart(2,'0'));
     roomNumber.position.set(x,hallY+height+2.25,hallZ);
+    roomNumber.visible=false; // Follow camera shows only the reachable door's label.
+    portals.get(roomIndex).numberLabel=roomNumber;
     scene.add(roomNumber);
     for(const mesh of [base,ring,hall,roof]){
       mesh.userData.room=roomIndex;
@@ -640,6 +642,9 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     if(closest!==near){
       near=closest;
       onNear(near);
+    }
+    for(const item of portals.values()){
+      item.numberLabel.visible=mapMode||item.index===near;
     }
     if(onPrompt){
       let point;
