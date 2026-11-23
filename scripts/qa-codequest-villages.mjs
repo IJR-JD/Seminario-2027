@@ -58,7 +58,7 @@ const game=readFileSync(resolve(root,'projects/codequest-rpg/overworld.mjs'),'ut
 const logic=readFileSync(resolve(root,'projects/codequest-rpg/world.js'),'utf8');
 const html=readFileSync(resolve(root,'projects/codequest-rpg/index.html'),'utf8');
 for(const required of ['addVillageHouse','roomLocation(zoneIndex,j)','towerFloor(towers[ladderIndex])',
-  'deck===item.deck','portal.upper?2.7','ladderIndex=towers.length','districtMap:']){
+  'deck===item.deck','portal?.upper?2.7','ladderIndex=towers.length','districtMap:']){
   assert(game.includes(required),'World integration missing '+required);
 }
 assert(logic.includes('roomLots=allRoomLocations()'),'Directory not mapped by topic');
