@@ -219,3 +219,15 @@ body.source-operations-parity .theory-section-v2{margin-top:clamp(44px,5vw,68px)
  .p60-intro-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}
  .p60-real{padding:16px}
 }
+
+/* Prevent the horizontal 12-stage rail from contributing its 2,200px
+ * min-content width to the grid track on tablet and phone layouts. */
+.integrated-practice,.integrated-practice .notebook-shell,
+.integrated-practice .notebook-main,.integrated-practice .stage-sidebar,
+.integrated-practice .stage-list{min-width:0;max-width:100%}
+@media(max-width:1080px){
+ .integrated-practice .notebook-shell{grid-template-columns:minmax(0,1fr)}
+ .integrated-practice .stage-sidebar{width:100%;min-width:0;max-width:100%;overflow:hidden}
+ .integrated-practice .stage-list{display:flex;width:100%;min-width:0;max-width:100%;overflow-x:auto;overflow-y:hidden}
+ .integrated-practice .stage{flex-shrink:0}
+}
