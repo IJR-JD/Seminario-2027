@@ -2,7 +2,7 @@ export const directions = {right:[1,0],left:[-1,0],up:[0,-1],down:[0,1]};
 export const abilities = ['jump','dash','fly'];
 const pointKey = (x,z) => x+','+z;
 
-function room(config){
+export function room(config){
   const surfaces = new Map();
   for(const [x0,x1,z0,z1,height] of config.platforms){
     for(let x=x0;x<=x1;x++) for(let z=z0;z<=z1;z++) surfaces.set(pointKey(x,z),height);
