@@ -645,7 +645,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
       onNear(near);
     }
     for(const item of portals.values()){
-      item.numberLabel.visible=mapMode||item.index===near;
+      item.numberLabel.visible=mapMode; // Room names remain in the contextual door prompt.
     }
     if(onPrompt){
       let point;
