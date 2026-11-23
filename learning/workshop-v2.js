@@ -5,12 +5,14 @@ const key=window.SEMINAR_2027_TRACK==="statistics"&&requested==="variables"?"typ
 const lesson=lessons.find(t=>t.slug===key)||lessons[0];
 if(!lesson)return;
 const tasks=lesson.exercises||[];
+const validStageKeys=new Set(tasks.map(task=>task.key));
+const previewKey='ijr2027_preview_'+(window.SEMINAR_2027_TRACK==='programming'?'coding_':'')+lesson.slug;
 const $=id=>document.getElementById(id);
 let stage=0,activeCode={},runResult=null,loading=false,auth=window.IJR_AUTH||null,preview=true;
 let completed=new Set(),source="Vista previa de práctica";
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-function readPreview(){try{return JSON.parse(sessionStorage.getItem("ijr2027_preview_"+lesson.slug)||"[]")}catch{return []}}
-function storePreview(){try{sessionStorage.setItem("ijr2027_preview_"+lesson.slug,JSON.stringify([...completed]))}catch{}}
+function readPreview(){try{const keys=JSON.parse(sessionStorage.getItem(previewKey)||"[]");return Array.isArray(keys)?keys.filter(key=>validStageKeys.has(key)):[]}catch{return []}}
+function storePreview(){try{sessionStorage.setItem(previewKey,JSON.stringify([...completed].filter(key=>validStageKeys.has(key))))}catch{}}
 const sidebar=$("stageList");const editor=$("codeEditor");
 const runButton=$("runButton"),gutter=$("runGutter"),validation=$("validateButton");
 const feedback=$("feedback"),output=$("outputText");
@@ -178,7 +180,7 @@ completed=new Set(readPreview());source="Vista previa temporal";displayStage();
 if(auth){auth.subscribe(async s=>{
  if(s.status!=="verified"){preview=true;completed=new Set(readPreview());source=s.status==="not_configured"?"Supabase aún no configurado":"Vista previa temporal";repaintProgress();return;}
  preview=false;source="Cargando progreso de correo institucional…";repaintProgress();
- try{const p=await auth.progress(lesson.slug);if(auth.state.user?.id!==s.user.id)return;completed=new Set(p);source="Sincronizado con Supabase 2027";}
+ try{const p=await auth.progress(lesson.slug);if(auth.state.user?.id!==s.user.id)return;completed=new Set(p.filter(key=>validStageKeys.has(key)));source="Sincronizado con Supabase 2027";}
  catch(e){completed=new Set();source="Sincronización no disponible: "+e.message;}
  repaintProgress();
  });}
