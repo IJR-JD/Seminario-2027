@@ -124,7 +124,7 @@ try{
  assert.equal(await page.locator('.topic-card:visible').count(),5);
  await page.getByRole('button',{name:'Data science'}).click();
  assert.equal(await page.locator('.topic-card:visible').count(),11);
- await page.getByRole('button',{name:'Project',exact:true}).click();
+ await page.getByRole('button',{name:'Projects',exact:true}).click();
  assert.equal(await page.locator('.topic-card:visible').count(),1);
  await page.getByRole('button',{name:'All topics'}).click();
  await page.locator('#topicSearch').fill('percentiles');
