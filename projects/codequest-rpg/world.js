@@ -1,5 +1,6 @@
 import {createOverworld} from './overworld.mjs?v=pythontrail1';
 import {pythonWaystations} from './island-exploration.mjs';
+import {allRoomLocations} from './island-villages.mjs';
 import {starTargets,starsFor,starsText} from './room-stars.mjs';
 import {insertCommand} from './command-editor.mjs';
 import {logicRooms,compileLogic,sense,pulse,logicMove,cellKey,RouteHazard} from './logic.mjs?v=edgefall1';
@@ -12,6 +13,7 @@ const W=9,H=9;
 const levels=[{"title":"The First Steps","zone":"Meadow of Beginnings","theme":"meadow","start":[1,7],"goal":[3,7],"obstacles":[],"crystals":[],"checkpoints":[],"concept":"01 · One direction","description":"Walk to the glowing beacon.","objective":"Reach X 3 · Z 7","instruction":"Read the starting and target coordinates, then choose a direction and distance.","hint":"Identify the X direction. A single variable assignment moves the hero.","require":[]},{"title":"A Name for Distance","zone":"Meadow of Beginnings","theme":"meadow","start":[1,7],"goal":[5,7],"obstacles":[],"crystals":[],"checkpoints":[],"concept":"02 · Distance as a value","description":"Let a variable decide how far you go.","objective":"Reach X 5 · Z 7","instruction":"Write a single directional variable with a numeric value.","hint":"Compare the starting X and the target X. Choose the matching direction and value.","require":[]},{"title":"The First Turn","zone":"Willow Crossroads","theme":"meadow","start":[1,7],"goal":[4,4],"obstacles":[],"crystals":[],"checkpoints":[],"concept":"03 · Two assignments","description":"A new path bends toward the north.","objective":"Reach X 4 · Z 4","instruction":"Use two directional variables on separate lines.","hint":"Think about the horizontal change and vertical change as two separate assignments.","require":[]},{"title":"Across the Stream","zone":"Willow Crossroads","theme":"river","start":[1,7],"goal":[6,3],"obstacles":[[3,3],[3,4],[3,5],[3,6],[3,7],[3,8]],"crystals":[],"checkpoints":[],"concept":"04 · Order of movement","description":"The river blocks the direct path. Find the bridge at Z 2.","objective":"Cross the bridge and reach the beacon","instruction":"Plan a safe route across the stream using directional assignments.","hint":"Observe where the safe crossing lies. The order of your directional assignments matters.","require":[]},{"title":"Stones in the Valley","zone":"Mossy Passage","theme":"forest","start":[1,7],"goal":[7,3],"obstacles":[[3,7],[3,6],[3,5],[5,2],[5,3],[5,4],[5,5]],"crystals":[],"checkpoints":[],"concept":"05 · Navigating obstacles","description":"Stone walls split the valley into winding passages.","objective":"Find a safe route around stone walls","instruction":"Avoid the stones by dividing the route into several assignments.","hint":"Examine the stone obstacles from above and split the trip into smaller segments.","require":[]},{"title":"Crystals of the Glade","zone":"The Crystal Glade","theme":"forest","start":[1,7],"goal":[7,2],"obstacles":[[4,4],[4,5],[4,6]],"crystals":[[2,5],[6,3]],"checkpoints":[],"concept":"06 · Collect by visiting","description":"The beacon only awakens when both crystals are collected.","objective":"Collect two crystals before reaching the beacon","instruction":"Visit each crystal tile. Collection happens automatically upon arrival.","hint":"Crystals are picked up when the hero walks onto them. Plan to visit both before the beacon.","require":[]},{"title":"The Forest Gate","zone":"Ancient Woodland","theme":"forest","start":[1,7],"goal":[7,1],"obstacles":[[3,5],[3,6],[3,7],[5,2],[5,3],[5,4]],"crystals":[],"checkpoints":[[3,3]],"concept":"07 · Checkpoints","description":"Pass through the waypoint to activate the destination.","objective":"Touch the waypoint, then the beacon","instruction":"Visit the checkpoint before reaching the beacon.","hint":"First visit the marked checkpoint. Then continue toward the destination without crossing walls.","require":[]},{"title":"A Calculated Path","zone":"Sunstone Ruins","theme":"ruins","start":[1,7],"goal":[7,4],"obstacles":[[4,6],[4,7],[5,6],[6,6]],"crystals":[],"checkpoints":[],"concept":"08 · Arithmetic in movement","description":"Build your travel distance from two smaller values.","objective":"Use an arithmetic expression to reach the beacon","instruction":"Use an arithmetic expression to determine a movement distance.","hint":"Use a simple calculation as the numeric value of a direction. Remember that the value is a distance.","require":[],"arithmetic":true},{"title":"The Narrow Pass","zone":"Sunstone Ruins","theme":"ruins","start":[1,7],"goal":[7,1],"obstacles":[[2,4],[3,4],[4,4],[5,4],[6,4],[6,5],[6,6]],"crystals":[],"checkpoints":[[1,3]],"concept":"09 · Repeated direction assignments","description":"Use several short movements to go around the old walls.","objective":"Reach the waypoint and solve the maze","instruction":"Break a long trip into separate directional assignments.","hint":"Look for the open corridor around the barrier. You may reuse a direction on another line.","require":[]},{"title":"The Three Signals","zone":"Valley of Signals","theme":"river","start":[1,7],"goal":[7,2],"obstacles":[[4,4],[4,5],[4,6],[4,7]],"crystals":[[2,5],[5,2],[7,3]],"checkpoints":[],"concept":"10 · Multi-stop paths","description":"Collect three signals distributed across the valley.","objective":"Collect all three signals","instruction":"Collect all signals automatically by walking across their locations.","hint":"Think about each crystal as a stop along the route, not just the final destination.","require":[]},{"title":"The Coordinate Trial","zone":"Highland Observatory","theme":"ruins","start":[1,7],"goal":[7,1],"obstacles":[[3,3],[3,4],[3,5],[3,6],[5,2],[5,3],[5,4]],"crystals":[],"checkpoints":[[2,2],[6,6]],"concept":"11 · Waypoints and planning","description":"Two waypoints. A difficult route. Your variables are the map.","objective":"Activate both waypoints and reach the beacon","instruction":"Reach the checkpoints and destination with a planned sequence of movement variables.","hint":"Plan both checkpoints as intermediate objectives. Longer paths are fine when safe.","require":[]},{"title":"The Last Beacon","zone":"Citadel of Code","theme":"citadel","start":[1,7],"goal":[7,1],"obstacles":[[3,5],[3,6],[3,7],[4,3],[4,4],[4,5],[5,5],[6,5]],"crystals":[[2,3],[7,3]],"checkpoints":[[6,2]],"concept":"12 · Final exploration","description":"The finale combines variables, careful navigation, crystals, and a waypoint.","objective":"Collect both crystals, activate the waypoint and reach the final beacon","instruction":"Build a complete route through the final world. Every objective matters.","hint":"Use the map to plan a complete itinerary through both crystals and the checkpoint.","require":[]}];
 const classicCount=levels.length;
 levels.push(...expedition,...logicRooms);
+const roomLots=allRoomLocations();
 const logicStart=classicCount+expedition.length;
 const foundryStart=logicStart+4;
 const heroDefaults={name:'Code Explorer',style:'guardian',personality:'brave',skin:'#d7a880',armor:'#48796b',hair:'#292b31',cape:'#b4a27f',hairStyle:'short',accessory:'satchel',height:100,build:100};
@@ -435,6 +437,12 @@ function openMissions(){
     title.textContent=mission.title;
     const concept=document.createElement('small');
     concept.textContent=mission.concept.split(' · ').at(-1);
+    const place=roomLots[i];
+    button.dataset.floor=String(place.upper?2:1);
+    button.dataset.topic=place.topic;
+    const building=document.createElement('small');
+    building.className='missionFloor';
+    building.textContent=place.topic+' · '+(place.upper?'Second floor · F to climb':'Ground-floor entrance');
     const state=document.createElement('span');
     state.className='missionState';
     state.textContent=completed.has(i)?'Complete':!available?'Locked':i===recommended?'Play next':'Available';
@@ -442,12 +450,13 @@ function openMissions(){
     const rating=document.createElement('small');
     const {three}=starTargets(i);
     rating.textContent=bestSteps.has(i)?starsText(starsFor(i,bestSteps.get(i)))+' · '+bestSteps.get(i)+' steps':'3★ target: '+three+' steps';
-    details.append(title,concept,state,rating);
+    details.append(title,concept,building,state,rating);
     button.append(number,details);
     button.addEventListener('click',()=>{
       if(overworld){
         overworld.travel(i);
         setDirectory(false);
+        if(roomLots[i].upper)showIslandToast('Second-floor room · Approach the building ladder and press F to climb');
         $('overworldCanvas').focus();
       }else portalEntered(i);
     });
@@ -488,8 +497,8 @@ function openMissions(){
     const room=prompt.room, best=bestSteps.get(room);
     $('doorAction').textContent=room===undefined?'R · Hablar':'Enter para ingresar';
     $('doorTitle').textContent=room===undefined?prompt.guide:levels[room].title;
-    $('doorStars').textContent=room===undefined?'':best===undefined?
-      '☆☆☆ · 3★ en '+starTargets(room).three+' pasos':starsText(starsFor(room,best))+' · '+best+' pasos';
+    $('doorStars').textContent=room===undefined?'':(roomLots[room].upper?'2F · ':'1F · ')+(best===undefined?
+      '☆☆☆ · 3★ en '+starTargets(room).three+' pasos':starsText(starsFor(room,best))+' · '+best+' pasos');
   };
   enter.hidden=true;
   enter.onclick=()=>{overworld?.interact();if(picker.open)$('overworldCanvas').focus();};
