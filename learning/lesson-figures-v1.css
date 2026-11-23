@@ -1,0 +1,53 @@
+/* IJR 2027 · Scientific vector illustrations and unified workshop visuals.
+ * These styles are intentionally topic-independent, including later units.
+ */
+.sv27-visual-system .diagram-grid-v2{grid-template-columns:minmax(0,1fr)}
+.sv27-visual-system .diagram-card-v2{min-width:0;box-shadow:0 8px 28px rgba(0,0,0,.035);overflow:hidden}
+.sv27-visual-system .diagram-card-head{margin-bottom:16px}
+.sv27-visual-system .diagram-card-head h3{font-size:clamp(19px,2vw,27px)}
+.sv27-visual-system .diagram-stage.sv27-stage{display:block;min-height:0;height:auto;padding:20px;background:#f7f7f6;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;scrollbar-gutter:stable}
+.sv27-figure{display:block;min-width:0;max-width:100%;width:100%;margin:0 auto;flex:0 0 auto;color:#151515}
+.sv27-figure svg{display:block;width:100%;height:auto;max-height:440px;min-height:235px;overflow:visible;background:#fff;border:1px solid #dededc}
+.sv27-figure svg text{font-family:Inter,system-ui,-apple-system,"Segoe UI",Arial,sans-serif;fill:#151515}
+.sv27-figure svg text[fill="#fff"],.sv27-figure svg text[fill="#ddd"]{fill:inherit}
+.sv27-figure svg .sv27-box{transform-origin:center center;animation:sv27-appear .55s ease both}
+.sv27-figure svg .sv27-box:nth-of-type(2){animation-delay:.15s}
+.sv27-figure svg .sv27-box:nth-of-type(3){animation-delay:.27s}
+.sv27-figure svg .sv27-box:nth-of-type(4){animation-delay:.4s}
+.sv27-figure svg path[stroke-dasharray]{animation:sv27-dashes 5s linear infinite}
+.sv27-workshop-panel{display:block;min-width:0;max-width:100%;margin:20px 0 14px;border:1px solid #cdcdca;border-radius:12px;background:#fafaf9;overflow:hidden}
+.sv27-workshop-heading{display:flex;align-items:baseline;flex-wrap:wrap;column-gap:14px;row-gap:6px;padding:14px 17px;border-bottom:1px solid #d9d9d6;background:#fff}
+.sv27-workshop-heading>span{font-size:11px;letter-spacing:.11em;font-weight:900;color:#545452}
+.sv27-workshop-heading>strong{font-size:15px;line-height:1.4;font-weight:800;letter-spacing:-.01em;color:#111}
+.sv27-workshop-heading>small{font-size:12px;color:#5e5e5c;flex:1 1 170px;text-align:right;line-height:1.5}
+.sv27-workshop-body{display:block;width:100%;min-width:0;max-width:100%;overflow-x:auto;overflow-y:hidden;padding:12px 16px;scrollbar-gutter:stable;scrollbar-width:thin;overscroll-behavior-x:contain}
+.sv27-workshop-body .sv27-figure{width:min(100%,880px);margin:auto}
+.sv27-workshop-body .sv27-figure svg{max-height:295px;min-height:180px;border:0}
+.sv27-workshop-footer{padding:10px 17px;border-top:1px solid #dededc;background:#fff;font-size:12px;color:#50504e;line-height:1.6}
+.sv27-workshop-panel:focus-within{outline:1px solid #333;outline-offset:1px}
+.sv27-figure.sv27-render-error{font-size:14px;color:#555}
+@keyframes sv27-appear{from{opacity:.1;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+@keyframes sv27-dashes{from{stroke-dashoffset:0}to{stroke-dashoffset:-45}}
+@media(max-width:1050px){
+ .sv27-visual-system .diagram-grid-v2{grid-template-columns:minmax(0,1fr)}
+ .sv27-visual-system .diagram-stage.sv27-stage{padding:14px}
+ .sv27-workshop-heading>small{flex:1 1 100%;text-align:left}
+}
+@media(max-width:650px){
+ .sv27-visual-system .diagram-stage.sv27-stage{padding:9px;scrollbar-width:thin}
+ .sv27-visual-system .diagram-card-v2{padding:12px}
+ .sv27-visual-system .diagram-card-head{padding:5px 3px 0}
+ .sv27-visual-system .diagram-card-head h3{font-size:18px}
+ .sv27-visual-system .diagram-card-head p{font-size:14px;line-height:1.58}
+ .sv27-visual-system .diagram-stage.sv27-stage .sv27-figure{width:700px;min-width:700px;max-width:none}
+ .sv27-workshop-panel{margin-top:15px;border-radius:9px}
+ .sv27-workshop-heading{padding:12px 13px}
+ .sv27-workshop-heading>strong{font-size:14px}
+ .sv27-workshop-body{padding:10px 8px}
+ .sv27-workshop-body .sv27-figure{width:700px;min-width:700px;max-width:none}
+ .sv27-workshop-body .sv27-figure svg{height:auto;min-height:0;max-height:none}
+ .sv27-workshop-footer{padding:10px 12px}
+}
+@media(prefers-reduced-motion:reduce){
+ .sv27-figure svg .sv27-box,.sv27-figure svg path[stroke-dasharray]{animation:none!important}
+}
