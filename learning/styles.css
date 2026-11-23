@@ -17,3 +17,6 @@ button,input,select,textarea{font:inherit}a{color:inherit}code,pre{font-family:"
 
 /* Seminario 2027 V3 — exactly two major learning spaces */
 .choice-grid.two-paths{grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}.choice-grid.two-paths .choice-card{min-height:370px}.choice-grid.two-paths .choice-card h3{font-size:clamp(34px,4.1vw,56px)}@media(max-width:760px){.choice-grid.two-paths{grid-template-columns:1fr}}
+
+/* Browser-Python generated files: accessible, keyboard-operable downloads. */
+.download-files[hidden]{display:none!important}.download-files{display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:12px 16px;border-top:1px solid var(--line);background:#fff}.download-files>span{font-size:12px;font-weight:800}.download-files button{border:1px solid #111;border-radius:999px;background:#fff;color:#111;font-size:12px;font-weight:750;padding:9px 14px;cursor:pointer}.download-files button:hover{background:#eee}.download-files button:disabled{opacity:.55;cursor:wait}
