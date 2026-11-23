@@ -249,6 +249,11 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
       waypoints=[];
     }
   }
+  function setMovementKey(key,pressed){
+    if(!Object.hasOwn(controls,key))return;
+    if(pressed){target=null;waypoints=[];keys.add(key);}
+    else keys.delete(key);
+  }
   function adjustCamera(turn=0,scale=1){
     yaw+=turn;
     zoom=THREE.MathUtils.clamp(zoom*scale,.45,2.2);
@@ -596,5 +601,5 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     if(near!==undefined)onEnter(near);
     else if(nearbyGuide)onDialogue?.(nearbyGuide);
   }
-  return {addZones,visit,travel,frame,setMapMode,adjustCamera,action,interact,trailState,setWaypoint,discoveries:()=>[discovered.size,secrets.length]};
+  return {addZones,visit,travel,frame,setMapMode,adjustCamera,action,setMovementKey,interact,trailState,setWaypoint,discoveries:()=>[discovered.size,secrets.length]};
 }
