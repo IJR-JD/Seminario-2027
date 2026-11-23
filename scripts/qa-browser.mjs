@@ -131,7 +131,7 @@ try{
  assert.equal(await sequence.locator('.sv28-speed').textContent(),'1.5×');
  await sequence.getByRole('button',{name:'Replay animation'}).click();
  assert.equal(await explainer.locator('.sv27-figure').getAttribute('data-motion-step'),'1');
- await sequence.getByRole('button',{name:'Play animation'}).click();
+ await sequence.getByRole('button',{name:'Play animation',exact:true}).click();
  assert.equal(await explainer.locator('.sv27-figure').getAttribute('data-motion-step'),'2');
  assert.equal(await page.locator('.sv28-iqr-bracket').count(),2,
   'IQR visual overlay should be available in Theory and guided Practice');
