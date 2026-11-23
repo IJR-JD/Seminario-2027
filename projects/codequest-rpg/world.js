@@ -70,7 +70,23 @@ controls.maxZoom=2.3;
 controls.maxPolarAngle=Math.PI/2.5;
 
 let cameraMode='3d';
-let frameWidth=1,frameHeight=1;
+let frameWidth=1,frameHeight=1,coordinateGroup,coordinatesVisible=true;
+const compassArrows=[...document.querySelectorAll('[data-axis]')].map(element=>{
+  const [x,z]=directions[element.dataset.axis];
+  return {vector:new THREE.Vector3(x,0,z),arrow:element.firstElementChild};
+});
+const screenDirection=new THREE.Vector3();
+function orientCompass(){
+  for(const {vector,arrow} of compassArrows){
+    screenDirection.copy(vector).transformDirection(camera.matrixWorldInverse);
+    arrow.style.transform='rotate('+Math.atan2(screenDirection.x,screenDirection.y)+'rad)';
+  }
+}
+$('toggleCoordinates').onclick=()=>{
+  coordinatesVisible=!coordinatesVisible;
+  if(coordinateGroup)coordinateGroup.visible=coordinatesVisible;
+  $('toggleCoordinates').setAttribute('aria-pressed',String(coordinatesVisible));
+};
 function recenterCamera(){
   const map=cameraMode==='map';
   controls.enableDamping=false;
@@ -88,7 +104,7 @@ function recenterCamera(){
   const inverseRotation=camera.quaternion.clone().invert();
   frameWidth=0;
   frameHeight=0;
-  for(const x of [-.6,width-.4]) for(const z of [-.6,depth-.4]) for(const y of [0,top+2.9]){
+  for(const x of [-1.55,width+.55]) for(const z of [-1.55,depth+.55]) for(const y of [0,top+2.9]){
     const corner=new THREE.Vector3(x,y,z).sub(controls.target).applyQuaternion(inverseRotation);
     frameWidth=Math.max(frameWidth,Math.abs(corner.x));
     frameHeight=Math.max(frameHeight,Math.abs(corner.y));
@@ -100,7 +116,6 @@ function setCameraMode(mode){
   for(const button of document.querySelectorAll('[data-camera]')){
     button.setAttribute('aria-pressed',String(button.dataset.camera===mode));
   }
-  $('mapDirections').hidden=mode!=='map';
   $('gameCanvas').style.touchAction=mode==='map'?'pan-y':'none';
   $('cameraHelp').textContent=mode==='map'?'Up and right match the movement variables':'Drag to rotate · scroll or pinch to zoom';
   recenterCamera();
@@ -111,6 +126,39 @@ const colorThemes={meadow:['#85ae77','#91b87e','#709c6a','#d3b98c'],river:['#93b
 const key=(x,z)=>x+','+z;
 const heroSeed=(x,z,n)=>Math.abs(Math.sin(x*123.7+z*71.3+n*52.1));
 function lantern(group,x,z){const wood=makeMat('#615846'),glow=makeMat('#f9d88b',.4);addCyl(group,.05,.07,1.2,wood,x,.6,z);addBox(group,.24,.32,.22,glow,x,1.28,z)}
+function addCoordinates(cfg){
+  const width=cfg.width??W,depth=cfg.depth??H;
+  const elevation=cfg.surfaces?Math.max(...cfg.surfaces.values()):0;
+  coordinateGroup=new THREE.Group();
+  coordinateGroup.visible=coordinatesVisible;
+  worldGroup.add(coordinateGroup);
+  function tick(text,x,z,color){
+    const canvas=document.createElement('canvas');
+    canvas.width=128;canvas.height=64;
+    const context=canvas.getContext('2d');
+    context.fillStyle=color;
+    context.fillRect(3,4,122,56);
+    context.fillStyle='#fff';
+    context.font='bold 34px system-ui';
+    context.textAlign='center';
+    context.textBaseline='middle';
+    context.fillText(text,64,32);
+    const texture=new THREE.CanvasTexture(canvas);
+    texture.colorSpace=THREE.SRGBColorSpace;
+    const marker=new THREE.Sprite(new THREE.SpriteMaterial({map:texture,depthWrite:false}));
+    marker.position.set(x,elevation+.12,z);
+    marker.scale.set(.83,.41,1);
+    coordinateGroup.add(marker);
+  }
+  for(let x=0;x<width;x++){
+    tick('X'+x,x,-.95,'#245962');
+    tick('X'+x,x,depth-.05,'#245962');
+  }
+  for(let z=0;z<depth;z++){
+    tick('Z'+z,-.95,z,'#63442f');
+    tick('Z'+z,width-.05,z,'#63442f');
+  }
+}
 function decorateWorld(cfg){
 if(worldGroup){
   const materials=new Set();
@@ -119,7 +167,7 @@ if(worldGroup){
     object.geometry?.dispose();
     if(object.material)materials.add(object.material);
   });
-  for(const material of materials)material.dispose();
+  for(const material of materials){material.map?.dispose();material.dispose();}
 }worldGroup=new THREE.Group();scene.add(worldGroup);const palette=colorThemes[cfg.theme];scene.background.set(cfg.conditional?(cfg.hazards?'#cca38c':cfg.zone==='Signal Grove'?'#b7cfbb':'#a6aec9'):cfg.surfaces?(cfg.theme==='citadel'?'#a4cadb':'#daccac'):cfg.theme==='ruins'?'#d8d0bc':cfg.theme==='citadel'?'#c4d1c4':'#bed2ce');
 const base=makeMat(palette[2]),grass=[makeMat(palette[0]),makeMat(palette[1]),makeMat(palette[2])],path=makeMat(palette[3]),stone=makeMat('#77877c'),stoneTop=makeMat('#a6b3aa'),trunk=makeMat('#746b50'),leaf=makeMat(cfg.theme==='forest'?'#456c4d':'#57845d');if(!cfg.surfaces)addBox(worldGroup,12,.66,12,base,4,-.45,4);tileMeshes=[];const obstacleSet=new Set(cfg.obstacles.map(p=>key(...p)));const otherUsed=new Set([key(...cfg.start),key(...cfg.goal),...cfg.crystals.map(p=>key(...p)),...cfg.checkpoints.map(p=>key(...p))]);
 const heightAt=(x,z)=>cfg.surfaces?surfaceAt(cfg,x,z):0;
@@ -289,7 +337,7 @@ function coordinateText(cfg,x,z){
   return 'X '+x+' · Z '+z+(cfg.surfaces?' · H '+surfaceAt(cfg,x,z):'');
 }
 function setActorPosition(x,z){positions={x,z};const cfg=levels[level];actor.position.set(x,cfg.surfaces?surfaceAt(cfg,x,z):0,z);$('coordinateLabel').textContent=coordinateText(cfg,x,z);}
-function resetLevel(preserveEditor=false){updateRating();$('conditionCue').hidden=true;conditionUsed=false;logicState={open:new Set(),shield:false};syncLogic();traceLine(0);stopped=true;activeRun++;running=false;$('editor').readOnly=false;const cfg=levels[level];flightFuel=cfg.flightBudget??0;variables={};collected.clear();visited.clear();hasArithmetic=false;actions=0;success=false;setActorPosition(...cfg.start);actor.rotation.y=Math.PI/2;clearPose();actor.visible=true;if(!preserveEditor)$('editor').value=cfg.powers?'# Plan a route with movement and the available abilities.\n\n':'# Write your own movement variables below\n# Each line makes your hero move.\n\n';updateLines();for(const mesh of crystalMeshes)mesh.visible=true;for(const mesh of checkpointMeshes){mesh.traverse(o=>{if(o.material?.color)o.material.color.set('#6887af')})}updateHud();$('variableView').textContent='No variables defined';$('consoleView').textContent='Ready · '+cfg.title;$('nextLevel').hidden=true;$('runCode').disabled=false;status('READY');message('Write code and press Run program.');$('toggleHint').textContent='Show a clue';$('hintText').hidden=true}
+function resetLevel(preserveEditor=false){updateRating();$('conditionCue').hidden=true;conditionUsed=false;logicState={open:new Set(),shield:false};syncLogic();traceLine(0);stopped=true;activeRun++;running=false;$('editor').readOnly=false;const cfg=levels[level];flightFuel=cfg.flightBudget??0;variables={};collected.clear();visited.clear();hasArithmetic=false;actions=0;success=false;setActorPosition(...cfg.start);actor.rotation.y=Math.PI/2;clearPose();actor.visible=true;if(!preserveEditor)$('editor').value=cfg.powers?'# Plan a route with movement and the available abilities.\n\n':'# Write your own movement variables below\n# Each line makes your hero move.\n\n';updateLines();for(const mesh of crystalMeshes)mesh.visible=true;for(const mesh of checkpointMeshes){mesh.traverse(o=>{if(o.material?.color)o.material.color.set('#6887af')})}updateHud();$('variableView').textContent='No variables defined';$('consoleView').textContent='Ready · '+cfg.title;$('nextLevel').hidden=true;$('returnToIsland').hidden=true;$('runCode').disabled=false;status('READY');message('Write code and press Run program.');$('toggleHint').textContent='Show a clue';$('hintText').hidden=true}
 function updateHud(){const cfg=levels[level];$('setbackHud').hidden=false;$('setbackCount').textContent=setbacks.get(level)??0;$('flightHud').hidden=!cfg.flightBudget;$('flightRange').textContent=flightFuel+' / '+(cfg.flightBudget??0);$('itemHud').hidden=cfg.crystals.length===0;$('itemCount').textContent=collected.size+' / '+cfg.crystals.length}
 function updateRating(steps){
   const best=bestSteps.get(level);
@@ -303,7 +351,7 @@ $('editorContext').textContent=cfg.conditional?'LOGIC · SENSORS':cfg.powers?'EX
 $('abilityPanel').hidden=!cfg.powers?.length;
 $('abilityPanel').textContent=cfg.powers?.map(mode=>['pulse','shield'].includes(mode)?mode+'()':mode+'(direction, distance)').join('  ·  ')??'';
 const flags=$('objectiveFlags');flags.innerHTML='';const notes=['Target ('+cfg.goal.join(', ')+')'];if(cfg.obstacles.length)notes.push('Avoid obstacles');if(cfg.crystals.length)notes.push('Collect '+cfg.crystals.length+' crystals');if(cfg.checkpoints.length)notes.push(cfg.ordered?'Relays: '+cfg.checkpoints.map(p=>'('+p.join(', ')+')').join(' → '):'Activate '+cfg.checkpoints.length+' waypoints');if(cfg.arithmetic)notes.push('Use arithmetic');for(const note of notes){const span=document.createElement('span');span.textContent=note;flags.append(span)}
-decorateWorld(cfg);addLogicDevices(cfg);resetLevel();renderEditor();updateLevelProgress()}
+decorateWorld(cfg);addCoordinates(cfg);addLogicDevices(cfg);resetLevel();renderEditor();updateLevelProgress()}
 function showIslandToast(message){
   const toast=$('islandDiscoveryToast');
   toast.textContent=message;
@@ -508,6 +556,8 @@ $('missionPicker').addEventListener('close',()=>{
     $('openMissions').focus();
   }
 });
+
+$('returnToIsland').onclick=openMissions;
 
 function store(){try{localStorage.setItem(STORAGE,JSON.stringify({completed:[...completed],level,bestSteps:Object.fromEntries(bestSteps)}))}catch{}}
 function checkWaypoint(){const cfg=levels[level];cfg.checkpoints.forEach(([x,z],i)=>{if(x===positions.x&&z===positions.z&&!visited.has(i)){if(cfg.ordered&&i!==visited.size){log('Relay '+(i+1)+' is out of order. Visit relay '+(visited.size+1)+' first.');return;}visited.add(i);checkpointMeshes[i].traverse(o=>{if(o.material?.color)o.material.color.set('#66bd89')});banner('WAYPOINT ACTIVATED');log('Waypoint '+(i+1)+' activated')}})}
@@ -723,7 +773,7 @@ async function run(){
       banner('LEVEL COMPLETE!');
       status('MISSION COMPLETE');
       message(starsText(starsFor(level,actions))+' · '+actions+' steps. All objectives verified.');
-      $('nextLevel').hidden=level===levels.length-1;
+      $('nextLevel').hidden=level===levels.length-1;$('returnToIsland').hidden=false;
       updateLevelProgress();
     }else status('TRY AGAIN');
   }catch(error){
@@ -916,4 +966,4 @@ if($('missionPicker').open&&overworld){overworld.frame(performance.now());return
 for(const device of devices){
   device.rotor.rotation.y=t*(device.kind==='sentry'?2:.8);
   device.rotor.position.y=.68+Math.sin(t*2+device.x)*.15;
-}if(actor&&!running){actor.position.y=(levels[level].surfaces?surfaceAt(levels[level],positions.x,positions.z):0)+.035*Math.sin(t*(hero.personality==='playful'?4:2));actor.userData.cape.rotation.x=.12+.035*Math.sin(t*2)}if(goalMesh){goalMesh.children[0].rotation.z+=.008;goalMesh.children[goalMesh.children.length-1].position.y=.97+.08*Math.sin(t*2)}for(const c of crystalMeshes)if(c.visible){c.rotation.y+=.015;c.position.y=c.userData.baseY+.075*Math.sin(t*3+c.userData.i)}controls.update();renderer.render(scene,camera);if(previewRenderer&&!$('heroOverlay').hidden){const host=$('heroPreview'),w=host.clientWidth,h=host.clientHeight;if(w&&h){previewRenderer.setSize(w,h,false);previewCamera.aspect=w/h;previewCamera.updateProjectionMatrix();if(previewActor)previewActor.rotation.y+=.012;previewRenderer.render(previewScene,previewCamera)}}}animate();
+}if(actor&&!running){actor.position.y=(levels[level].surfaces?surfaceAt(levels[level],positions.x,positions.z):0)+.035*Math.sin(t*(hero.personality==='playful'?4:2));actor.userData.cape.rotation.x=.12+.035*Math.sin(t*2)}if(goalMesh){goalMesh.children[0].rotation.z+=.008;goalMesh.children[goalMesh.children.length-1].position.y=.97+.08*Math.sin(t*2)}for(const c of crystalMeshes)if(c.visible){c.rotation.y+=.015;c.position.y=c.userData.baseY+.075*Math.sin(t*3+c.userData.i)}controls.update();camera.updateMatrixWorld();orientCompass();renderer.render(scene,camera);if(previewRenderer&&!$('heroOverlay').hidden){const host=$('heroPreview'),w=host.clientWidth,h=host.clientHeight;if(w&&h){previewRenderer.setSize(w,h,false);previewCamera.aspect=w/h;previewCamera.updateProjectionMatrix();if(previewActor)previewActor.rotation.y+=.012;previewRenderer.render(previewScene,previewCamera)}}}animate();
