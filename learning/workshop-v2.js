@@ -15,7 +15,10 @@ const sidebar=$("stageList");const editor=$("codeEditor");
 const runButton=$("runButton"),gutter=$("runGutter"),validation=$("validateButton");
 const feedback=$("feedback"),output=$("outputText");
 if(!document.getElementById("theoryTitle"))document.title="Workshop · "+lesson.title+" · Seminario 2027";
-$("theoryReturn").href="theory.html?topic="+encodeURIComponent(lesson.slug);
+// The 12-stage workshop is embedded inside Theory as well as on its legacy standalone URL.
+// The embedded layout has no separate theoryReturn anchor.
+const theoryReturn=$("theoryReturn");
+if(theoryReturn)theoryReturn.href="theory.html?topic="+encodeURIComponent(lesson.slug);
 function set(id,s){const e=$(id);if(e)e.textContent=String(s??"")}
 function repaintProgress(){
  const done=completed.size;set("topicPercent",Math.round(done*100/12)+"%");
@@ -84,6 +87,31 @@ async function execute(){
  finally{setBusy(false)}
 }
 function norm(s){return String(s??"").replace(/\r/g,"").trim().replace(/[ \t]+$/gm,"")}
+// Accept equivalent numeric representations and Python container representations while
+// retaining strict comparisons for text, booleans and different container types.
+function comparable(line){
+ const s=line.trim();
+ if(/^[-+]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][-+]?\\d+)?$/.test(s))return {type:"number",value:Number(s)};
+ const tuple=s.startsWith("(")&&s.endsWith(")");
+ if(tuple||((s.startsWith("[")&&s.endsWith("]"))||(s.startsWith("{")&&s.endsWith("}")))){
+  try{
+   const json=(tuple?"["+s.slice(1,-1)+"]":s).replace(/'/g,'"').replace(/\\bTrue\\b/g,"true").replace(/\\bFalse\\b/g,"false").replace(/\\bNone\\b/g,"null");
+   const parsed=JSON.parse(json);
+   const canonical=value=>Array.isArray(value)?value.map(canonical):value&&typeof value==="object"?Object.fromEntries(Object.entries(value).sort(([a],[b])=>a.localeCompare(b)).map(([k,v])=>[k,canonical(v)])):value;
+   return {type:tuple?"tuple":"container",value:JSON.stringify(canonical(parsed))};
+  }catch{return {type:"text",value:s};}
+ }
+ return {type:"text",value:s};
+}
+function outputMatches(expected,actual){
+ const a=norm(expected),b=norm(actual);
+ if(a===b)return true;
+ const la=a.split("\\n"),lb=b.split("\\n");if(la.length!==lb.length)return false;
+ return la.every((line,i)=>{
+  const x=comparable(line),y=comparable(lb[i]);if(x.type!==y.type)return false;
+  return x.type==="number"?Number.isFinite(x.value)&&Number.isFinite(y.value)&&Math.abs(x.value-y.value)<=1e-9*Math.max(1,Math.abs(x.value)):x.value===y.value;
+ });
+}
 async function complete(){
  const task=tasks[stage];completed.add(task.key);
  if(preview){storePreview();source="Vista previa temporal";repaintProgress();return;}
@@ -105,20 +133,18 @@ async function validate(){
    else{set("outputText","Respuesta seleccionada: "+task.choices[Number(checked.value)]);status("Esta opción no coincide con la respuesta esperada. Revisa Theory e inténtalo nuevamente.");}
   }else{
    set("outputText","Respuesta elegida: "+task.choices[Number(checked.value)]);
-   status("Pregunta registrada para discusión: esta etapa requiere revisión docente, no autocorrección.",true);
-   await complete();
+   status("Esta pregunta no tiene una respuesta de referencia configurada. No se marcará como validada; solicita revisión docente.");
   }
   return;
  }
  if(!runResult||runResult.key!==task.key||runResult.code!==editor.value){status("Ejecuta esta versión del código con ▶ Run antes de validar.");return;}
  const expected=checks.outputs?.[task.key];
  if(typeof expected==="string"){
-  const correct=norm(expected)===norm(runResult.output);
+  const correct=outputMatches(expected,runResult.output);
   if(correct){status("✓ Salida comprobada automáticamente. Etapa validada.",true);await complete();}
   else status("La salida no coincide con el resultado esperado. Revisa entradas, procedimiento y sintaxis. Inténtalo de nuevo.");
  }else{
-  status("✓ El código se ejecutó sin error. Esta práctica queda registrada como realizada, no como respuesta verificada: requiere revisión docente.",true);
-  await complete();
+  status("La celda se ejecutó, pero esta actividad no tiene una rúbrica automática configurada. No se marcará como validada; solicita revisión docente.");
  }
 }
 function navigate(i){if(loading||i<0||i>=tasks.length)return;activeCode[tasks[stage].key]=editor.value;stage=i;displayStage();(document.getElementById("practice")||document.documentElement).scrollIntoView({block:"start",behavior:"smooth"});}
