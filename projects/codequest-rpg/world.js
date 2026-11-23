@@ -852,7 +852,7 @@ function resize(){
 recenterCamera();
 new ResizeObserver(resize).observe($('cameraStage'));
 const clock=new THREE.Clock();function animate(){requestAnimationFrame(animate);const t=clock.getElapsedTime();
-if($('missionPicker').open&&overworld)overworld.frame(performance.now());
+if($('missionPicker').open&&overworld){overworld.frame(performance.now());return;}
 for(const device of devices){
   device.rotor.rotation.y=t*(device.kind==='sentry'?2:.8);
   device.rotor.position.y=.68+Math.sin(t*2+device.x)*.15;
