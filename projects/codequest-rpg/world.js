@@ -519,8 +519,9 @@ function openMissions(){
       button.setAttribute('aria-pressed',String(selected));
       button.textContent=selected?'Clear waypoint':'Set waypoint';
       button.onclick=()=>{
-        overworld.setWaypoint(station.id);
+        const active=overworld.setWaypoint(station.id);
         renderPythonTrail();
+        if(active)setTrailPanel(false); // Reveal the 3D route immediately after selection.
         $('overworldCanvas').focus();
       };
       entry.append(heading,clue,coords);
