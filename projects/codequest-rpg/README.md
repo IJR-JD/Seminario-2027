@@ -15,7 +15,7 @@ Integrated in the institutional Seminario 2027 project.
 
 **All classes:** Quick Dash and Barrier Pulse.
 
-The studio uses a separate Three.js scene and deterministic animation timelines. The player can change classes, replay or pause the current skill, adjust speed, orbit the camera and customize appearance. The character shares the same stored colors and style as the movement adventure. The previews are procedural motion effects, not skeletal rigged animations; skills currently have **no collision, damage or AI logic**, and they do not run inside the first 12 movement levels.
+Each class has a foundation and two branches. All nodes are available for exploration and completed previews are tracked locally. The studio uses a separate Three.js scene with articulated procedural characters and deterministic animation timelines. The player can change classes, replay or pause the current skill, adjust speed, scrub to a specific moment, orbit the camera and customize appearance. The timing panel displays actual keyframe, phase and impact values from `skill-motion.js`. The character shares the same stored colors and style as the movement adventure. Procedural rigs animate the torso, head, shoulders, elbows, hips, knees and cape. Impacts are scripted studio cues. The first 12 movement levels use their original interpreter.
 
 ## Learning progression
 
@@ -24,6 +24,6 @@ Chapter 01 remains unchanged: students program movement using only \`up = 1\`, \
 ## Quality assurance
 
 \`node scripts/qa-codequest.mjs\` validates the initial movement chapter.
-\`node scripts/qa-codequest-skills.mjs\` validates studio source, navigation, skill availability and JavaScript syntax.
+\`node scripts/qa-codequest-skills.mjs\` validates studio source, navigation, skill availability, motion continuity, event timing and JavaScript syntax.
 
 Three.js is imported from a CDN. Real-browser visual motion and mobile performance tests are still needed.
