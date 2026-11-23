@@ -437,3 +437,26 @@
   font-weight:700;
 }
 .islandTools button[aria-label^="Zoom"] {min-width:44px;font-size:1.1rem}
+
+#overworldCanvas {touch-action:none}
+.doorPrompt {
+  position:absolute;
+  z-index:3;
+  transform:translate(-50%,-100%);
+  display:grid;
+  justify-items:center;
+  gap:2px;
+  max-width:min(245px,80%);
+  padding:7px 11px;
+  border:1px solid #daba7b;
+  border-radius:7px;
+  background:#142634f2;
+  color:#fff4db;
+  box-shadow:0 4px 15px #0c1b26a8;
+  font:inherit;
+}
+.doorPrompt span,.doorPrompt small {font-size:.74rem;color:#f5cf7f}
+.doorPrompt strong {font-size:.83rem}
+.doorPrompt[hidden] {display:none}
+.islandStatus {position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+.islandStatus.visible {left:12px;bottom:12px;width:auto;height:auto;clip-path:none;color:white}
