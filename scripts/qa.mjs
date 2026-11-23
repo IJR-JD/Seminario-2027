@@ -74,7 +74,7 @@ assert.deepEqual(choiceOptions,['OPTION 01','OPTION 02'],'Homepage must show exa
 assert.ok(root.includes('href="projects/"'),'Home page has no project entrance');
 assert.ok(root.includes('class="choice-grid two-paths"'),'Two-column home layout missing');
 assert.ok(!root.includes('OPTION 03'),'Third main option must be removed');
-assert.ok(hub.includes('One topic. One complete learning space.'),'Topic catalogue must not split theory and workshop');
+assert.ok(hub.includes('Build real programming skills, step by step.')&&hub.includes('track=statistics'),'Topic catalogue must not split theory and workshop');
 const hubCode=read('learning/hub-v2.js');
 assert.ok(!hubCode.includes('02 · Workshop'),'Standalone workshop option still shown');
 assert.ok(hubCode.includes('Open Theory + 12 guided exercises'),'Theory card must include integrated practice');
