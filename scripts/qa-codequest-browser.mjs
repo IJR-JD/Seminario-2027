@@ -1,0 +1,77 @@
+/* Real browser QA for the optional CodeQuest Python Trail.
+   Runs against locally served PR files, with pinned local Three.js imports. */
+import assert from 'node:assert/strict';
+import {mkdirSync} from 'node:fs';
+import {resolve} from 'node:path';
+import {chromium} from 'playwright';
+
+const origin=process.env.QA_BASE||'http://127.0.0.1:8765';
+const url=origin+'/projects/codequest-rpg/';
+mkdirSync('qa-codequest',{recursive:true});
+const browser=await chromium.launch({
+  headless:true,
+  args:['--no-sandbox','--enable-webgl','--use-angle=swiftshader','--enable-unsafe-swiftshader']
+});
+const errors=[];
+async function prepare(page){
+  page.on('pageerror',error=>errors.push(String(error.message||error)));
+  await page.route('https://cdn.jsdelivr.net/npm/three@0.170.0/**',route=>{
+    const location=route.request().url();
+    const relative=location.split('/three@0.170.0/')[1];
+    if(!relative||relative.includes('..'))return route.abort();
+    return route.fulfill({path:resolve('node_modules/three',relative),contentType:'application/javascript'});
+  });
+}
+async function openIsland(page){
+  await page.goto(url,{waitUntil:'domcontentloaded',timeout:45000});
+  await page.waitForFunction(()=>document.querySelector('#commandPalette')?.children.length>0,null,{timeout:30000});
+  await page.locator('#continueAdventure').click();
+  await page.locator('#missionPicker[open]').waitFor({timeout:15000});
+  await page.waitForFunction(()=>document.querySelector('#islandTrailProgress')?.textContent.includes('5 Python Trail'),null,{timeout:15000});
+  assert(await page.locator('#overworldStage').isVisible(),'WebGL island must render, not fall back to text list');
+  assert((await page.locator('#overworldCanvas').evaluate(canvas=>canvas.width))>0,'WebGL canvas has no width');
+}
+try{
+  const desktop=await browser.newPage({viewport:{width:1440,height:900}});
+  await prepare(desktop);
+  await openIsland(desktop);
+  await desktop.locator('#islandTrailToggle').click();
+  assert.equal(await desktop.locator('#islandTrailList .islandTrailEntry').count(),5,'Five Atlas entries');
+  await desktop.locator('#islandTrailList button').first().click();
+  assert.equal(await desktop.locator('#islandTrailList button').first().getAttribute('aria-pressed'),'true');
+  await desktop.waitForFunction(()=>document.querySelector('#islandTrailDistance')?.textContent.includes('Variable Spring'));
+  await desktop.locator('#islandCamera').click();
+  assert.equal(await desktop.locator('#islandCamera').getAttribute('aria-pressed'),'true','Map mode toggles');
+  await desktop.screenshot({path:'qa-codequest/island-desktop.png'});
+  await desktop.locator('#islandTrailToggle').click();
+  await desktop.locator('#islandDirectoryToggle').click();
+  assert.equal(await desktop.locator('#levelList .missionCard').count(),22,'All 22 existing room doors remain in directory');
+  await desktop.evaluate(()=>localStorage.setItem('cq-island-python-trail-v1',JSON.stringify(['variable-spring'])));
+  await desktop.reload({waitUntil:'domcontentloaded'});
+  await desktop.waitForFunction(()=>document.querySelector('#commandPalette')?.children.length>0);
+  await desktop.locator('#continueAdventure').click();
+  await desktop.locator('#islandTrailToggle').click();
+  assert((await desktop.locator('#islandTrailProgress').textContent()).includes('1 / 5'),'Discovery survives reload');
+  assert((await desktop.locator('#islandTrailList .islandTrailEntry').first().textContent()).includes('distance = 4'),'Found landmark unlocks Python example');
+  await desktop.close();
+
+  const mobile=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
+  await prepare(mobile);
+  await openIsland(mobile);
+  const forward=mobile.locator('#islandDpad [data-walk="ArrowUp"]');
+  assert(await forward.isVisible(),'Touch D-pad should be visible on coarse pointers');
+  const box=await forward.boundingBox();
+  await mobile.mouse.move(box.x+box.width/2,box.y+box.height/2);
+  await mobile.mouse.down();
+  assert.equal(await forward.getAttribute('data-active'),'true','Held pointer activates movement');
+  await mobile.mouse.up();
+  assert.equal(await forward.getAttribute('data-active'),'false','Released pointer stops movement');
+  await mobile.locator('#islandTrailToggle').click();
+  assert.equal(await mobile.locator('#islandTrailList .islandTrailEntry').count(),5);
+  await mobile.screenshot({path:'qa-codequest/island-mobile.png'});
+  await mobile.close();
+  assert.deepEqual(errors,[],'No uncaught browser errors');
+  console.log('PASS Chromium CodeQuest: 3D island, Atlas, waypoint cue, 22 doors, persistence, mobile D-pad and screenshots');
+}finally{
+  await browser.close();
+}
