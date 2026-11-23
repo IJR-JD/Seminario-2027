@@ -52,15 +52,15 @@ const rowTable=(headers,data,{selected=-1,width=710,left=85,top=86}={})=>{
  });
  return b;
 };
-const cells=(values,{label="INDEX",first=0,y=137,selected=-1}={})=>{
+const cells=(values,{label="INDEX",first=0,y=137,selected=-1,subLabels=null,footer="ordered values · zero-based positions"}={})=>{
  const len=values.length, w=Math.min(150,(756-12*(len-1))/len),gap=12,start=(880-(len*w+(len-1)*gap))/2;
  let b=text(start,88,label,13,820,"start","#565656");
  values.forEach((v,i)=>{
   const x=start+i*(w+gap);b+='<g class="sv27-box pc27-list-cell">'+box(x,y,w,81,{fill:i===selected?"#171717":"#fff"})+
   text(x+w/2,y+37,v,23,820,"middle",i===selected?"#fff":"#111")+
-  text(x+w/2,y+66,'index '+(i+first),12,700,"middle",i===selected?"#dddddd":"#666")+'</g>';
+  text(x+w/2,y+66,subLabels?.[i]??('index '+(i+first)),12,700,"middle",i===selected?"#dddddd":"#666")+'</g>';
  });
- b+=text(440,276,"ordered values · zero-based positions",15,600);
+ b+=text(440,276,footer,15,600);
  return b;
 };
 const grid=(cols=4,rows=3)=>{
@@ -70,7 +70,7 @@ const grid=(cols=4,rows=3)=>{
   b+='<g class="sv27-box pc27-grid-cell" style="--pc-index:'+(r*cols+c)+'">'+box(x,y,w,57,{fill:r===0&&c===0?"#161616":"#fff",rx:6,stroke:"#a9a9a5"})+
    text(x+w/2,y+34,r+","+c,16,760,"middle",r===0&&c===0?"#fff":"#111")+'</g>';
  }
- return b+text(440,312,rows+' rows × '+cols+' columns = '+(rows*cols)+' iterations',16,760);
+ return b+text(440,76,rows+' rows × '+cols+' columns = '+(rows*cols)+' iterations',16,760);
 };
 const source=(lines,{x=126,y=83,w=625,focus=0}={})=>{
  let b=box(x,y,w,Math.min(215,lines.length*37+29),{fill:"#fafafa",stroke:"#d5d5d2",rx:10});
@@ -92,19 +92,19 @@ const templates={
  execution:{beats:["Enter a Python expression.","The interpreter evaluates its operands.","The computed value is sent to print().","The console displays the result."],build:()=>flow([["SOURCE","a = 17"],["EXPRESSION","a + 8"],["PRINT","print(...)"],["CONSOLE","25"]],{emphasis:3})},
  operators:{beats:["Evaluate multiplication first: 3 × 4 = 12.","Add two to obtain 14.","Parentheses can change the order."],build:()=>flow([["2 + 3 × 4","expression"],["3 × 4 = 12","first"],["2 + 12","second"],["14","result"]])},
  memory:{beats:["Read the variable name score.","Bind score to the current value 85.","A later assignment can update the binding."],build:()=>flow([["score","name"],["=","assignment"],["85","int value"]],{emphasis:2})},
- types:{beats:["An int stores whole numbers.","A float represents decimal numbers.","A str stores text.","A bool is True or False.","None represents no value."],build:()=>cells(["42","4.5",'"10A"',"True","None"],{label:"FIVE COMMON PYTHON VALUES",y:137})},
+ types:{beats:["An int stores whole numbers.","A float represents decimal numbers.","A str stores text.","A bool is True or False.","None represents no value."],build:()=>cells(["42","4.5",'"10A"',"True","None"],{label:"FIVE COMMON PYTHON VALUES",y:137,subLabels:["int","float","str","bool","NoneType"],footer:"Each Python value has a type with specific operations."})},
  conversion:{beats:["Input begins as the string '12'.","int('12') converts it to a number.","Arithmetic now evaluates 12 + 3."],build:()=>flow([['"12"',"str"],["int(...)","conversion"],["15","numerical result"]])},
  io:{beats:["Begin with simulated user text '17'.","Convert the text to an integer.","Use the number in an expression.","Print the formatted response."],build:()=>flow([["USER TEXT",'"17"'],["int(...)","17"],["+ 1","18"],["OUTPUT","Next year: 18"]])},
  format:{beats:["Store values under names.","Insert them into an f-string.","Print the readable sentence."],build:()=>flow([["name","'Ana'"],['f"Hello, {name}!"',"interpolate"],["CONSOLE","Hello, Ana!"]])},
  logic:{beats:["Evaluate the case False, False.","Evaluate False, True.","Evaluate True, False.","Evaluate True, True."],build:()=>rowTable(["A","B","A and B","A or B"],[["F","F","F","F"],["F","T","F","T"],["T","F","F","T"],["T","T","T","T"]],{selected:3})},
  comparison:{beats:["Compare age against 18.","Compare has_id against True.","Combine the checks with and.","The final condition is True only when both pass."],build:()=>flow([["age ≥ 18","True"],["has_id","True"],["AND","both"],["True","result"]])},
- decision:{beats:["Evaluate the decision condition.","The Yes path executes PASS.","The No path executes RETRY.","Only one branch runs per decision."],build:()=>branching("decision")},
- indent:{beats:["Start at the if statement.","Read the indented branch body.","After the branch, execution continues outside."],build:()=>source(["if ready:","    print('Go')","else:","    print('Wait')","print('Done')"],{focus:1})},
- iteration:{beats:["range(1,5) begins at 1.","The loop visits 2 on its next iteration.","It continues with 3.","The last value is 4; stop 5 is excluded."],build:()=>cells(["1","2","3","4"],{label:"for n in range(1, 5)",y:132})},
+ decision:{targets:[1,2,3,1],beats:["Evaluate the decision condition.","The Yes path executes PASS.","The No path executes RETRY.","Only one branch runs per decision."],build:()=>branching("decision")},
+ indent:{targets:[0,1,4],beats:["Start at the if statement.","Read the indented branch body.","After the branch, execution continues outside."],build:()=>source(["if ready:","    print('Go')","else:","    print('Wait')","print('Done')"],{focus:1})},
+ iteration:{beats:["range(1,5) begins at 1.","The loop visits 2 on its next iteration.","It continues with 3.","The last value is 4; stop 5 is excluded."],build:()=>cells(["1","2","3","4"],{label:"for n in range(1, 5)",y:132,subLabels:["iteration 1","iteration 2","iteration 3","iteration 4"],footer:"Loop values: 1, 2, 3, 4  ·  stop argument 5 excluded"})},
  accumulate:{beats:["Initialize the total at zero.","Add 1; total becomes 1.","Add 2; total becomes 3.","Add 3; total becomes 6.","Add 4; total becomes 10."],build:()=>flow([["0","initial"],["+1 → 1","step 1"],["+2 → 3","step 2"],["+3 → 6","step 3"],["+4 → 10","final"]])},
- while:{beats:["Test n < 3 before running the body.","If True, execute and increment n.","Repeat until n reaches 3.","Exit when the test becomes False."],build:()=>branching("while")},
+ while:{targets:[1,2,1,3],beats:["Test n < 3 before running the body.","If True, execute and increment n.","Repeat until n reaches 3.","Exit when the test becomes False."],build:()=>branching("while")},
  dowhile:{beats:["Enter while True and execute the body once.","Increment the state before testing.","Check the break condition.","If it is True, break out of the loop."],build:()=>flow([["while True","enter"],["BODY","n += 1"],["if n >= 3","test"],["break","exit"]],{emphasis:3})},
- grid:{beats:["Visit row 0, column 0.","Traverse columns within the first row.","Advance to the next row.","The inner body runs 12 times on a 3×4 grid."],build:()=>grid(4,3)},
+ grid:{targets:[0,1,4,11],beats:["Visit row 0, column 0.","Traverse columns within the first row.","Advance to the next row.","The inner body runs 12 times on a 3×4 grid."],build:()=>grid(4,3)},
  pattern:{beats:["First outer iteration prints one star.","Second outer iteration prints two.","Third outer iteration prints three."],build:()=>source(["for row in range(1, 4):","    print('*' * row)","OUTPUT: *","        **","        ***"],{focus:1})},
  call:{beats:["The caller passes arguments 4 and 6.","add(a,b) computes the sum.","return transfers 10 to the caller.","print displays 10."],build:()=>flow([["CALL","add(4,6)"],["PARAMETERS","a=4 · b=6"],["RETURN","a+b"],["CONSOLE","10"]])},
  scope:{beats:["The outer program has its own variables.","The function receives a local parameter.","The local result is returned rather than leaked."],build:()=>flow([["OUTSIDE","x = 4"],["INSIDE","value = x + 2"],["RETURN","6"]])},
@@ -112,7 +112,7 @@ const templates={
  mutation:{beats:["Start with three list elements.","Assignment updates one existing position.","append adds a new element at the end."],build:()=>flow([["[6, 10, 15]","original"],["items[1]=11","mutation"],["append(21)","growth"],["[6,11,15,21]","result"]])},
  slice:{beats:["Set start index to 1.","Set stop index to 3, excluded.","Select positions 1 and 2."],build:()=>cells(["3","6","9","12"],{selected:1,label:"items[1:3] returns [6, 9]"})},
  characters:{beats:["Character 0 is 'P'.","Character 1 is 'y'.","Continue through the ordered string.","Index -1 identifies final character 'n'."],build:()=>cells(["P","y","t","h","o","n"],{label:"word = 'Python' · Unicode character indices"})},
- transform:{beats:["Start with surrounding whitespace.","strip() removes outer spaces.","upper() converts to uppercase.","The result is a new string."],build:()=>flow([['"  hello  "',"original"],["strip()","hello"],["upper()","HELLO"]])},
+ transform:{targets:[0,1,2,2],beats:["Start with surrounding whitespace.","strip() removes outer spaces.","upper() converts to uppercase.","The result is a new string."],build:()=>flow([['"  hello  "',"original"],["strip()","hello"],["upper()","HELLO"]])},
  mapping:{beats:["Select the dictionary key 'name'.","Find the value attached to that key.","Return the stored string 'Ana'."],build:dictionary},
  sets:{beats:["Begin with repeated values 1, 2, 2 and 3.","Construct a set from that sequence.","The set contains three distinct values."],build:()=>flow([["LIST","[1,2,2,3]"],["set(...)","remove repeats"],["UNIQUE","{1,2,3}"]])},
  modules:{beats:["Your program imports math.","Python resolves the math module.","The call math.sqrt(81) runs.","The returned result is 9.0."],build:modules},
@@ -120,7 +120,7 @@ const templates={
  traceback:{beats:["Run the statement with a bad conversion.","The interpreter identifies ValueError.","Read the exception type and failing line.","Replace or validate the input."],build:()=>flow([["SOURCE","int('abc')"],["EXCEPTION","ValueError"],["INSPECT","bad text"],["FIX","validate input"]])},
  recovery:{beats:["Try the conversion.","Follow the success path if valid.","Catch ValueError for bad text.","Return a helpful error message."],build:()=>flow([["try:","int(text)"],["ValueError?","bad input"],["except","show message"],["CONTINUE","recover"]])},
  architecture:{beats:["Define what the application needs.","Validate incoming values.","Compute through reusable functions.","Format and display the result."],build:()=>flow([["REQUIREMENTS","user goal"],["INPUT","validation"],["FUNCTIONS","processing"],["OUTPUT","result"]])},
- test:{beats:["Define one normal input.","Check the boundary condition.","Test invalid or missing data.","Compare actual with expected behavior."],build:()=>rowTable(["TEST","INPUT","EXPECTED"],[["Normal","[4,6]","5.0"],["Boundary","[]","0"],["Invalid","'x'","handled"]],{selected:1})}
+ test:{targets:[0,1,2,2],beats:["Define one normal input.","Check the boundary condition.","Test invalid or missing data.","Compare actual with expected behavior."],build:()=>rowTable(["TEST","INPUT","EXPECTED"],[["Normal","[4,6]","5.0"],["Boundary","[]","0"],["Invalid","'x'","handled"]],{selected:1})}
 };
 const modeByType={flowchart:"flow",branch:"flow",decision:"flow",while:"flow",grid:"flow",list:"flow",slice:"flow",types:"flow",logic:"flow",test:"flow"};
 function compose(type,ordinal){
@@ -141,7 +141,7 @@ window.IJR_PROGRAMMING_MOTION_SEQUENCES=Object.fromEntries(lessons.map(unit=>[
  unit.slug,(unit.diagrams||[]).map(d=>{
   const x=templates[d.type];
   if(!x)throw Error("No motion plan for "+d.type);
-  return {mode:modeByType[d.type]||"flow",beats:x.beats};
+  return {mode:modeByType[d.type]||"flow",beats:x.beats,targets:x.targets||null};
  })
 ]));
 function renderTheory(){
