@@ -33,13 +33,13 @@ const CLASS={warrior:{color:0xe7b874,label:'WARRIOR · SWORD TECHNIQUES'},wizard
 const mat=(hex,rough=.6)=>new THREE.MeshStandardMaterial({color:hex,roughness:rough,metalness:.1});
 const glow=(hex,opacity=1)=>new THREE.MeshBasicMaterial({color:hex,transparent:true,opacity,depthWrite:false,side:THREE.DoubleSide});
 const scene=new THREE.Scene();scene.background=new THREE.Color('#1c3038');scene.fog=new THREE.FogExp2('#1c3038',.052);
-const camera=new THREE.PerspectiveCamera(42,1,.1,60);camera.position.set(6.7,5.8,10.5);
+const camera=new THREE.PerspectiveCamera(42,1,.1,60);camera.position.set(5.9,4.65,9.3);
 const renderer=new THREE.WebGLRenderer({canvas:$('scene'),antialias:true,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 const controls=new OrbitControls(camera,$('scene'));controls.enableDamping=true;controls.target.set(0,1,0);controls.minDistance=6;controls.maxDistance=20;controls.maxPolarAngle=Math.PI/2.03;
 scene.add(new THREE.HemisphereLight('#b3d7ff','#75604e',1.85));
 const sun=new THREE.DirectionalLight('#fff3d5',2.5);sun.position.set(-5,11,8);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);sun.shadow.normalBias=.035;sun.shadow.camera.left=-11;sun.shadow.camera.right=11;sun.shadow.camera.top=11;sun.shadow.camera.bottom=-11;scene.add(sun);
 const world=new THREE.Group();scene.add(world);
-const stone=mat('#84998b',.95),floorA=mat('#cedac9',1),floorB=mat('#aabfad',1),dark=mat('#435e50',.9);
+const stone=mat('#84998b',.95),floorA=mat('#829887',1),floorB=mat('#748d83',1),dark=mat('#435e50',.9);
 function cub(g,w,h,d,m,x,y,z){const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;g.add(o);return o}
 function ball(g,r,m,x,y,z){const o=new THREE.Mesh(new THREE.SphereGeometry(r,16,12),m);o.position.set(x,y,z);o.castShadow=true;g.add(o);return o}
 function cyl(g,a,b,h,m,x,y,z,segments=12){const o=new THREE.Mesh(new THREE.CylinderGeometry(a,b,h,segments),m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;g.add(o);return o}
@@ -55,7 +55,7 @@ const tileGeometry=new THREE.BoxGeometry(.97,.045,.97);
 tileGroups.forEach((tiles,i)=>{
   const mesh=new THREE.InstancedMesh(tileGeometry,i?floorA:floorB,tiles.length);
   const matrix=new THREE.Matrix4();
-  tiles.forEach(([x,z],j)=>mesh.setMatrixAt(j,matrix.makeTranslation(x,-.043,z)));
+  tiles.forEach(([x,z],j)=>mesh.setMatrixAt(j,matrix.makeTranslation(x,-.022,z)));
   mesh.receiveShadow=true;
   world.add(mesh);
 });
