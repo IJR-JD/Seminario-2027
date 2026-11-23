@@ -1,4 +1,4 @@
-import {room,directions,planMove} from './expedition.mjs';
+import {room,directions,planMove,surfaceAt} from './expedition.mjs';
 
 const puzzle=config=>room({conditional:true,theme:'citadel',...config});
 export const logicRooms=[
@@ -25,6 +25,24 @@ export const logicRooms=[
     objective:'Cross the gap, open the lock, activate the relay and collect the core',
     instruction:'Combine a jump with separate checks for the prism and sentinel. You can nest conditions with four spaces per level.',
     hint:'The detector checks only one adjacent tile. Recheck from the correct position.'}),
+  puzzle({title:'The Ember Causeway',zone:'Ember Foundry',width:16,depth:9,start:[2,5],goal:[13,4],
+    platforms:[[0,5,3,7,0],[7,15,3,7,1]],
+    traps:[[4,5],[8,4],[10,5],[10,6]],checkpoints:[[9,3]],powers:['jump'],hazards:true,
+    concept:'Trap detection and safe landings',description:'Avoid pressure spikes before crossing the broken bridge.',
+    objective:'Reach the upper relay and the beacon',
+    instruction:'danger(direction) detects spikes and gaps. Jump over spikes, and land on a clear tile.',
+    hint:'Test the tile ahead before choosing a walking segment or a jump.'}),
+  puzzle({title:'The Furnace Circuit',zone:'Ember Foundry',width:19,depth:11,start:[2,7],goal:[16,5],
+    platforms:[[0,5,5,9,0],[7,18,4,9,1]],
+    traps:[[4,7],[8,7],[11,6],[13,7],[15,6]],
+    locks:[[10,7]],sentries:[[14,7]],
+    obstacles:[[10,4],[10,5],[10,6],[10,8],[10,9],[14,4],[14,5],[14,6],[14,8],[14,9]],
+    checkpoints:[[11,7]],crystals:[[16,7]],powers:['jump','dash','pulse','shield'],hazards:true,
+    concept:'Combining traps, locks and shields',description:'Cross broken ground, unlock the furnace and pass its guardian.',
+    objective:'Activate the relay, collect the furnace crystal and reach the beacon',
+    instruction:'Dash crosses flat ground quickly. Spikes trigger during a dash, so use jump to clear them.',
+    hint:'Check the spike lane between the relay and guardian. Shield protects against a guardian hit.'}),
+
 ];
 
 export function compileLogic(source,parseAction){
@@ -73,7 +91,7 @@ function locked(cfg,state,x,z){
 export function sense(cfg,state,position,sensor,direction){
   const [dx,dz]=directions[direction],x=position.x+dx,z=position.z+dz;
   if(sensor==='locked')return locked(cfg,state,x,z);
-  if(sensor==='danger')return matches(cfg.sentries,x,z);
+  if(sensor==='danger')return matches(cfg.sentries,x,z)||matches(cfg.traps,x,z)||(cfg.hazards&&surfaceAt(cfg,x,z)===undefined);
   try{
     logicMove(cfg,state,position,direction,1,'walk',0);
     return true;
@@ -91,12 +109,30 @@ export function pulse(cfg,state,position){
 }
 
 export function logicMove(cfg,state,position,direction,distance,mode,fuel){
-  const path=planMove(cfg,position,direction,distance,mode,fuel);
   const [dx,dz]=directions[direction];
+  const targetX=position.x+dx*distance,targetZ=position.z+dz*distance;
+  const missing=surfaceAt(cfg,targetX,targetZ)===undefined;
+  const inRange=Number.isInteger(distance)&&distance>=1&&distance<={walk:1,jump:3,dash:5,fly:6}[mode];
+  if(cfg.hazards&&missing&&inRange&&(mode==='walk'||(mode==='jump'&&cfg.powers.includes(mode)))){
+    throw new RouteHazard('fall',targetX,targetZ,'The landing is over a gap.');
+  }
+  const path=planMove(cfg,position,direction,distance,mode,fuel);
   for(let step=1;step<=distance;step++){
     const x=position.x+step*dx,z=position.z+step*dz;
     if(locked(cfg,state,x,z))throw Error('A prism lock blocks the path at ('+x+', '+z+').');
-    if(matches(cfg.sentries,x,z)&&!state.shield)throw Error('Sentinel ahead. Shield before moving into its cell.');
+    if(matches(cfg.sentries,x,z)&&!state.shield)throw new RouteHazard('hit',x,z,'Sentinel ahead. Shield before moving into its cell.');
+    if(matches(cfg.traps,x,z)&&(mode==='walk'||mode==='dash'||step===distance)){
+      throw new RouteHazard('hit',x,z,'Pressure spikes triggered at ('+x+', '+z+').');
+    }
   }
   return path;
+}
+
+export class RouteHazard extends Error {
+  constructor(kind,x,z,message){
+    super(message);
+    this.kind=kind;
+    this.x=x;
+    this.z=z;
+  }
 }
