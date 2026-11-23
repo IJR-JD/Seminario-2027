@@ -45,17 +45,19 @@
         'import numpy as np',
         'from scipy import signal',
         't = np.linspace(0, 1, 500)',
-        'noisy = np.sin(2*np.pi*5*t) + 0.35*np.random.randn(500)',
+        'rng = np.random.default_rng(2027)',
+        'noisy = np.sin(2*np.pi*5*t) + 0.35*rng.standard_normal(500)',
         'b, a = signal.butter(3, 0.12)',
-        'clean = signal.filtfilt(b, a, noisy)'
+        'clean = signal.filtfilt(b, a, noisy)',
+        'print(round(float(np.std(clean)), 3))'
       ],
       result:'noisy signal → filtered signal'
     },
     {
       area:'Video games',
       library:'Pygame',
-      tag:'GAME DEVELOPMENT',
-      use:'Create a window, sprites, keyboard control and a real-time game loop.',
+      tag:'DESKTOP PYTHON · SDL REQUIRED',
+      use:'Run this example in desktop Python with Pygame installed; an SDL game window is not supported inside the browser Python sandbox.',
       code:[
         'import pygame',
         'pygame.init()',
@@ -77,20 +79,29 @@
         'from matplotlib.animation import FuncAnimation',
         'x = np.linspace(0, 2*np.pi, 200)',
         'fig, ax = plt.subplots()',
-        'animation = FuncAnimation(fig, update, frames=60)'
+        'line, = ax.plot(x, np.zeros_like(x))',
+        'def update(frame):',
+        '    line.set_ydata(np.sin(x + frame / 10))',
+        '    return (line,)',
+        'animation = FuncAnimation(fig, update, frames=60)',
+        'print(type(animation).__name__)',
+        'plt.close(fig)'
       ],
       result:'calculation → moving figure'
     },
     {
       area:'Images',
       library:'OpenCV',
-      tag:'COMPUTER VISION',
+      tag:'COLAB / OPENCV DEPENDENCY',
       use:'Read an image and detect visual structures such as edges.',
       code:[
         'import cv2',
-        'img = cv2.imread("photo.jpg")',
+        'import numpy as np',
+        'img = np.zeros((100, 100, 3), dtype=np.uint8)',
+        'cv2.rectangle(img, (15, 15), (85, 85), (255, 255, 255), 2)',
         'gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)',
-        'edges = cv2.Canny(gray, 80, 150)'
+        'edges = cv2.Canny(gray, 80, 150)',
+        'print(int(np.count_nonzero(edges)))'
       ],
       result:'image → measurable visual features'
     },
@@ -101,9 +112,10 @@
       use:'Read Excel, filter observations, summarize variables and export results.',
       code:[
         'import pandas as pd',
-        'df = pd.read_excel("students.xlsx")',
+        'df = pd.read_excel("pandas_excel_students.xlsx", sheet_name="Students")',
         'high = df.loc[df["score"] >= 80]',
-        'summary = df.groupby("group")["score"].mean()'
+        'summary = df.groupby("group")["score"].mean()',
+        'print(summary.round(1).to_dict())'
       ],
       result:'Excel table → reproducible analysis'
     },
@@ -117,7 +129,8 @@
         'X = [[1], [2], [3], [4]]',
         'y = [50, 60, 72, 83]',
         'model = LinearRegression().fit(X, y)',
-        'prediction = model.predict([[5]])'
+        'prediction = model.predict([[5]])',
+        'print(round(float(prediction[0]), 2))'
       ],
       result:'examples → fitted model → prediction'
     }
