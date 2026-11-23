@@ -64,4 +64,6 @@ for(const required of ['addVillageHouse','roomLocation(zoneIndex,j)','towerFloor
 assert(logic.includes('roomLots=allRoomLocations()'),'Directory not mapped by topic');
 assert(logic.includes('button.dataset.floor'),'Directory does not identify upper floors');
 assert(html.includes('F climb to second floors'),'Missing student ladder guidance');
+assert(game.includes('item.numberLabel.visible=mapMode||item.index===near'),
+  'Foreground room numbers should hide unless relevant or in map mode');
 console.log('PASS CodeQuest villages: 22 rooms, six topic clusters, eight extra houses, eleven accessible upper floors, safe placements.');
