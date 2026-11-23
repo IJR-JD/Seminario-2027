@@ -158,7 +158,7 @@ const specialStage={
 };
 const valid=()=>Object.keys(specialized);
 function renderFigure(factory,label){
- try{const html=factory();return html.includes('sv27-figure')?html:'';}
+ try{const html=factory();return html.includes('sv27-figure')?html.replace('class="sv27-figure"','class="sv27-figure" data-motion-id="'+x(label)+'"'):'';}
  catch(error){console.error('Seminario 2027 diagram failed',label,error);return '';}
 }
 function upgradeTheory(){
