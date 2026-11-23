@@ -25,10 +25,12 @@ try{
    cards:document.querySelectorAll('#conceptGrid .concept-card-v2').length,
    figures:document.querySelectorAll('#diagramGrid .diagram-card-v2').length,
    stages:document.querySelectorAll('#stageList .stage').length,
-   topic:document.querySelector('#theoryTitle')?.textContent?.trim()
+   topic:document.querySelector('#theoryTitle')?.textContent?.trim(),
+   expectedSections:(window.SEMINAR_2027_COURSE||[]).find(t=>t.slug===new URLSearchParams(location.search).get('topic'))?.sections.length,
+   expectedFigures:(window.SEMINAR_2027_COURSE||[]).find(t=>t.slug===new URLSearchParams(location.search).get('topic'))?.diagrams.length
   }));
-  assert.ok(details.cards>=3,slug+' conceptual cards missing: '+JSON.stringify(details));
-  assert.ok(details.figures>=1,slug+' figures missing: '+JSON.stringify(details));
+  assert.equal(details.cards,details.expectedSections,slug+' conceptual cards mismatch: '+JSON.stringify(details));
+  assert.equal(details.figures,details.expectedFigures,slug+' figure count mismatch: '+JSON.stringify(details));
   assert.equal(details.stages,12,slug+' guided practice failed: '+JSON.stringify(details));
   if(slug==='operations'){
    await page.waitForFunction(()=>document.querySelectorAll('#diagramGrid .v9-stage').length===8);
