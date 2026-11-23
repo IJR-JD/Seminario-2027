@@ -74,6 +74,7 @@ const sequences={
   {mode:"scatter",beats:["Plot paired observations with labeled axes.","Inspect the direction of the relationship.","Explain uncertainty and avoid causal overclaims."]}
  ]
 };
+Object.assign(sequences,window.IJR_PROGRAMMING_MOTION_SEQUENCES||{});
 const prefersReduced=window.matchMedia("(prefers-reduced-motion: reduce)");
 const el=(name,cls,text)=>{const node=document.createElement(name);if(cls)node.className=cls;if(text!==undefined)node.textContent=text;return node;};
 const icon=(d)=>'<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="'+d+'" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" stroke-linecap="round"/></svg>';
@@ -131,7 +132,7 @@ function descriptionFor(fig){
  if(portion.startsWith("stage-")){
   const stage=Number(portion.slice(6))||0;
   index=Math.min(scenes.length-1,Math.floor(stage/Math.ceil(12/scenes.length)));
-  if(topic==="operations"||topic==="arrays")index=0;
+  if(window.SEMINAR_2027_TRACK==="statistics"&&(topic==="operations"||topic==="arrays"))index=0;
  }else index=Math.max(0,Math.min(scenes.length-1,Number(portion)||0));
  return {topic,index,scene:scenes[index],id};
 }
