@@ -70,8 +70,7 @@ const specialized={
  ()=>flow([["XLSX","Students"],["PANDAS","read_excel"],["DATAFRAME","filas y columnas"],["ANÁLISIS","selección"]],"De Excel a datos","Primero se revisa la estructura; después se analiza."),
  ()=>frame("Tabla de observaciones",rows(["student","score","group","attendance"],[["A","68","10A","0.92"],["B","92","10A","0.97"],["C","81","10B","0.85"]],{highlight:[1],width:740,left:70})+
  T(440,274,"Filas → observaciones     |     Columnas → variables",17,700),"La fila B es una observación; score es una variable."),
- ()=>frame("Máscara booleana",rows(["score","score ≥ 90","selección"],[["68","False","—"],["92","True","B"],["81","False","—"],["96","True","D"]],{highlight:[1,3]})+
- T(440,285,"Las filas con True forman el subconjunto.",16,700),"Los filtros conservan registros completos.")
+ ()=>frame("Máscara booleana",rows(["score","score ≥ 90","selección"],[["68","False","—"],["92","True","B"],["81","False","—"],["96","True","D"]],{highlight:[1,3]}),"Los filtros conservan registros completos.")
  ],
  conditions:[
  ()=>flow([["CSV","estudiantes.csv"],["PANDAS","pd.read_csv"],["INSPECCIÓN","shape · head()"],["VARIABLE","nota"]],"Lectura de CSV","Un archivo CSV contiene registros separados por delimitadores."),
@@ -81,8 +80,7 @@ const specialized={
  loops:[
  ()=>frame("Tendencia central",scale(2,5,[2,3,4,5])+[2.7,3.2,3.8,3.8,3.8,4.2,4.5].map(v=>dot(v,2,5)).join("")+
  T(440,112,"Media · Mediana · Moda",24,800)+T(440,153,"Los valores permiten comparar medidas centrales.",17,500),"Cada punto es una calificación observada."),
- ()=>frame("Filtro estadístico",rows(["nota","criterio ≥ 3.0","estado"],[["2.7","False","revisar"],["3.2","True","aprobado"],["3.8","True","aprobado"],["4.5","True","aprobado"]],{highlight:[1,2,3]})+
- T(440,285,"La condición se aplica a cada observación.",16,700),"No se altera el conjunto original al seleccionar filas.")
+ ()=>frame("Filtro estadístico",rows(["nota","criterio ≥ 3.0","estado"],[["2.7","False","revisar"],["3.2","True","aprobado"],["3.8","True","aprobado"],["4.5","True","aprobado"]],{highlight:[1,2,3]}),"No se altera el conjunto original al seleccionar filas.")
  ],
  functions:[
  ()=>flow([["ENTRADA","a, b"],["FUNCIÓN","add(a,b)"],["RETORNO","a + b"]],"Función reutilizable","Una función evita repetir el mismo procedimiento."),
@@ -94,7 +92,7 @@ const specialized={
  ()=>frame("Reparto equitativo",bars([8,12,10,14,6],["A","B","C","D","E"],{max:16,left:107,barW:70,gap:83})+
  '<path d="M75 150H830" stroke="#151515" stroke-width="2" stroke-dasharray="7 6"/>'+T(760,136,"MEDIA = 10",17,800),"Redistribuir el total permite visualizar el valor medio."),
  ()=>frame("Rango",scale(0,16,[0,4,6,8,12,14,16])+dot(6,0,16)+dot(14,0,16)+
- L(346,135,682,135)+T(510,121,"RANGO = 14 − 6 = 8",19,800),"El rango mide la distancia entre mínimo y máximo."),
+ L(348,135,702,135)+T(525,121,"RANGO = 14 − 6 = 8",19,800),"El rango mide la distancia entre mínimo y máximo."),
  ()=>flow([["MEDIA","sum / len"],["RECORRER","for value"],["COMPARAR","value > mean"],["CONTAR","n + 1"]],"Contar sobre la media","Un contador se actualiza solo cuando se cumple el criterio.")
  ],
  descriptive:[
@@ -107,9 +105,9 @@ const specialized={
  ],
  "position-outliers":[
  ()=>frame("Diagrama de caja",scale(0,32,[0,4,8,12,16,20,24,28,32],238,100,790)+
- L(160,184,318,184)+L(160,169,160,199)+R(318,147,105,74,"#eeeeec","#151515",0)+L(370,147,370,221)+L(423,184,475,184)+
- '<circle cx="759" cy="184" r="10" fill="#151515"/>'+
- T(318,131,"Q1 = 4",16,800)+T(370,113,"Q2 = 6",16,800)+T(423,131,"Q3 = 8",16,800)+T(759,164,"30 · outlier",16,800),
+ L(143,184,186,184)+L(143,168,143,200)+R(186,147,86,74,"#eeeeec","#151515",0)+L(229,147,229,221)+
+ L(402,91,402,236,true)+'<circle cx="747" cy="184" r="10" fill="#151515"/>'+
+ T(186,132,"Q1 = 4",16,800)+T(229,112,"Q2 = 6",16,800)+T(272,132,"Q3 = 8",16,800)+T(428,102,"límite = 14",15,700)+T(746,163,"30 · atípico",16,800),
  "Q1 = 4 · Q3 = 8 · IQR = 4 · límite superior = 14."),
  ()=>frame("Percentil",scale(0,50,[0,10,20,30,40,50],230,100,790)+
  [10,20,30,40,50].map(v=>dot(v,0,50,230,100,790)).join("")+
