@@ -538,3 +538,10 @@
 .islandDpad button:nth-child(4) {grid-column:3;grid-row:2}
 @media(pointer:coarse){.islandDpad {display:grid}}
 @media(max-width:550px){.islandDpad {bottom:150px;grid-template-columns:repeat(3,42px);grid-template-rows:repeat(2,42px)}}
+
+/* Keep contextual help out of the atlas and directory on desktop/mobile. */
+#missionPicker .overworld:has(.islandTrailPanel:not([hidden])) .islandHelp,
+#missionPicker .overworld:has(#islandDirectory:not([hidden])) .islandHelp {display:none}
+@media(max-width:700px) {
+  #missionPicker .islandHelp {top:117px;max-width:calc(100% - 24px);font-size:.7rem}
+}
