@@ -6,6 +6,9 @@ on:
       - 'learning/**'
       - 'scripts/qa-browser.mjs'
       - 'scripts/qa-visual.mjs'
+      - 'scripts/qa-programming-browser.mjs'
+      - 'scripts/qa-programming-visual.mjs'
+      - 'scripts/qa-programming-data.mjs'
       - '.github/workflows/qa-browser.yml'
   workflow_dispatch:
 permissions:
@@ -33,6 +36,9 @@ jobs:
           server_pid=$!
           trap 'kill "$server_pid" || true' EXIT
           sleep 2
+          node scripts/qa-programming-data.mjs
+          node scripts/qa-programming-browser.mjs
+          node scripts/qa-programming-visual.mjs
           node scripts/qa-browser.mjs
           node scripts/qa-visual.mjs
       - name: Preserve visual QA evidence
@@ -40,6 +46,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: visual-qa-2027
-          path: qa-visual/
+          path: |
+            qa-visual/
+            qa-programming-visual/
           if-no-files-found: ignore
           retention-days: 7
