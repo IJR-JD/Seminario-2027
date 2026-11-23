@@ -4,6 +4,7 @@ const params=new URLSearchParams(location.search);const aliases={variables:"type
 const requested=aliases[params.get("topic")]||params.get("topic")||"algoritmos";
 const idx=Math.max(0,course.findIndex(t=>t.slug===requested));
 const topic=course[idx];if(!topic){document.querySelector("main").textContent="No se pudo cargar el programa.";return;}
+if(topic.slug==="operations")document.body.classList.add("source-operations-parity");
 const $=id=>document.getElementById(id);
 const esc=v=>String(v??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
 function set(id,v){if($(id))$(id).textContent=String(v??"")}
@@ -17,6 +18,30 @@ set("theoryStatus","12 guided problems follow the theory");
 set("workshopIntro",topic.workshopIntro||"Aplica lo aprendido en 12 problemas desde una celda vacía.");
 ["theoryWorkshopLink","workshopHeader"].forEach(id=>{if($(id))$(id).href=goWorkshop;});
 $("theoryProgress").style.width=Math.round((idx+1)*100/course.length)+"%";
+if(topic.slug==="operations"&&Array.isArray(topic.resources)&&topic.resources.length){
+ const resourceSection=document.createElement("section");
+ resourceSection.className="source-operations-resources theory-section-v2";
+ resourceSection.id="sourceOperationsResources";
+ resourceSection.innerHTML='<div class="section-heading-v2"><p class="eyebrow">OFFICIAL RESOURCES</p><h2>Use the real tools and documentation.</h2><p>These links point to the official Python and Google Colab resources. The logos are used only to identify the corresponding technology.</p></div>';
+ const resourceGrid=document.createElement("div");
+ resourceGrid.className="source-resource-grid";
+ topic.resources.forEach(resource=>{
+  const card=document.createElement("a");card.className="source-resource-card";
+  card.href=resource.url;card.target="_blank";card.rel="noopener noreferrer";
+  const logo=document.createElement("img");logo.src=resource.logo;logo.alt=resource.name+" logo";logo.loading="lazy";
+  const details=document.createElement("div");const title=document.createElement("strong");title.textContent=resource.name;
+  const kind=document.createElement("span");kind.textContent=resource.kind;
+  const url=document.createElement("small");url.textContent=resource.url.replace(/^https?:\\/\\//,"");
+  details.append(title,kind,url);const arrow=document.createElement("b");arrow.textContent="↗";
+  card.append(logo,details,arrow);resourceGrid.append(card);
+ });
+ resourceSection.append(resourceGrid);
+ const foundation=$("foundation");foundation.parentNode.insertBefore(resourceSection,foundation);
+ const visualHead=$("visuals")?.querySelector(".section-heading-v2");
+ if(visualHead){const h=visualHead.querySelector("h2"),p=visualHead.querySelector("p:last-child");if(h)h.textContent="Diagrams that explain the model";if(p)p.textContent="Each diagram represents one mental model. Read the description first, then follow the animated figure.";}
+ const syntaxHead=$("reference")?.querySelector(".section-heading-v2 h2");
+ if(syntaxHead)syntaxHead.textContent="Read the notation as a vocabulary, not as an answer key.";
+}
 const concepts=$("conceptGrid");
 (topic.sections||[]).forEach((part,i)=>{
  const node=document.createElement("article");node.className="concept-card-v2";
