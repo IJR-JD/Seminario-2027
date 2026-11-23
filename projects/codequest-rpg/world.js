@@ -1,4 +1,4 @@
-import {createOverworld} from './overworld.mjs?v=districts1';
+import {createOverworld} from './overworld.mjs?v=highlands1';
 import {starTargets,starsFor,starsText} from './room-stars.mjs';
 import {insertCommand} from './command-editor.mjs';
 import {logicRooms,compileLogic,sense,pulse,logicMove,cellKey,RouteHazard} from './logic.mjs?v=edgefall1';
@@ -435,6 +435,11 @@ function openMissions(){
   directoryToggle.onclick=()=>setDirectory(directory.hidden);
   cameraToggle.setAttribute('aria-pressed','false');
   cameraToggle.textContent='Island map';
+  $('islandZoomIn').onclick=()=>{overworld?.adjustCamera(0,1/1.18);$('overworldCanvas').focus();};
+  $('islandZoomOut').onclick=()=>{overworld?.adjustCamera(0,1.18);$('overworldCanvas').focus();};
+  document.querySelectorAll('[data-traversal]').forEach(button=>{
+    button.onclick=()=>{overworld?.action(button.dataset.traversal);$('overworldCanvas').focus();};
+  });
   cameraToggle.onclick=()=>{
     const map=cameraToggle.getAttribute('aria-pressed')!=='true';
     overworld.setMapMode(map);
@@ -446,6 +451,10 @@ function openMissions(){
     try{
       overworld=createOverworld({canvas:$('overworldCanvas'),stage:$('overworldStage'),makeHero:createHero,
         onNear:i=>portalChanged(i),onEnter:i=>portalEntered(i),
+        onTraversal:state=>{
+          const output=$('islandTraversalStatus');
+          if(output.textContent!==state)output.textContent=state;
+        },
         onDiscovery:(relic,found,total)=>{
           $('islandDiscoveries').textContent=found+' / '+total+' discoveries';
           const toast=$('islandDiscoveryToast');
