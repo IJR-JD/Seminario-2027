@@ -4,6 +4,7 @@
  * diagrams remain untouched.
  */
 (()=>{"use strict";
+if(window.SEMINAR_2027_TRACK==="programming")return;
 const course=window.SEMINAR_2027_COURSE||[];
 const req=new URLSearchParams(location.search).get("topic")||"algoritmos";
 const slug=req==="variables"?"types":req;
