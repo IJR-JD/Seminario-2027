@@ -1,4 +1,4 @@
-import {createOverworld} from './overworld.mjs?v=island1';
+import {createOverworld} from './overworld.mjs?v=districts1';
 import {starTargets,starsFor,starsText} from './room-stars.mjs';
 import {insertCommand} from './command-editor.mjs';
 import {logicRooms,compileLogic,sense,pulse,logicMove,cellKey,RouteHazard} from './logic.mjs?v=edgefall1';
@@ -445,7 +445,15 @@ function openMissions(){
   if(!overworld){
     try{
       overworld=createOverworld({canvas:$('overworldCanvas'),stage:$('overworldStage'),makeHero:createHero,
-        onNear:i=>portalChanged(i),onEnter:i=>portalEntered(i)});
+        onNear:i=>portalChanged(i),onEnter:i=>portalEntered(i),
+        onDiscovery:(relic,found,total)=>{
+          $('islandDiscoveries').textContent=found+' / '+total+' discoveries';
+          const toast=$('islandDiscoveryToast');
+          toast.textContent=relic.name+' · '+relic.note;
+          toast.hidden=false;
+          clearTimeout(toast.hideTimer);
+          toast.hideTimer=setTimeout(()=>{toast.hidden=true;},5500);
+        }});
       overworld.addZones(zones);
     }catch(error){
       overworld=null;
@@ -455,6 +463,9 @@ function openMissions(){
   portalChanged(undefined);
   if(overworld){
     cameraToggle.hidden=false;
+    const [found,total]=overworld.discoveries();
+    $('islandDiscoveries').textContent=found+' / '+total+' discoveries';
+    $('islandDiscoveryToast').hidden=true;
     overworld.setMapMode(false);
     overworld.visit(level,isAvailable,bestSteps);
     $('overworldCanvas').focus();
