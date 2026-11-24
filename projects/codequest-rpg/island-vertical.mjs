@@ -48,7 +48,7 @@ export function createCourses(){
 }
 export const courses=createCourses();
 export const platformList=courses.flatMap(c=>c.pads);
-export const onPlatform=(p,x,z,margin=.05)=>Math.abs(x-p.x)<=p.hx+margin&&Math.abs(z-p.z)<=p.hz+margin;
+export const onPlatform=(p,x,z,margin=.10)=>Math.abs(x-p.x)<=p.hx+margin&&Math.abs(z-p.z)<=p.hz+margin;
 // The deck's collision uses the same footprint as the rendered top, with a small foot tolerance.
 export const footTolerance=.10;
 export function platformSideBlocked(surfaces,a,b,feet,bodyHeight=1.65){
