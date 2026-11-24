@@ -1,4 +1,4 @@
-import {createOverworld} from './overworld.mjs?v=playability91';
+import {createOverworld} from './overworld.mjs?v=physics92';
 import {createRenderQuality,toastAllowed} from './playability.mjs';
 import {createIslandAvatar} from './island-avatar.mjs';
 import {shrines,travelGates,circuits} from './island-adventure.mjs';
@@ -390,6 +390,8 @@ function openMissions(){
   const enter=$('enterPortal');
   const help=$('islandControlsHelp'),toggle=$('islandControlsToggle');help.hidden=true;toggle.setAttribute('aria-expanded','false');toggle.onclick=()=>{help.hidden=!help.hidden;toggle.setAttribute('aria-expanded',String(!help.hidden));};
   $('contextAction').hidden=true;
+  const exploreMenu=$('exploreMenu'),powerMenu=$('powerMenu');exploreMenu.open=false;powerMenu.open=false;
+  exploreMenu.addEventListener('click',event=>{if(event.target.closest('button'))exploreMenu.open=false;});
   let activeZone;
   function selectZone(zone,focus=false){
     for(const entry of zones){
@@ -831,7 +833,7 @@ function openMissions(){
         }});
       overworld.addZones(zones);overworld.setQuality($('graphicsQuality').value);
     }catch(error){
-      overworld=null;
+      console.error('Island initialization failed',error);overworld=null;
       $('overworldStage').hidden=true;
     }
   }
