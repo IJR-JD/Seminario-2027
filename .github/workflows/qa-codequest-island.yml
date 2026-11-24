@@ -30,6 +30,7 @@ jobs:
           node --check projects/codequest-rpg/island-detail.mjs
           node --check projects/codequest-rpg/island-interiors.mjs
           node --check projects/codequest-rpg/interior-scene.mjs
+          node --check projects/codequest-rpg/island-vertical.mjs
       - name: Test all CodeQuest room and island mechanics
         run: |
           node scripts/qa-codequest.mjs
@@ -39,6 +40,7 @@ jobs:
           node scripts/qa-codequest-adventure.mjs
           node scripts/qa-codequest-airgear.mjs
           node scripts/qa-codequest-interiors.mjs
+          node scripts/qa-codequest-vertical.mjs
   browser:
     runs-on: ubuntu-24.04
     timeout-minutes: 12
@@ -185,6 +187,34 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: codequest-living-interiors-qa
+          path: qa-codequest/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  vertical-world:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned browser dependencies
+        run: |
+          npm install --no-save --no-audit --no-fund playwright@1.56.1 three@0.170.0
+          npx playwright install chromium
+      - name: Exercise manual jump and six actual vertical landings
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/codequest-browser.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" || true' EXIT
+          sleep 2
+          node scripts/qa-codequest-vertical-browser.mjs
+      - name: Save vertical-world visual evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: codequest-vertical-world-qa
           path: qa-codequest/
           if-no-files-found: ignore
           retention-days: 7
