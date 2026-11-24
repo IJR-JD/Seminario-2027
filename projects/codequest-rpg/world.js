@@ -391,7 +391,7 @@ function openMissions(){
   const help=$('islandControlsHelp'),toggle=$('islandControlsToggle');help.hidden=true;toggle.setAttribute('aria-expanded','false');toggle.onclick=()=>{help.hidden=!help.hidden;toggle.setAttribute('aria-expanded',String(!help.hidden));};
   $('contextAction').hidden=true;
   const exploreMenu=$('exploreMenu'),powerMenu=$('powerMenu');exploreMenu.open=false;powerMenu.open=false;
-  exploreMenu.addEventListener('click',event=>{if(event.target.closest('button'))exploreMenu.open=false;});
+  exploreMenu.onclick=event=>{if(event.target.closest('button'))exploreMenu.open=false;};
   let activeZone;
   function selectZone(zone,focus=false){
     for(const entry of zones){
