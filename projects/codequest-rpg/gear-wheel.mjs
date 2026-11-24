@@ -61,10 +61,10 @@ export function createGearWheel({picker,canvas,button,panel,getWorld,onMessage})
   previousFocus=document.activeElement;opened=true;held=hold;w.clearGearInput();refresh();choose(-1);
   panel.hidden=false;button.setAttribute('aria-expanded','true');picker.dataset.gearOpen='true';if(!hold)panel.focus();return true;
  }
- function close(commit=false,restoreFocus=true){
+ function close(commit=false,restoreFocus=true,gameFocus=commit){
   if(!opened)return;
   const w=getWorld(),i=selected,state=states[i];opened=false;held=false;panel.hidden=true;button.setAttribute('aria-expanded','false');picker.dataset.gearOpen='false';w?.clearGearInput();
-  if(restoreFocus&&picker.open)(previousFocus===button?button:canvas).focus();
+  if(restoreFocus&&picker.open)(gameFocus||previousFocus!==button?canvas:button).focus();
   if(!commit||i<0||!w)return;
   const item=gearItems[i];
   if(state==='cooldown'||state==='unavailable'){onMessage?.('Equipment unavailable in the current movement state.');return;}
@@ -74,7 +74,7 @@ export function createGearWheel({picker,canvas,button,panel,getWorld,onMessage})
  }
  button.onclick=()=>opened?close(false):open(false);
  panel.querySelector('#gearCancel').onclick=()=>close(false);
- for(const el of panel.querySelectorAll('[data-wheel-action]'))el.onclick=()=>{const action=el.dataset.wheelAction;close(false);getWorld()?.action(action);};
+ for(const el of panel.querySelectorAll('[data-wheel-action]'))el.onclick=()=>{const action=el.dataset.wheelAction;close(false,true,true);getWorld()?.action(action);};
  ring.addEventListener('pointermove',event=>{
   if(!held||event.pointerType==='touch')return;
   const rect=ring.getBoundingClientRect();choose(radialIndex(event.clientX-rect.left-rect.width/2,event.clientY-rect.top-rect.height/2));
