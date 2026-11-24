@@ -622,7 +622,17 @@ function openMissions(){
     button.addEventListener('blur',release);
   });
   document.querySelectorAll('[data-traversal]').forEach(button=>{
-    button.onclick=()=>{overworld?.action(button.dataset.traversal);$('overworldCanvas').focus();};
+    const action=button.dataset.traversal;
+    if(action==='jump'||action==='crouch'){
+      let held=false;
+      button.addEventListener('pointerdown',e=>{
+        if(!overworld?.adventureState().jetting)return;
+        e.preventDefault();held=true;button.setPointerCapture(e.pointerId);overworld.action(action);
+      });
+      const release=()=>{if(held){overworld?.action('jetStop');setTimeout(()=>{held=false;},0);}};
+      for(const event of ['pointerup','pointercancel','lostpointercapture'])button.addEventListener(event,release);
+      button.onclick=()=>{if(!held){overworld?.action(action);if(overworld?.adventureState().jetting)overworld.action('jetStop');$('overworldCanvas').focus();}};
+    }else button.onclick=()=>{overworld?.action(action);$('overworldCanvas').focus();};
   });
   cameraToggle.onclick=()=>{
     const map=cameraToggle.getAttribute('aria-pressed')!=='true';
