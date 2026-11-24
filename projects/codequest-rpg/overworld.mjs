@@ -126,6 +126,11 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     const w=max.x-min.x,h=max.y-min.y,d=max.z-min.z;
     if(h<.075||w<.07||d<.07)return;
     const top=(max.x+min.x)/2,side=(max.z+min.z)/2;
+    // Angled structural beams use segmented collision instead of a single enclosing box.
+    if(mesh.geometry.type==='BoxGeometry'&&(Math.abs(mesh.rotation.x)>.02||Math.abs(mesh.rotation.z)>.02)){
+      const {width,height,depth}=mesh.geometry.parameters;const n=Math.max(1,Math.ceil(height/.35)),matrix=mesh.matrixWorld;
+      const center=new THREE.Vector3();for(let i=0;i<n;i++){center.set(0,-height/2+(i+.5)*height/n,0).applyMatrix4(matrix);const size=Math.max(width,depth,.12)+height/n*.7;physics.add(boxBounds(center.x,center.y,center.z,size,size,size,{kind:'beam',walkable:false,enabled}));}return;
+    }
     const walkable=w>=.70&&d>=.70&&h>=.14&&Math.abs(mesh.rotation.x)<.01&&Math.abs(mesh.rotation.z)<.01;
     if(kind==='roof'){
       for(let i=0;i<8;i++){const scale=1-i/8;physics.add(boxBounds(top,min.y+(i+.5)*h/8,side,w*scale,h/8,d*scale,{kind,walkable:i<7,enabled}));}return;
@@ -364,7 +369,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   function structuralPart(color,x,y,z,w,h,d,rx=0,ry=0,rz=0){
     if(!structureParts.has(color))structureParts.set(color,[]);
     structureParts.get(color).push({x,y,z,w,h,d,rx,ry,rz});
-    if(Math.abs(rx)<.01&&Math.abs(ry)<.01&&Math.abs(rz)<.01&&h>=.12&&w>=.12&&d>=.12)physics.add(boxBounds(x,y,z,w,h,d,{kind:'anchor',walkable:w>=.70&&d>=.70}));
+    if(h>=.12&&w>=.10&&d>=.10){if(Math.abs(rx)<.01&&Math.abs(rz)<.01)physics.add(boxBounds(x,y,z,w,h,d,{kind:'anchor',walkable:w>=.70&&d>=.70}));else{const n=Math.ceil(h/.35),q=new THREE.Quaternion().setFromEuler(new THREE.Euler(rx,ry,rz)),v=new THREE.Vector3();for(let i=0;i<n;i++){v.set(0,-h/2+(i+.5)*h/n,0).applyQuaternion(q);const size=Math.max(w,d)+h/n*.7;physics.add(boxBounds(x+v.x,y+v.y,z+v.z,size,size,size,{kind:'anchor-brace',walkable:false}));}}}
   }
   const sp=structuralPart;
   const anchorRingGeometry=new THREE.TorusGeometry(.58,.13,10,24);
@@ -565,9 +570,9 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   const explicitSurfaces=()=>cachedSurfaces??(cachedSurfaces=[...platformList,...towers.map((t,i)=>({id:'deck-'+i,deck:i,x:t.x,z:t.z+(t.kind==='village'?.42:0),hx:t.kind==='village'?2.1:2,hz:t.kind==='village'?1.55:2,y:towerFloor(t)})),...frontierSurfaces(skills),...landmarkSurfaces]);
   const surfaceList=(x=position.x,z=position.z)=>{const base=explicitSurfaces();return [...base,...physics.surfaces(x,z,3).filter(p=>!base.some(q=>Math.abs(p.y-q.y)<.14&&Math.abs(p.x-q.x)<q.hx&&Math.abs(p.z-q.z)<q.hz))];};
   const floorAt=(x,z)=>physics.floor(x,z,elevation(x,z));
-  const stand=(x,z)=>groundSafe(x,z)&&physics.clear(x,z,floorAt(x,z),{step:BODY.step});
+  const stand=(x,z)=>groundSafe(x,z)&&physics.clear(x,z,floorAt(x,z),{step:.02});
   function walkSegment(a,b,avoidTraps=false){
-    if(!segmentSafe(a,b)||!physics.move(a,b,floorAt(a.x,a.z),{step:BODY.step,ground:floorAt}))return false;
+    if(!segmentSafe(a,b)||!physics.move(a,b,floorAt(a.x,a.z),{step:.02,ground:floorAt}))return false;
     if(avoidTraps){const n=Math.max(1,Math.ceil(Math.hypot(b.x-a.x,b.z-a.z)/.4));for(let i=0;i<=n;i++){const t=i/n;if(traps.some(p=>Math.hypot(a.x+(b.x-a.x)*t-p.x,a.z+(b.z-a.z)*t-p.z)<p.r+.8))return false;}}
     return true;
   }
@@ -1110,7 +1115,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
       const height=crouched?BODY.crouch:BODY.height;
       const validMove=(x,z)=>{const p={x,z};
         const terrainValid=wallRunning?onWallLane(x,z)&&walkable(x,z):onGround?segmentSafe(position,p):shore(x,z)<.91;
-        return terrainValid&&physics.move(position,p,feet,{height,step:onGround?BODY.step:0,ground:onGround?floorAt:null});
+        return terrainValid&&physics.move(position,p,feet,{height,step:onGround?.02:0,ground:onGround?floorAt:null});
       };
       let moved=false;
       if(validMove(nextX,nextZ)){position.set(nextX,0,nextZ);moved=true;}
