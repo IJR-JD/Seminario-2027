@@ -529,7 +529,11 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   function publishMobility(){const m=mobilityState(),sig=JSON.stringify(m);if(sig!==lastMobility){lastMobility=sig;onMobility?.(m);}}
   function locateDepot(id){
     if(interior||ride||lift||deck!==null||air>.7||climb||flying||jetting||swing||releaseMotion||wallRunning)return false;
-    const d=depots.find(p=>p.id===id),v=fleet.find(p=>p.id===id&&canDrive(p.type,skills));const point=d??v;if(!point)return false;routeTo(point.x,point.z);return !!target;
+    const d=depots.find(p=>p.id===id),v=fleet.find(p=>p.id===id&&canDrive(p.type,freeSkills));const point=d??v;if(!point)return false;routeTo(point.x,point.z);return !!target;
+  }
+  function selectGearPower(id){
+    if(id==='wall'&&!wallRunning&&!onWallLane(position.x,position.z)&&!ride&&!lift&&!interior&&!air&&deck===null&&!climb&&!flying&&!jetting&&!swing&&!releaseMotion&&!crouched){routeTo(wallLane.sideX,(wallLane.minZ+wallLane.maxZ)/2);if(target){notify('Route to the wall lane · select Wall run again when nearby.');return;}}
+    action(id);
   }
   function selectVehicleType(type){
     if(!vehicleTypes[type]||!canDrive(type,freeSkills)||interior||lift)return false;
@@ -1371,7 +1375,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     else if(activeGate)action('gate');
     else if(nearbyGuide)onDialogue?.(nearbyGuide);
   }
-  return {addZones,visit,travel,frame,setMapMode,adjustCamera,action,setMovementKey,interact,trailState,setWaypoint,adventureState,locateAdventure,locateBuilding,enterBuilding,interiorWalk:id=>interior?.walkTo(id),interiorInteract:id=>interior?.interact(id),interiorState:()=>interior?.state()??null,interiorProgress:()=>({...interiorProgress}),parkourState,locateCourse,assistJump,mobilityState,locateDepot,mountVehicle,activateFrontier,setSectorProgress,selectVehicleType,clearGearInput:()=>{clearInput();last=0;},
+  return {addZones,visit,travel,frame,setMapMode,adjustCamera,action,setMovementKey,interact,trailState,setWaypoint,adventureState,locateAdventure,locateBuilding,enterBuilding,interiorWalk:id=>interior?.walkTo(id),interiorInteract:id=>interior?.interact(id),interiorState:()=>interior?.state()??null,interiorProgress:()=>({...interiorProgress}),parkourState,locateCourse,assistJump,mobilityState,locateDepot,mountVehicle,activateFrontier,setSectorProgress,selectVehicleType,selectGearPower,clearGearInput:()=>{clearInput();last=0;},
     districtMap:()=>[...portals.values()].map(({index,x,z,upper,deck,topic,storeys})=>({index,x,z,upper,deck,topic,storeys})),
     discoveries:()=>[discovered.size,secrets.length]};
 }
