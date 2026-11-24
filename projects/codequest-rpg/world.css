@@ -782,3 +782,49 @@ body:has(.roomStudio)>.topbar nav a:hover,body:has(.roomStudio)>.topbar nav butt
 .roomCompass [data-axis].directionPreview{background:#f1d89d!important;color:#26382f!important;outline:2px solid #e7be65}
 @media(max-width:700px){.qualityControl{font-size:11px}.islandControlsToggle{top:120px}.contextAction{top:64%;font-size:12px}.roomInteractionCue{font-size:11px}#missionPicker .islandHelp{top:154px}}
 @media(prefers-reduced-motion:reduce){.contextAction,.roomInteractionCue,.roomCompass *{animation:none!important;transition:none!important}}
+
+/* V9.2 · exploration first. Secondary functions are disclosed on demand. */
+#missionPicker .missionHeader{padding:6px 16px;min-height:52px}
+#missionPicker .missionHeader h2{font:600 19px system-ui;letter-spacing:0}
+#missionPicker #missionHero,#missionPicker #islandDiscoveries,#missionPicker #islandTrailProgress{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+#missionPicker .missionHeader #missionProgress{font-size:11px}
+#missionPicker .islandTools{top:10px;right:10px;gap:5px;align-items:flex-start;flex-wrap:nowrap}
+#missionPicker .islandTools button,#missionPicker .exploreMenu summary,#missionPicker .adventureHotbar summary{font:600 12px system-ui;min-height:34px;padding:7px 9px;border:1px solid #829b9f;border-radius:7px;background:#17343ee8;color:#edf4ea;cursor:pointer;box-shadow:none}
+#missionPicker .exploreMenu{position:relative}
+#missionPicker .exploreMenuItems{position:absolute;top:42px;right:0;display:grid;grid-template-columns:1fr 1fr;gap:5px;width:235px;background:#142e39f5;border:1px solid #718a8f;border-radius:9px;padding:8px;box-shadow:0 8px 18px #10212e55}
+#missionPicker .exploreMenu:not([open]) .exploreMenuItems,#missionPicker .adventureHotbar:not([open]) .powerItems{display:none}
+#missionPicker .islandControlsToggle{top:10px;left:10px;font:600 12px system-ui}
+#missionPicker .islandHelp{top:50px}
+#missionPicker .adventureHotbar{left:auto;right:10px;bottom:10px;transform:none;max-width:min(420px,calc(100% - 20px));width:auto;padding:0;border:0;background:transparent;box-shadow:none;display:block}
+#missionPicker .adventureHotbar summary{width:max-content;margin-left:auto;list-style:none}
+#missionPicker .adventureHotbar summary::-webkit-details-marker{display:none}
+#missionPicker .adventureHotbar[open] summary{margin-bottom:5px}
+#missionPicker .powerItems{display:flex;align-items:center;flex-wrap:wrap;justify-content:flex-end;gap:4px;padding:7px;background:#142e39f2;border:1px solid #718a8f;border-radius:8px}
+#missionPicker .adventureHotbar #adventureProgress{font-size:10px;color:#c6d9d6}
+#missionPicker .islandTraversal{bottom:10px;left:10px;right:auto;transform:none;max-width:calc(100% - 180px)}
+#missionPicker .islandTraversal button{min-height:34px;padding:6px 8px;font-size:11px}
+#missionPicker .islandTraversal span:not(:empty){font-size:11px;max-width:230px}
+#missionPicker .contextAction{top:auto;bottom:64px;transform:translateX(-50%);box-shadow:none}
+#missionPicker .mobilityHUD{bottom:66px;left:10px;top:auto;max-width:min(310px,calc(100% - 20px));box-shadow:none}
+#missionPicker .parkourHUD{bottom:65px;right:10px;box-shadow:none}
+#missionPicker .buildingEntrance{bottom:64px;left:10px;box-shadow:none;padding:7px 10px}
+#missionPicker .islandDiscovery{box-shadow:none}
+#missionPicker:has(#buildingEntrance:not([hidden])) .contextAction,#missionPicker:has(#parkourHUD:not([hidden])) .contextAction,#missionPicker:has(#mobilityHUD:not([hidden])) .contextAction{display:none}
+#missionPicker .islandTrailDistance{bottom:112px}
+#missionPicker .islandTrailPanel,#missionPicker #islandDirectory{top:55px;bottom:62px}
+#missionPicker .islandDpad{bottom:68px}
+#missionPicker.insideBuilding .adventureHotbar,#missionPicker.insideBuilding .islandTraversal{display:none}
+@media (min-width:701px) and (pointer:fine){#missionPicker .islandTraversal button{display:none}#missionPicker .islandTraversal span:empty{display:none}}
+@media (max-width:700px){
+#missionPicker .missionHeader h2{font-size:16px}
+#missionPicker .islandTools button,#missionPicker .exploreMenu summary{padding:6px;min-height:32px;font-size:11px}
+#missionPicker .islandTools button[aria-label^="Zoom"]{min-width:30px}
+#missionPicker .adventureHotbar{max-width:calc(100% - 20px)}
+#missionPicker .islandTraversal{bottom:10px;max-width:calc(100% - 150px)}
+#missionPicker .islandTraversal span{display:none}
+#missionPicker .mobilityHUD,#missionPicker .buildingEntrance,#missionPicker .parkourHUD{top:auto;bottom:160px;font-size:11px}
+#missionPicker .contextAction{bottom:156px}
+#missionPicker .islandTrailDistance{bottom:218px}
+#missionPicker .islandDpad{bottom:55px}
+#missionPicker .islandTrailPanel,#missionPicker #islandDirectory{top:53px;bottom:53px}
+}
