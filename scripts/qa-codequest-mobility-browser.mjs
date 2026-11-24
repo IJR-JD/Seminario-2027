@@ -57,10 +57,11 @@ try{
  await wait(()=>document.querySelector('#mobilityHUD')?.dataset.skills==='servo');
  await go('[data-depot-route="depot-0"]');
  await wait(()=>document.querySelector('#mobilityHUD')?.dataset.nearFrontier==='frontier-0'&&!document.querySelector('#frontierLift').disabled);
- await page.locator('#frontierLift').click();
- await wait(()=>document.querySelector('#mobilityHUD')?.dataset.frontier==='frontier-0',null,20000);
+ await page.locator('#gearWheelToggle').click();await page.locator('#gearWheel').waitFor({state:'visible'});
+ assert(await page.locator('[data-wheel-action="frontier"]').isEnabled());await page.locator('[data-wheel-action="frontier"]').click();
+ try{await wait(()=>document.querySelector('#mobilityHUD')?.dataset.frontier==='frontier-0',null,45000);}catch(error){console.log('LIFT DIAGNOSTICS '+JSON.stringify(await page.evaluate(()=>({hud:{...document.querySelector('#mobilityHUD').dataset},canvas:{...document.querySelector('#overworldCanvas').dataset},toast:document.querySelector('#islandDiscoveryToast').textContent,gearOpen:document.querySelector('#missionPicker').dataset.gearOpen}))));await page.screenshot({path:'qa-codequest/lift-failed.png'});throw error;}
  await page.screenshot({path:'qa-codequest/mobility-frontier.png'});
- await page.keyboard.down('d');
+ await page.locator('#overworldCanvas').focus();await page.keyboard.down('d');
  await wait(()=>document.querySelector('#mobilityHUD')?.dataset.visited.includes('frontier-0'),null,20000);
  await page.keyboard.up('d');
  await page.screenshot({path:'qa-codequest/mobility-beacon.png'});
@@ -68,7 +69,8 @@ try{
  await page.keyboard.down('a');
  await wait(()=>document.querySelector('#mobilityHUD')?.dataset.nearFrontier==='frontier-0'&&!document.querySelector('#frontierLift').disabled,null,20000);
  await page.keyboard.up('a');
- await page.locator('#frontierLift').click();
+ await page.locator('#gearWheelToggle').click();await page.locator('#gearWheel').waitFor({state:'visible'});
+ assert(await page.locator('[data-wheel-action="frontier"]').isEnabled());await page.locator('[data-wheel-action="frontier"]').click();
  await wait(()=>document.querySelector('#mobilityHUD')?.dataset.frontier===''&&document.querySelector('#mobilityHUD')?.dataset.lifting==='false',null,20000);
  await page.setViewportSize({width:390,height:844});await page.screenshot({path:'qa-codequest/mobility-mobile.png'});
  assert.deepEqual(errors,[]);
