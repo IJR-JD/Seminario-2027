@@ -3,6 +3,8 @@ import {islandBounds as bounds,islandCrossings as crossings,shore,isIslandWalkab
 import {islandDistricts,villageHouses,secondFloorHeight,roomLocation} from './island-villages.mjs';
 import {adventureKey,shrines,travelGates,circuits,traps,wallLane,flightLimit,dashDuration,dashCooldown,blocked,groundSafe,airSafe,onWallLane,trapActive,restoreProgress,padResult,routeAdventure,segmentSafe} from './island-adventure.mjs';
 import {animateIslandAvatar} from './island-avatar.mjs';
+import {gear,anchors,jetCapacity,selectAnchor,swingStart,swingStep,jetStep} from './island-airgear.mjs';
+import {createIslandDetail} from './island-detail.mjs';
 
 const river=z=>Math.abs(z)<3.3;
 const bridge=x=>crossings.some(center=>Math.abs(x-center)<2.1);
@@ -39,6 +41,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   const unlocked=new Set(adventure.powers),solved=new Set(adventure.circuits);
   const trialState=new Map(circuits.map(c=>[c.id,{next:0,used:!c.requires}]));
   let dashLeft=0,dashWait=0,flightLeft=flightLimit,flying=false,wallRunning=false,gateLock=0,damageLock=0;
+  let jetting=false,jetFuel=jetCapacity,jetHeight=2,swing=null,releaseMotion=null,jetInput=0;
   const dashVector=new THREE.Vector3(),safeSpot=new THREE.Vector3();
   let lastAdventure='',activeGate=null,activePad=null;
   function saveAdventure(){
@@ -48,7 +51,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   function notify(message){onAdventureToast?.(message);}
   function adventureState(){
     return {powers:[...unlocked],circuits:[...solved],setbacks:adventure.setbacks,
-      flying,wallRunning,flight:Math.ceil(flightLeft*10)/10,dashReady:dashWait<=0,gate:activeGate?.name??null,
+      flying,wallRunning,jetting,jetFuel:Math.ceil(jetFuel*10)/10,grappling:!!swing,anchor:swing?.anchor.id??null,flight:Math.ceil(flightLeft*10)/10,dashReady:dashWait<=0,gate:activeGate?.name??null,
       progress:Object.fromEntries([...trialState].map(([id,p])=>[id,p.next]))};
   }
   function publishAdventure(){
@@ -85,6 +88,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     scene.add(mesh);
     return mesh;
   }
+  const details=createIslandDetail(scene,{elevation,groundSafe,blocked,landmarks:[...shrines,...gear,...travelGates,...circuits,...pythonWaystations]});
   const water=new THREE.Mesh(new THREE.PlaneGeometry(420,420),new THREE.MeshStandardMaterial({color:'#258dac',roughness:.48}));
   water.rotation.x=-Math.PI/2;
   water.position.y=-1;
@@ -106,10 +110,12 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   }
   ground.setAttribute('color',new THREE.Float32BufferAttribute(shades,3));
   ground.computeVertexNormals();
-  const island=new THREE.Mesh(ground,new THREE.MeshStandardMaterial({vertexColors:true,roughness:1}));
+  const island=new THREE.Mesh(ground,new THREE.MeshStandardMaterial({vertexColors:true,roughness:1,map:details.ground}));
   scene.add(island);
   const wood=material('#a07750'), timber=material('#503c34'), ivory=material('#ddc398');
   const roofMats=['#885d49','#ab7346','#54678d','#526956','#534e6b','#763f3c'].map(material);
+  roofMats.forEach(m=>{m.map=details.roof;m.needsUpdate=true;});
+  wood.map=details.wood;wood.needsUpdate=true;
   const roofGeometry=new THREE.ConeGeometry(3.32,1.82,4);
   const glow=new THREE.MeshBasicMaterial({color:'#ffd79a'});
   const lampGeo=new THREE.OctahedronGeometry(.25);
@@ -252,7 +258,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     return activeTrail?.id??null;
   }
   // Adventure landmarks have distinct silhouettes, colors, and physical interaction zones.
-  const shrineModels=shrines.map(p=>{
+  const shrineModels=[...shrines,...gear].map(p=>{
     const y=elevation(p.x,p.z),mat=material(p.color);
     box(3,.25,3,stonework,p.x,y+.12,p.z);
     for(const side of [-1,1])box(.38,2.55,.42,mat,p.x+side*1.10,y+1.35,p.z);
@@ -303,6 +309,27 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     box(.75,3.3,2.05,material('#665b85'),wallLane.x,y+1.55,z);
     box(.15,.14,1.75,material('#c3aaff'),wallLane.x-.43,y+1.6,z);
   }
+  // Elevated attachment towers: original tether anchors with glowing target rings.
+  const anchorModels=anchors.map(p=>{
+    const y=elevation(p.x,p.z),top=y+p.h;
+    const steel=material('#586e78'),brace=material('#8b9e9d'),copper=material('#bb9b65');
+    box(2.5,.35,2.5,steel,p.x,y+.15,p.z);
+    for(const side of [-1,1]){
+      box(.28,p.h,.28,steel,p.x+side*.62,y+p.h/2,p.z);
+      for(let h=1;h<p.h;h+=2.2){
+        const beam=box(.12,2.45,.12,brace,p.x,y+h,p.z);
+        beam.rotation.z=side*.48;
+      }
+    }
+    box(2.2,.22,1.4,copper,p.x,top-.35,p.z);
+    const ring=new THREE.Mesh(new THREE.TorusGeometry(.58,.13,10,24),new THREE.MeshStandardMaterial({color:'#8cece7',emissive:'#55c8d6',emissiveIntensity:.65}));
+    ring.position.set(p.x,top,p.z);scene.add(ring);
+    return {...p,y:top,ring};
+  });
+  const ropeGeometry=new THREE.BufferGeometry();
+  ropeGeometry.setAttribute('position',new THREE.BufferAttribute(new Float32Array(6),3));
+  const rope=new THREE.Line(ropeGeometry,new THREE.LineBasicMaterial({color:'#c7fcff'}));rope.frustumCulled=false;rope.visible=false;scene.add(rope);
+  const jetFx=Array.from({length:2},()=>{const m=new THREE.Mesh(new THREE.ConeGeometry(.19,.85,7),new THREE.MeshBasicMaterial({color:'#ffb46e',transparent:true,opacity:.8}));m.rotation.z=Math.PI;m.visible=false;scene.add(m);return m;});
   const shadow=new THREE.Mesh(new THREE.CircleGeometry(.55,24),new THREE.MeshBasicMaterial({color:'#213c42',transparent:true,opacity:.32,depthWrite:false}));
   shadow.rotation.x=-Math.PI/2;scene.add(shadow);
   const speedFx=Array.from({length:8},(_,i)=>{
@@ -323,6 +350,25 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   }
   function action(key){
     if(!hero)return;
+    if(key==='grapple'){
+      if(!unlocked.has('grapple')){notify('Find the Tether Workshop to unlock the harness.');return;}
+      if(swing){releaseMotion={vx:swing.state.vx,vy:swing.state.vy,vz:swing.state.vz};swing=null;rope.visible=false;return;}
+      if(climb||deck!==null||crouched||jetting||flying||wallRunning)return;
+      const heading={x:Math.sin(hero.rotation.y),z:Math.cos(hero.rotation.y)};
+      const origin={x:position.x,y:elevation(position.x,position.z)+Math.max(air,2.5),z:position.z};
+      const anchor=selectAnchor(origin,anchorModels,heading);
+      if(!anchor){notify('No anchor in range · approach a cyan tower.');return;}
+      swing={anchor,state:swingStart(origin,anchor,heading)};releaseMotion=null;target=null;waypoints=[];dashLeft=0;velocity=0;notify('Tether attached · steer with WASD, T to release.');return;
+    }
+    if(key==='jetpack'){
+      if(!unlocked.has('jetpack')){notify('Find the Jetpack Forge to unlock the thrusters.');return;}
+      if(jetting){jetting=false;jetInput=0;if(!groundSafe(position.x,position.z)){position.copy(safeSpot);air=0;}else velocity=0;return;}
+      if(climb||deck!==null||crouched||swing||releaseMotion||flying||wallRunning||jetFuel<.5)return;
+      jetting=true;jetHeight=Math.max(2,air);velocity=0;dashLeft=0;target=null;waypoints=[];notify('Jetpack active · Space ascend / C descend / J land.');return;
+    }
+    if((swing||releaseMotion||jetting)&&!['jump','crouch'].includes(key))return;
+    if(jetting&&(key==='jump'||key==='crouch')){jetInput=key==='jump'?1:-1;return;}
+    if(swing||releaseMotion)return;
     if(key==='gate'){
       if(activeGate&&gateLock<=0&&!climb&&deck===null&&!flying){
         const destination=gateModels.find(g=>g.id===activeGate.to);
@@ -392,6 +438,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   // All 22 lesson IDs remain stable; a second-storey portal only changes physical access.
   function addVillageHouse({x,z,zoneIndex,storeys,upper,roomIndex,topic}){
     const facade=material(colors[zoneIndex]),accent=roofMats[zoneIndex],gold=material('#f4d594');
+    facade.map=details.stone;facade.needsUpdate=true;
     const y=elevation(x,z),hallZ=z-2.7,hallY=elevation(x,hallZ);
     const height=storeys===2?6.15:3.05;
     const base=box(3.2,.28,2.9,facade,x,y+.12,z+.15);
@@ -400,6 +447,22 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     roof.rotation.y=Math.PI/4;
     roof.position.set(x,hallY+height+.85,hallZ);
     scene.add(roof);
+    // Architectural trim: plinth, corner pilasters, framed windows, sills and eaves.
+    box(4.02,.35,3.48,stonework,x,hallY+.17,hallZ);
+    box(4.12,.18,3.58,timber,x,hallY+height-.07,hallZ);
+    for(const sx of [-1,1])for(const sz of [-1,1]){
+      box(.18,height-.25,.18,ivory,x+sx*1.89,hallY+height/2,hallZ+sz*1.59);
+    }
+    for(let floor=0;floor<storeys;floor++)for(const side of [-1,1]){
+      const wy=hallY+1.58+floor*2.99,wx=x+side*1.08,wz=hallZ+1.72;
+      box(.66,.84,.10,timber,wx,wy,wz);
+      box(.48,.65,.12,glow,wx,wy,wz+.06);
+      box(.045,.66,.14,timber,wx,wy,wz+.13);
+      box(.50,.045,.14,timber,wx,wy,wz+.13);
+      box(.75,.11,.24,ivory,wx,wy-.43,wz+.07);
+      box(.12,.72,.70,timber,x+side*1.96,wy,hallZ);
+      box(.13,.52,.50,glow,x+side*2.03,wy,hallZ);
+    }
     // Consistent front porch, stone columns and warm windows on every house.
     for(const side of [-1,1]){
       box(.29,2.45,.28,ivory,x+side*1.37,y+1.2,z+.15);
@@ -546,13 +609,13 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   });
   canvas.addEventListener('keydown',event=>{
     const key=event.key.length===1?event.key.toLowerCase():event.key;
-    if([' ','c','f','q','e','r','x','v','b','g','+','=','-'].includes(key)){
+    if([' ','c','f','q','e','r','x','v','b','g','t','j','+','=','-'].includes(key)){
       event.preventDefault();
       if(event.repeat)return;
       if(key==='q'||key==='e')adjustCamera(key==='q'?.3:-.3);
       else if(['+','=','-'].includes(key))adjustCamera(0,key==='-'?1.18:1/1.18);
       else if(key==='r'){if(nearbyGuide)onDialogue?.(nearbyGuide);}
-      else action({' ':'jump',c:'crouch',f:'climb',x:'dash',v:'fly',b:'wall',g:'gate'}[key]);
+      else action({' ':'jump',c:'crouch',f:'climb',x:'dash',v:'fly',b:'wall',g:'gate',t:'grapple',j:'jetpack'}[key]);
       return;
     }
     if(key==='Shift'){keys.add(key);return;}
@@ -566,8 +629,8 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
       interact();
     }
   });
-  canvas.addEventListener('keyup',event=>keys.delete(event.key.length===1?event.key.toLowerCase():event.key));
-  canvas.addEventListener('blur',()=>keys.clear());
+  canvas.addEventListener('keyup',event=>{const k=event.key.length===1?event.key.toLowerCase():event.key;keys.delete(k);if(k===' '||k==='c')jetInput=0;});
+  canvas.addEventListener('blur',()=>{keys.clear();jetInput=0;});
   function routeTo(x,z){
     waypoints=[];
     try{
@@ -586,9 +649,9 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     if(!groundSafe(position.x,position.z)){position.copy(safeSpot);notify('Flight ended over water · returned to safe ground.');}
   }
   function locateAdventure(id){
-    const p=[...shrines,...travelGates,...circuits].find(item=>item.id===id);
+    const p=[...shrines,...gear,...travelGates,...circuits].find(item=>item.id===id);
     if(!p)return false;
-    if(deck!==null||climb||flying){notify('Return to ground before setting a route.');return false;}
+    if(deck!==null||climb||flying||jetting||swing||releaseMotion){notify('Return to ground before setting a route.');return false;}
     routeTo(p.x,p.z);return Boolean(target);
   }
   function visit(index,available,marks){
@@ -607,6 +670,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     waypoints=[];
     gait=0;pace=0;air=0;velocity=0;deck=null;climb=null;crouched=false;
     dashLeft=0;dashWait=0;flightLeft=flightLimit;flying=false;wallRunning=false;gateLock=0;damageLock=0;activePad=null;activeGate=null;safeSpot.copy(position);
+    jetting=false;jetFuel=jetCapacity;jetHeight=2;jetInput=0;swing=null;releaseMotion=null;rope.visible=false;
     baseHeight=hero.scale.y;
     keys.clear();
     near=undefined;
@@ -647,27 +711,43 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     }
     if(target)trail.subVectors(target,position);
     const dashing=dashLeft>0;
+    if(jetting){const j=jetStep(jetFuel,jetHeight,jetInput,delta);jetFuel=j.fuel;jetHeight=j.height;air=jetHeight;if(!jetFuel){jetting=false;jetInput=0;if(!groundSafe(position.x,position.z)){position.copy(safeSpot);air=0;}velocity=0;}}
+    else if(!air&&!swing&&!releaseMotion&&groundSafe(position.x,position.z))jetFuel=Math.min(jetCapacity,jetFuel+delta*1.25);
+    const airborneGear=!!(swing||releaseMotion);
     if(dashing){trail.copy(dashVector);dashLeft=Math.max(0,dashLeft-delta);}
     if(wallRunning){trail.x=0;trail.z=Math.sign(trail.z);}
     if(climb)trail.set(0,0,0);
-    if(!flying&&(air>0||velocity!==0)){
+    if(!flying&&!jetting&&!airborneGear&&(air>0||velocity!==0)){
       velocity-=delta*18;
       air+=velocity*delta;
       if(air<=0){air=0;velocity=0;}
     }
     const distance=trail.length();
-    if(distance>.025){
+    if(airborneGear){
+      const input=trail.clone();if(input.length()>1)input.normalize();
+      const current=swing?swingStep(swing.state,swing.anchor,input,delta):{x:position.x+releaseMotion.vx*delta,y:elevation(position.x,position.z)+air+(releaseMotion.vy-=14*delta)*delta,z:position.z+releaseMotion.vz*delta};
+      const groundY=elevation(current.x,current.z);
+      if(!airSafe(current.x,current.z)||current.y<groundY+.28||current.y>groundY+30){
+        if(!groundSafe(position.x,position.z))position.copy(safeSpot);
+        swing=null;releaseMotion=null;air=0;velocity=0;
+      }else{
+        position.set(current.x,0,current.z);air=current.y-groundY;
+        if(swing){swing.state=current;if(current.time>9){releaseMotion={vx:current.vx,vy:current.vy,vz:current.vz};swing=null;}}
+        const v=swing?.state??releaseMotion;
+        if(v)hero.rotation.y=Math.atan2(v.vx,v.vz);
+      }
+    }else if(distance>.025){
       const heading=Math.atan2(trail.x,trail.z);
       hero.rotation.y+=Math.atan2(Math.sin(heading-hero.rotation.y),Math.cos(heading-hero.rotation.y))*Math.min(1,delta*14);
-      const speed=dashing?27:flying?15:wallRunning?12:crouched?3.5:target?14:keys.has('Shift')?15:8;
+      const speed=dashing?27:jetting?19:flying?15:wallRunning?12:crouched?3.5:target?14:keys.has('Shift')?15:8;
       const stride=target?Math.min(distance,delta*speed):delta*speed;
       trail.normalize();
       const nextX=position.x+trail.x*stride,nextZ=position.z+trail.z*stride;
       const onDeck=deck===null||(Math.abs(nextX-towers[deck].x)<1.72&&Math.abs(nextZ-towers[deck].z)<1.72);
-      const valid=flying?airSafe(nextX,nextZ):wallRunning?onWallLane(nextX,nextZ)&&groundSafe(nextX,nextZ):segmentSafe(position,{x:nextX,z:nextZ});
-      if(valid&&onDeck&&(flying||crouched||!lowCeiling(nextX,nextZ))){
+      const valid=flying||jetting?airSafe(nextX,nextZ):wallRunning?onWallLane(nextX,nextZ)&&groundSafe(nextX,nextZ):segmentSafe(position,{x:nextX,z:nextZ});
+      if(valid&&onDeck&&(flying||jetting||crouched||!lowCeiling(nextX,nextZ))){
         position.set(nextX,0,nextZ);
-        if(groundSafe(nextX,nextZ)&&!flying&&!wallRunning&&!air&&!trapModels.some(t=>Math.hypot(t.x-nextX,t.z-nextZ)<t.r+1.2))safeSpot.copy(position);
+        if(groundSafe(nextX,nextZ)&&!flying&&!jetting&&!wallRunning&&!air&&!trapModels.some(t=>Math.hypot(t.x-nextX,t.z-nextZ)<t.r+1.2))safeSpot.copy(position);
       }
       else if(target&&!crouched&&lowCeiling(nextX,nextZ)&&!lowCeiling(target.x,target.z)){
         const side=passage.x+(position.x<passage.x?-2.8:2.8);
@@ -700,14 +780,14 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     const time=now/1000;
     for(const p of shrineModels){
       p.gem.rotation.y=time*1.6;p.gem.position.y=p.y+1.65+.15*Math.sin(time*3);
-      if(!unlocked.has(p.id)&&deck===null&&!flying&&!climb&&Math.hypot(position.x-p.x,position.z-p.z)<1.85){
+      if(!unlocked.has(p.id)&&deck===null&&!flying&&!jetting&&!swing&&!releaseMotion&&air<.7&&!climb&&Math.hypot(position.x-p.x,position.z-p.z)<1.85){
         unlocked.add(p.id);saveAdventure();notify(p.name+' · '+p.description);
       }
       p.gem.material.emissiveIntensity=unlocked.has(p.id)?.18:.75;
     }
     for(const g of gateModels){
       g.ring.rotation.z=time*.6;g.core.material.opacity=.17+.07*Math.sin(time*3);
-      if(deck===null&&!climb&&!flying&&Math.hypot(position.x-g.x,position.z-g.z)<2.5)activeGate=g;
+      if(deck===null&&!climb&&!flying&&!jetting&&!swing&&!releaseMotion&&air<.7&&Math.hypot(position.x-g.x,position.z-g.z)<2.5)activeGate=g;
     }
     for(const c of circuits){
       const state=trialState.get(c.id);
@@ -757,7 +837,12 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
       fx.position.set(hero.position.x+Math.sin(i*2.4)*.65-Math.sin(hero.rotation.y)*(i*.25+.4),hero.position.y+.8+(i%3)*.24,hero.position.z+Math.cos(i*2.4)*.65-Math.cos(hero.rotation.y)*(i*.25+.4));
       fx.rotation.y=hero.rotation.y;
     }
-    onTraversal?.(climb?'Climbing':flying?'Flying · '+flightLeft.toFixed(1)+'s':wallRunning?'Wall running':dashing?'Dash':activeGate?'Travel gate · G':ladder()>=0?'Ladder nearby · F':lowCeiling(position.x,position.z)?'Low passage · C':crouched?'Crouching':air>0?'Jumping':'');
+    rope.visible=!!swing;
+    if(swing){const p=ropeGeometry.attributes.position;p.setXYZ(0,hero.position.x,hero.position.y+1.45,hero.position.z);p.setXYZ(1,swing.anchor.x,swing.anchor.y,swing.anchor.z);p.needsUpdate=true;}
+    for(const [i,fx] of jetFx.entries()){fx.visible=jetting;fx.position.set(hero.position.x+(i?1:-1)*.27*Math.cos(hero.rotation.y)-.30*Math.sin(hero.rotation.y),hero.position.y+.43,hero.position.z-(i?1:-1)*.27*Math.sin(hero.rotation.y)-.30*Math.cos(hero.rotation.y));fx.scale.y=.65+.4*Math.sin(time*24+i);}
+    for(const a of anchorModels){a.ring.rotation.y=time*.7;a.ring.material.emissiveIntensity=swing?.anchor===a?1.5:.55+.16*Math.sin(time*3);}
+    details.update(time,delta,mapMode);
+    onTraversal?.(swing?'Tether swing · T release':releaseMotion?'Aerial release':jetting?'Jetpack · '+jetFuel.toFixed(1)+'s':climb?'Climbing':flying?'Flying · '+flightLeft.toFixed(1)+'s':wallRunning?'Wall running':dashing?'Dash':activeGate?'Travel gate · G':ladder()>=0?'Ladder nearby · F':lowCeiling(position.x,position.z)?'Low passage · C':crouched?'Crouching':air>0?'Jumping':'');
     publishAdventure();
     if(mapMode){
       const extent=Math.max(132,163/aspect)*zoom;
@@ -768,7 +853,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
       survey.lookAt(0,0,0);
     }else{
       look.lerp(hero.position,1-Math.exp(-delta*8));
-      const distance=(aspect<1?15:13)*zoom,horizontal=Math.cos(pitch)*distance;
+      const distance=(aspect<1?15:13)*zoom*(swing||jetting||releaseMotion?1.20:1),horizontal=Math.cos(pitch)*distance;
       follow.position.set(look.x+Math.sin(yaw)*horizontal,look.y+Math.sin(pitch)*distance+.8,look.z+Math.cos(yaw)*horizontal);
       follow.lookAt(look.x,look.y+.9,look.z);
       follow.aspect=aspect;
@@ -777,8 +862,8 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     camera.updateMatrixWorld();
     pace+=(Number(distance>.025)-pace)*Math.min(1,delta*12);
     gait+=delta*pace*(keys.has('Shift')&&!crouched?21:14);
-    const mode=climb?'climb':flying?'fly':wallRunning?'wall':dashing?'dash':crouched?'crouch':air>0?'jump':keys.has('Shift')&&distance>.025?'sprint':distance>.025?'walk':'idle';
-    animateIslandAvatar(hero,{time:now/1000,delta,pace,mode,phase:climb?climb.time*45:gait});
+    const mode=swing?'grapple':jetting?'jetpack':releaseMotion?'jump':climb?'climb':flying?'fly':wallRunning?'wall':dashing?'dash':crouched?'crouch':air>0?'jump':keys.has('Shift')&&distance>.025?'sprint':distance>.025?'walk':'idle';
+    animateIslandAvatar(hero,{time:now/1000,delta,pace,mode,phase:climb?climb.time*45:gait,gear:[...unlocked]});
     for(const [i,ripple] of ripples.entries())ripple.scale.x=.75+.35*Math.sin(now*.0018+i);
     for(const relic of relics){
       if(!relic.gem.visible)continue;
@@ -827,7 +912,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     let closest,best=2.9;
     for(const item of portals.values()){
       const distance=Math.hypot(position.x-item.x,position.z-(item.z+1.15));
-      if(distance<best&&deck===item.deck&&!climb&&!flying&&!wallRunning&&air<.8){best=distance;closest=item.index;}
+      if(distance<best&&deck===item.deck&&!climb&&!flying&&!jetting&&!swing&&!releaseMotion&&!wallRunning&&air<.8){best=distance;closest=item.index;}
       item.ring.position.y=item.y+1.12+.12*Math.sin(now*.002+item.index);
       item.ring.rotation.z=now*.00065;
       item.ring.material.emissiveIntensity=deck===item.deck&&distance<2.15?.92:.45+.17*Math.sin(now*.003+item.index);
