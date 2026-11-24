@@ -1,4 +1,5 @@
-import {createOverworld} from './overworld.mjs?v=columns83';
+import {createGearWheel} from './gear-wheel.mjs?v=wheel84';
+import {createOverworld} from './overworld.mjs?v=wheel84';
 import {createIslandAvatar} from './island-avatar.mjs';
 import {shrines,travelGates,circuits} from './island-adventure.mjs';
 import {gear} from './island-airgear.mjs';
@@ -26,6 +27,7 @@ const heroDefaults={name:'Code Explorer',style:'guardian',personality:'brave',sk
 let hero={...heroDefaults},completed=new Set(),level=0,worldGroup,actor,actorParts,goalMesh,crystalMeshes=[],checkpointMeshes=[],tileMeshes=[],activeRun=0,running=false,stopped=false,positions={x:0,z:0},variables={},collected=new Set(),visited=new Set(),actions=0,hasArithmetic=false,success=false,previewActor;
 const bestSteps=new Map();
 let overworld,portalChanged,portalEntered,portalPrompt;
+const gearWheel=createGearWheel({picker:$('missionPicker'),canvas:$('overworldCanvas'),button:$('gearWheelToggle'),panel:$('gearWheel'),getWorld:()=>overworld,onMessage:message=>showIslandToast(message)});
 try{const saved=JSON.parse(localStorage.getItem(STORAGE)||'{}');completed=new Set((saved.completed||[]).filter(i=>Number.isInteger(i)&&i>=0&&i<levels.length));for(const [id,steps] of Object.entries(saved.bestSteps??{})){const index=Number(id);if(completed.has(index)&&Number.isInteger(steps)&&steps>0&&steps<=75)bestSteps.set(index,steps);}level=clamp(saved.level||0,0,levels.length-1);if(!isAvailable(level))level=0}catch{}
 try{hero={...hero,...JSON.parse(localStorage.getItem(HERO)||'{}')}}catch{}
 function isAvailable(i){
@@ -804,6 +806,7 @@ function openMissions(){
     }
   }
   portalChanged(undefined);
+  $('gearWheelToggle').hidden=!overworld;
   if(overworld){
     cameraToggle.hidden=false;
     trailToggle.hidden=false;adventureToggle.hidden=false;renderAdventure(overworld.adventureState());
@@ -1249,7 +1252,7 @@ function resize(){
 recenterCamera();
 new ResizeObserver(resize).observe($('cameraStage'));
 const clock=new THREE.Clock();function animate(){requestAnimationFrame(animate);const t=clock.getElapsedTime();
-if($('missionPicker').open&&overworld){overworld.frame(performance.now());return;}
+if($('missionPicker').open&&overworld){if(!gearWheel.isOpen())overworld.frame(performance.now());return;}
 for(const device of devices){
   device.rotor.rotation.y=t*(device.kind==='sentry'?2:.8);
   device.rotor.position.y=.68+Math.sin(t*2+device.x)*.15;

@@ -36,10 +36,26 @@ try{
   await prepare(desktop);
   console.log('QA desktop: island ready');
   await openIsland(desktop);
-  await desktop.waitForFunction(()=>document.querySelector('#overworldCanvas')?.dataset.release==='8.3-columns');
+  await desktop.waitForFunction(()=>document.querySelector('#overworldCanvas')?.dataset.release==='8.4-wheel');
   const metrics=await desktop.locator('#overworldCanvas').evaluate(c=>({...c.dataset}));
   assert(Number(metrics.visibleLabels)<=6);assert(Number(metrics.triangles)>0);assert(Number(metrics.renderRatio)>0);console.log('PASS live renderer diagnostics '+JSON.stringify(metrics));
   assert(Number(metrics.columns)>=144,'Registered solid columns');
+  const wheel=desktop.locator('#gearWheel');
+  await desktop.locator('#overworldCanvas').focus();await desktop.keyboard.down('Tab');
+  await wheel.waitFor({state:'visible'});
+  assert.equal(await wheel.locator('[data-gear]').count(),8);
+  assert.equal(await wheel.locator('[data-gear="dash"]').getAttribute('data-state'),'locked');
+  assert.equal(await wheel.locator('[data-gear="hover"]').getAttribute('data-state'),'locked');
+  assert.equal(await wheel.locator('[data-gear="rover"]').getAttribute('data-state'),'ready');
+  await desktop.keyboard.press('ArrowRight');
+  assert.equal(await wheel.locator('[data-gear="dash"]').getAttribute('aria-pressed'),'true');
+  await desktop.keyboard.press('Escape');await desktop.keyboard.up('Tab');
+  assert(await wheel.isHidden());assert(await desktop.locator('#missionPicker').evaluate(e=>e.open));
+  await desktop.keyboard.down('Tab');await wheel.waitFor({state:'visible'});await desktop.keyboard.up('Tab');assert(await wheel.isHidden());
+  await desktop.screenshot({path:'qa-codequest/wheel-closed.png'});
+  await desktop.locator('#gearWheelToggle').click();await wheel.waitFor({state:'visible'});await desktop.screenshot({path:'qa-codequest/wheel-desktop.png'});
+  await wheel.locator('#gearCancel').click();
+  console.log('PASS hold Tab, cancel, release without selection, locked gear and click access');
   await desktop.locator('#overworldCanvas').focus();
   await desktop.keyboard.down('d');await desktop.keyboard.down('w');
   try{await desktop.waitForFunction(()=>Number(document.querySelector('#overworldCanvas').dataset.columnContacts)>0,null,{timeout:12000});}finally{await desktop.keyboard.up('d');await desktop.keyboard.up('w');}
@@ -99,6 +115,7 @@ try{
   const mobile=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
   await prepare(mobile);
   await openIsland(mobile);
+  await mobile.locator('#gearWheelToggle').tap();await mobile.locator('#gearWheel').waitFor({state:'visible'});await mobile.screenshot({path:'qa-codequest/wheel-mobile.png'});await mobile.locator('#gearCancel').tap();
   const forward=mobile.locator('#islandDpad [data-walk="ArrowUp"]');
   assert(await forward.isVisible(),'Touch D-pad should be visible on coarse pointers');
   const box=await forward.boundingBox();

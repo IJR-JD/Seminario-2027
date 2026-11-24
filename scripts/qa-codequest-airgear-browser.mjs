@@ -33,6 +33,7 @@ try{
  await open(4);
  await page.screenshot({path:'qa-codequest/dynamic-village.png'});
  await unlock('grapple');
+ await page.locator('.adventureHotbar').evaluate(el=>el.open=true);
  await page.locator('[data-power="grapple"]').click();
  await page.waitForFunction(()=>document.querySelector('#islandTraversalStatus')?.textContent.includes('Tether swing'),null,{timeout:15000});
  await page.waitForFunction(()=>document.querySelector('#tetherNetwork')?.dataset.next&&document.querySelector('#tetherNetwork')?.dataset.anchor,null,{timeout:12000});
@@ -47,15 +48,17 @@ try{
  await open(20);
  assert.equal(await page.locator('[data-power="grapple"]').getAttribute('data-unlocked'),'true');
  await unlock('jetpack');
- await page.locator('[data-power="jetpack"]').click();
+ await page.locator('#overworldCanvas').focus();await page.keyboard.down('Tab');
+ await page.locator('#gearWheel').waitFor({state:'visible'});await page.locator('[data-gear="jetpack"]').hover();await page.keyboard.up('Tab');
  await page.waitForFunction(()=>document.querySelector('#islandTraversalStatus')?.textContent.includes('Jetpack'),null,{timeout:15000});
  await page.keyboard.down('Space');
  await page.waitForFunction(()=>{const t=document.querySelector('#islandTraversalStatus')?.textContent||'';const m=t.match(/([0-9.]+)m$/);return m&&Number(m[1])>=3;},null,{timeout:15000});
  await page.keyboard.up('Space');
  await page.screenshot({path:'qa-codequest/dynamic-jetpack.png'});
- await page.locator('[data-power="jetpack"]').click();
+ await page.locator('#overworldCanvas').focus();await page.keyboard.down('Tab');
+ await page.locator('#gearWheel').waitFor({state:'visible'});await page.locator('[data-gear="jetpack"]').hover();await page.keyboard.up('Tab');
  await page.waitForFunction(()=>document.querySelector('[data-power="jetpack"]')?.getAttribute('aria-pressed')==='false');
- console.log('PASS discovered jetpack, ascended and deactivated');
+ console.log('PASS discovered jetpack, activated via Tab, ascended and deactivated via Tab');
  await page.locator('#islandAdventureToggle').click();
  assert.equal(await page.locator('#adventureList article').count(),13);
  await page.screenshot({path:'qa-codequest/dynamic-journal.png'});
