@@ -36,7 +36,7 @@ export function createIslandDetail(scene,{elevation,groundSafe,blocked,landmarks
    dummy.position.set(p.x,p.y,p.z);dummy.rotation.set(p.rx||0,p.ry||0,p.rz||0);dummy.scale.set(p.sx||1,p.sy||1,p.sz||1);dummy.updateMatrix();
    mesh.setMatrixAt(i,dummy.matrix);if(p.color)mesh.setColorAt(i,new THREE.Color(p.color));
   });
-  mesh.instanceMatrix.needsUpdate=true;scene.add(mesh);return mesh;
+  mesh.instanceMatrix.needsUpdate=true;mesh.computeBoundingSphere();scene.add(mesh);return mesh;
  };
  const grass=[],flowers=[],rocks=[],pebbles=[],tufts=[];
  for(let i=0;i<4700;i++){
@@ -62,26 +62,28 @@ export function createIslandDetail(scene,{elevation,groundSafe,blocked,landmarks
  function iColor(v){return v<.33?'#b5ab92':v<.66?'#918f81':'#bcb6a1';}
  batch(new THREE.DodecahedronGeometry(1,0),basic,pebbles);
  const clouds=[];
- const cloudMat=new THREE.MeshBasicMaterial({color:'#f4fbff',transparent:true,opacity:.72,depthWrite:false});
+ const cloudMat=new THREE.MeshBasicMaterial({color:'#f4fbff',transparent:true,opacity:.72,depthWrite:false});const cloudGeo=new THREE.SphereGeometry(1,9,6);
  for(let i=0;i<9;i++){
-  const g=new THREE.Group();const geo=new THREE.SphereGeometry(1,9,6);
+  const g=new THREE.Group();const geo=cloudGeo;
   for(let j=0;j<5;j++){const m=new THREE.Mesh(geo,cloudMat);m.position.set(j*4-8,Math.sin(j)*1.1,Math.cos(j)*2);m.scale.set(5+j%2,2.2,3.8);g.add(m);}
   g.position.set(-145+i*35,35+i%3*8,-80+(i*41)%170);scene.add(g);clouds.push(g);
  }
  const birdGeo=new THREE.BufferGeometry();
  birdGeo.setAttribute('position',new THREE.Float32BufferAttribute([-1,0,0,0,0,.35,1,0,0,0,0,-.25,-1,0,0,1,0,0],3));
+ const birdMat=new THREE.MeshBasicMaterial({color:'#405c6d',side:THREE.DoubleSide});
  const birds=Array.from({length:8},(_,i)=>{
-  const mesh=new THREE.Mesh(birdGeo,new THREE.MeshBasicMaterial({color:'#405c6d',side:THREE.DoubleSide}));scene.add(mesh);return mesh;
+  const mesh=new THREE.Mesh(birdGeo,birdMat);scene.add(mesh);return mesh;
  });
- const fireflies=Array.from({length:24},(_,i)=>({x:-87+rand()*40,z:30+rand()*25,phase:rand()*6.28}));
+ const fireflies=Array.from({length:24},(_,i)=>{const x=-87+rand()*40,z=30+rand()*25;return {x,z,y:elevation(x,z),phase:rand()*6.28};});
  const fireGeo=new THREE.BufferGeometry();fireGeo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(fireflies.length*3),3));
  const fire=new THREE.Points(fireGeo,new THREE.PointsMaterial({color:'#ffdf91',size:.18,transparent:true,opacity:.8}));scene.add(fire);
  function update(time,delta,mapMode){
   water.offset.set(time*.009,time*.004);
   clouds.forEach((g,i)=>{g.visible=!mapMode;g.position.x+=delta*(.6+i%3*.17);if(g.position.x>185)g.position.x=-185;});
   birds.forEach((m,i)=>{const t=time*.27+i*.78;m.visible=!mapMode;m.position.set(55*Math.cos(t),16+i%3*3+Math.sin(t*2),45*Math.sin(t));m.rotation.y=-t;m.rotation.z=Math.sin(time*9+i)*.24;});
+  fire.visible=!mapMode;if(mapMode)return;
   const a=fireGeo.attributes.position;
-  fireflies.forEach((p,i)=>{a.setXYZ(i,p.x+Math.sin(time*.8+p.phase)*1.8,elevation(p.x,p.z)+1+Math.sin(time*2+p.phase)*.35,p.z+Math.cos(time*.7+p.phase)*1.4);});a.needsUpdate=true;
+  fireflies.forEach((p,i)=>{a.setXYZ(i,p.x+Math.sin(time*.8+p.phase)*1.8,p.y+1+Math.sin(time*2+p.phase)*.35,p.z+Math.cos(time*.7+p.phase)*1.4);});a.needsUpdate=true;
   fire.visible=!mapMode;
  }
  return {ground,stone,wood,roof,water,update};

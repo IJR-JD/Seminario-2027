@@ -1,10 +1,12 @@
 import * as THREE from 'three';
 import {animateIslandAvatar} from './island-avatar.mjs';
+import {horizontalStep} from './island-vertical.mjs';
 import {bounds,landmarks,floorKey,floorPlan,indoorSafe,indoorRoute,nearestInteriorAction} from './island-interiors.mjs';
 // Cutaway interior scenes are created only when visited. The exterior world is
 // retained untouched, and the same WebGL renderer is reused.
 export function createInterior({building,makeHero,available,marks,textures,initialFloor=1,onState,onTalk,onRoom,onExit,onVisit}){
- let scene,camera,hero,npc,plan,position,route=[],floor=1,gait=0,pace=0,lastState='',disposed=false;
+ let scene,camera,hero,npc,plan,position,route=[],floor=1,gait=0,pace=0,lastState='',disposed=false,velocity={x:0,z:0},projectionAspect=0;
+ const input=new THREE.Vector3();
  const materialCache=new Map(),geometryCache=new Map();
  const mats=(color,map=null,emissive=false)=>{
   const k=color+':'+(map?.uuid??'')+':'+emissive;
@@ -30,7 +32,7 @@ export function createInterior({building,makeHero,available,marks,textures,initi
   destroyFloor();floor=next;plan=floorPlan(building,floor);scene=new THREE.Scene();scene.background=new THREE.Color('#293b43');
   scene.add(new THREE.HemisphereLight('#fff4db','#7892a0',2.2));
   const sun=new THREE.DirectionalLight('#fff0ce',2.1);sun.position.set(-4,9,7);scene.add(sun);
-  camera=new THREE.OrthographicCamera(-9,9,8,-8,.1,70);camera.position.set(0,15,15);camera.lookAt(0,.5,-.3);
+  projectionAspect=0;camera=new THREE.OrthographicCamera(-9,9,8,-8,.1,70);camera.position.set(0,15,15);camera.lookAt(0,.5,-.3);
   const {theme}=plan,wood='#967651',dark='#51483f',gold='#d8bb80',stone='#b0a799',glow='#fce0a1';
   ground=box(11.25,.22,13.25,0,-.12,0,wood,textures.wood);
   for(let z=-6;z<6.4;z+=.65)box(10.8,.018,.025,0,.004,z,'#6f5945');
@@ -51,10 +53,13 @@ export function createInterior({building,makeHero,available,marks,textures,initi
   for(const z of [-3.5,3.7])box(3.25,.03,.09,0,.034,z,gold);
   for(const o of plan.obstacles){
    if(o.type==='shelf'){
-    box(o.hx*2,2.5,o.hz*2,o.x,1.25,o.z,dark,textures.wood);
+    // Open-front bookshelf: the books sit inside the actual shelf rather than inside a solid block.
+    box(.15,2.5,o.hz*2,o.x-o.hx+.075,1.25,o.z,dark,textures.wood);
+    for(const side of [-1,1])box(o.hx*2,2.5,.14,o.x,1.25,o.z+side*(o.hz-.07),dark,textures.wood);
+    box(o.hx*2,.13,o.hz*2,o.x,2.45,o.z,wood,textures.wood);
     for(let y=.5;y<2.4;y+=.58){
      box(1.55,.09,3.3,o.x,y,o.z,wood);
-     for(let i=0;i<7;i++){const z=o.z-1.34+i*.4,h=.27+(i%3)*.06;box(.3,h,.28,o.x+.72,y+h/2+.05,z,['#b36d50','#5d8f91','#bdad64','#7980a5'][i%4]);}
+     for(let i=0;i<7;i++){const z=o.z-1.34+i*.4,h=.27+(i%3)*.06;box(.52,h,.28,o.x+.28,y+h/2+.05,z,['#b36d50','#5d8f91','#bdad64','#7980a5'][i%4]);}
     }
    }else if(o.type==='table'||o.type==='workbench'){
     box(o.hx*2,.14,o.hz*2,o.x,.92,o.z,wood,textures.wood);
@@ -62,7 +67,7 @@ export function createInterior({building,makeHero,available,marks,textures,initi
     if(o.type==='workbench'){
      for(let i=0;i<4;i++){const z=o.z-1.05+i*.65;box(.48,.21,.45,o.x,.1+1,z,theme.color);box(.26,.10,.27,o.x,1.28,z,gold);}
     }else{box(.7,.06,.55,o.x,1.03,o.z,'#eee1c1');box(.05,.07,.5,o.x,1.07,o.z,dark);}
-   }else if(o.type==='crate'){box(1.2,1.0,1.2,o.x,.5,o.z,wood,textures.wood);box(1.22,.10,1.22,o.x,.84,o.z,gold);}
+   }else if(o.type==='crate'){box(1.2,1.0,1.2,o.x,.5,o.z,wood,textures.wood);box(1.22,.10,1.22,o.x,.84,o.z,gold);for(const side of [-1,1])box(.10,1.02,1.23,o.x+side*.43,.51,o.z,dark);}
   }
   // Six distinct prop families, placed against walls, away from the movement lane.
   const px=2.2,pz=-5.65;
@@ -90,7 +95,7 @@ export function createInterior({building,makeHero,available,marks,textures,initi
   hero=makeHero();scene.add(hero);
   npc=makeHero({style:'guardian',skin:'#c29a78',armor:theme.color,hair:'#3c3430',cape:'#b4a27f',accessory:'satchel',height:96,build:94});npc.position.set(plan.npc.x,0,plan.npc.z);scene.add(npc);sign(plan.npc.name,plan.npc.x,2.65,plan.npc.z);
   position=new THREE.Vector3(fromStairs?landmarks.stairs.x:0,0,fromStairs?landmarks.stairs.z:landmarks.entry.z);
-  hero.position.copy(position);hero.rotation.y=Math.PI;route=[];gait=pace=0;lastState='';onVisit?.(floorKey(building.id,floor));publish();
+  hero.position.copy(position);hero.rotation.y=Math.PI;route=[];gait=pace=0;velocity={x:0,z:0};lastState='';onVisit?.(floorKey(building.id,floor));publish();
  }
  function state(){return {id:building.id,name:building.name,floor,totalFloors:building.storeys,room:plan.room,available:plan.room!==null&&available(plan.room),npc:plan.npc.name,action:nearestInteriorAction(plan,position),x:Math.round(position.x*10)/10,z:Math.round(position.z*10)/10};}
  function publish(){const s=state(),signature=JSON.stringify(s);if(signature!==lastState){lastState=signature;onState?.(s);}}
@@ -114,24 +119,26 @@ export function createInterior({building,makeHero,available,marks,textures,initi
  }
  function frame({renderer,width,height,delta,now,keys,controls}){
   if(disposed)return;
-  const input=new THREE.Vector3();
+  input.set(0,0,0);
   for(const k of keys){const v=controls[k];if(v){input.x+=v[0];input.z+=v[1];}}
   if(input.lengthSq()>0)route=[];
   if(route.length){input.set(route[0].x-position.x,0,route[0].z-position.z);if(input.length()<.09){route.shift();input.set(0,0,0);}}
-  const d=input.length(),moving=d>.01;
-  if(moving){
-   const speed=keys.has('Shift')?5.5:route.length?5.5:3.8,step=Math.min(route.length?d:Infinity,speed*delta);
-   input.normalize();const nx=position.x+input.x*step,nz=position.z+input.z*step;
-   if(indoorSafe(plan,nx,position.z))position.x=nx;if(indoorSafe(plan,position.x,nz))position.z=nz;
-   const yaw=Math.atan2(input.x,input.z);hero.rotation.y+=Math.atan2(Math.sin(yaw-hero.rotation.y),Math.cos(yaw-hero.rotation.y))*Math.min(1,delta*13);
-  }
-  hero.position.copy(position);pace+=(Number(moving)-pace)*Math.min(1,delta*12);gait+=delta*pace*12;
-  animateIslandAvatar(hero,{time:now/1000,delta,pace,mode:moving?'walk':'idle',phase:gait});
+  const d=input.length(),speed=keys.has('Shift')?5.5:route.length?5.5:3.8;
+  input.normalize();
+  if(route.length){const step=Math.min(d,speed*delta);velocity={x:delta?input.x*step/delta:0,z:delta?input.z*step/delta:0};}
+  else velocity=horizontalStep(velocity,input,speed,true,delta);
+  const nx=position.x+velocity.x*delta,nz=position.z+velocity.z*delta;
+  if(indoorSafe(plan,nx,position.z))position.x=nx;else velocity.x=0;
+  if(indoorSafe(plan,position.x,nz))position.z=nz;else velocity.z=0;
+  const actual=Math.hypot(velocity.x,velocity.z),moving=actual>.08;
+  if(moving){const yaw=Math.atan2(velocity.x,velocity.z);hero.rotation.y+=Math.atan2(Math.sin(yaw-hero.rotation.y),Math.cos(yaw-hero.rotation.y))*(1-Math.exp(-delta*13));}
+  hero.position.copy(position);pace+=(Math.min(1,actual/3.8)-pace)*(1-Math.exp(-delta*12));gait+=delta*actual*2.7;
+  animateIslandAvatar(hero,{time:now/1000,delta,pace,mode:moving?(actual>4.5?'run':'walk'):'idle',phase:gait});
   npc.rotation.y=Math.atan2(position.x-npc.position.x,position.z-npc.position.z);
   animateIslandAvatar(npc,{time:now/1000,delta,mode:'idle'});
   if(portalRing){portalRing.rotation.z=now*.0006;portalRing.position.y=1.45+.10*Math.sin(now*.003);}
   if(stairMarker)stairMarker.material.emissiveIntensity=.4+.18*Math.sin(now*.003);
-  const aspect=width/height,extent=Math.max(8.0,6.5/aspect);camera.left=-extent*aspect;camera.right=extent*aspect;camera.top=extent;camera.bottom=-extent;camera.updateProjectionMatrix();
+  const aspect=width/height;if(aspect!==projectionAspect){projectionAspect=aspect;const extent=Math.max(8.0,6.5/aspect);camera.left=-extent*aspect;camera.right=extent*aspect;camera.top=extent;camera.bottom=-extent;camera.updateProjectionMatrix();}
   publish();renderer.render(scene,camera);
  }
  build(initialFloor,initialFloor===2);

@@ -4,11 +4,13 @@ export function createIslandAvatar(settings={}){
  const root=new THREE.Group(),rig=new THREE.Group();root.add(rig);
  const color=(value,fallback)=>new THREE.MeshStandardMaterial({color:value||fallback,roughness:.72});
  const skin=color(settings.skin,'#d7a880'),armor=color(settings.armor,'#48796b'),hair=color(settings.hair,'#292b31'),capeMat=color(settings.cape,'#b4a27f'),dark=color('#263746'),trim=color('#d7be82'),eye=color('#273342');
- const box=(parent,w,h,d,mat,x,y,z)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);m.position.set(x,y,z);parent.add(m);return m;};
+ const geometries=new Map();
+ const box=(parent,w,h,d,mat,x,y,z)=>{const key=[w,h,d].join(',');if(!geometries.has(key))geometries.set(key,new THREE.BoxGeometry(w,h,d));const m=new THREE.Mesh(geometries.get(key),mat);m.position.set(x,y,z);parent.add(m);return m;};
  const pivot=(x,y,z)=>{const p=new THREE.Group();p.position.set(x,y,z);rig.add(p);return p;};
  box(rig,.76,.72,.43,armor,0,1.15,0);
  box(rig,.78,.13,.46,dark,0,.83,0);
  box(rig,.28,.22,.045,trim,0,1.26,.24);
+ box(rig,.50,.16,.055,dark,0,1.43,.244);box(rig,.46,.035,.06,trim,0,1.50,.248);
  const head=pivot(0,1.65,0);
  box(head,.58,.53,.53,skin,0,.18,0);
  box(head,.60,.15,.55,hair,0,.43,0);
@@ -17,10 +19,10 @@ export function createIslandAvatar(settings={}){
  if(settings.hairStyle==='long')for(const s of [-1,1])box(head,.12,.41,.48,hair,s*.29,.15,-.04);
  for(const s of [-1,1])box(head,.065,.085,.022,eye,s*.13,.20,.276);
  box(head,.16,.024,.025,eye,0,.075,.277);
- const arms=[],legs=[];
+ const arms=[],legs=[],knees=[],elbows=[];
  for(const s of [-1,1]){
-  const leg=pivot(s*.20,.78,0);box(leg,.32,.57,.35,dark,0,-.27,0);box(leg,.34,.19,.44,trim,0,-.65,.045);legs.push(leg);
-  const arm=pivot(s*.54,1.45,0);box(arm,.25,.43,.32,armor,0,-.18,0);box(arm,.24,.23,.30,skin,0,-.48,0);arms.push(arm);
+  const leg=pivot(s*.20,.78,0);box(leg,.32,.36,.35,dark,0,-.17,0);const knee=new THREE.Group();knee.position.y=-.35;leg.add(knee);box(knee,.30,.28,.33,dark,0,-.13,0);box(knee,.34,.19,.44,trim,0,-.30,.045);legs.push(leg);knees.push(knee);
+  const arm=pivot(s*.54,1.45,0);box(arm,.25,.32,.32,armor,0,-.14,0);const elbow=new THREE.Group();elbow.position.y=-.31;arm.add(elbow);box(elbow,.24,.28,.30,skin,0,-.14,0);arms.push(arm);elbows.push(elbow);
   if(settings.style==='guardian')box(arm,.36,.19,.40,trim,0,-.02,0);
  }
  const cape=pivot(0,1.48,-.25);box(cape,.64,.75,.055,capeMat,0,-.37,0);
@@ -31,8 +33,8 @@ export function createIslandAvatar(settings={}){
  const metal=color('#839eaa'),cyan=color('#79d9e3'),orange=color('#f0a868');
  for(const side of [-1,1]){
   box(rig,.10,.60,.048,trim,side*.24,1.15,.24);
-  box(legs[side===1?1:0],.29,.13,.37,metal,0,-.48,.015);
-  box(arms[side===1?1:0],.28,.12,.34,trim,0,-.35,0);
+  box(knees[side===1?1:0],.29,.13,.37,metal,0,-.12,.015);box(legs[side===1?1:0],.27,.08,.36,trim,0,-.32,.012);
+  box(elbows[side===1?1:0],.28,.12,.34,trim,0,-.05,0);box(arms[side===1?1:0],.30,.11,.36,metal,0,-.04,.012);
   box(head,.09,.022,.026,hair,side*.13,.28,.278);
  }
  box(rig,.21,.13,.07,metal,0,.83,.26);
@@ -54,32 +56,40 @@ export function createIslandAvatar(settings={}){
   const w=pivot(s*.40,1.25,-.26);box(w,.85,.26,.10,trim,s*.41,0,0);box(w,.60,.17,.085,capeMat,s*.59,-.19,0);w.visible=false;wings.push(w);
  }
  root.scale.set((Number(settings.build)||100)/100,(Number(settings.height)||100)/100,(Number(settings.build)||100)/100);
- root.userData={rig,arms,legs,cape,head,wings,harness,pack};return root;
+ root.userData={rig,arms,legs,knees,elbows,cape,head,wings,harness,pack};return root;
 }
-export function animateIslandAvatar(hero,{time=0,delta=.016,pace=0,mode='idle',phase=0,gear=[],landing=0}={}){
- const {rig,arms,legs,cape,head,wings,harness,pack}=hero.userData;
+export function animateIslandAvatar(hero,{time=0,delta=.016,pace=0,mode='idle',phase=0,gear=[],landing=0,turn=0,roll=0}={}){
+ const {rig,arms,legs,knees,elbows,cape,head,wings,harness,pack}=hero.userData;
  harness.visible=gear.includes('grapple');pack.visible=gear.includes('jetpack');cape.visible=!pack.visible;
- const smooth=Math.min(1,delta*17),mix=(obj,axis,value)=>obj.rotation[axis]+=(value-obj.rotation[axis])*smooth;
- const swing=Math.sin(phase)*(mode==='sprint'?1.05:.65)*pace;
+ const smooth=1-Math.exp(-Math.max(0,delta)*17),mix=(obj,axis,value)=>obj.rotation[axis]+=(value-obj.rotation[axis])*smooth;
+ const swing=Math.sin(phase)*(mode==='sprint'?1.12:mode==='run'?.88:.57)*pace;
  const idle=Math.sin(time*2.2)*.025;
  for(let i=0;i<2;i++){
-  const sign=i?1:-1;let leg=sign*swing,arm=-sign*swing*.82,spread=0;
+  const sign=i?1:-1;let leg=sign*swing,arm=-sign*swing*.82,spread=0,knee=Math.max(0,-leg)*.8,elbow=Math.abs(arm)*.7+.12;
   if(mode==='climb'){leg=sign*Math.sin(phase)*.62;arm=-2.1-sign*Math.sin(phase)*.45;}
-  if(mode==='jump'){leg=i?-.85:.45;arm=-1.0;}
+  if(mode==='jump'||mode==='takeoff'){leg=i?-.85:.45;arm=-1.0;knee=i?1.05:.48;elbow=.48;}
+  if(mode==='jump-apex'){leg=i?-.76:-.38;arm=-.62;spread=sign*.36;knee=1.15;elbow=.5;}
+  if(mode==='turn'){leg=sign*swing*.6;arm=-sign*swing*.6;spread=sign*.15;}
+  if(mode==='mount'||mode==='dismount'){leg=i?-.70:-.3;knee=i?1.10:.6;arm=-.75;elbow=.55;}
+  if(mode==='roll'){leg=-.85;knee=1.45;arm=-1.4;elbow=.95;}
+  if(mode==='slide'){leg=i?-.62:-1.18;arm=.42;knee=i?1.05:.22;elbow=.6;}
+  if(mode==='ride-bike'){leg=-1.12+sign*Math.sin(phase)*.12;knee=1.45;arm=-.95;elbow=.35;}
+  if(mode==='ride-rover'){leg=-1.15;knee=1.25;arm=-.92;elbow=.65;}
+  if(mode==='ride-hover'){leg=i?-.31:.16;knee=.55;arm=-.35;spread=sign*.65;elbow=.18;}
   if(mode==='fall'){leg=i?-.22:.18;arm=-.35;spread=sign*.75;}
-  if(mode==='land'){leg=.32;arm=-.30;spread=sign*.14;}
+  if(mode==='land'){leg=-.40;arm=-.30;spread=sign*.14;knee=.85;elbow=.35;}
   if(mode==='dash'){leg=sign*.36;arm=.9;}
   if(mode==='fly'){leg=.25;arm=-.20;spread=sign*.60;}
   if(mode==='grapple'){leg=i?-.58:.32;arm=-2.55;spread=sign*.10;}
   if(mode==='jetpack'){leg=.12;arm=-.15;spread=sign*.24;}
   if(mode==='wall'){leg=sign*swing;arm=-1.1;spread=sign*.28;}
   if(mode==='crouch'){leg=sign*swing*.42+.28;arm=-.45;}
-  mix(legs[i],'x',leg);mix(arms[i],'x',arm+idle);mix(arms[i],'z',spread);
+  mix(legs[i],'x',leg);mix(knees[i],'x',knee);mix(elbows[i],'x',-elbow);mix(arms[i],'x',arm+idle);mix(arms[i],'z',spread);
   wings[i].visible=mode==='fly';mix(wings[i],'z',Math.sin(time*8)*.25*sign);
  }
- mix(rig,'x',mode==='dash'?-.42:mode==='grapple'?-.22:mode==='jetpack'?-.13:mode==='fly'?-.18:mode==='sprint'?-.12:mode==='land'?.18:mode==='fall'?.08:mode==='crouch'?.20:0);
- mix(rig,'z',mode==='wall'?.23:0);mix(cape,'x',mode==='fly'?.8:mode==='dash'?.95:idle+pace*.20);
+ mix(rig,'x',mode==='dash'?-.42:mode==='grapple'?-.22:mode==='jetpack'?-.13:mode==='fly'?-.18:mode==='sprint'?-.20:mode==='run'?-.10:mode==='slide'?-.48:mode==='roll'?-.95:mode==='mount'?-.28:mode==='dismount'?-.18:mode==='ride-bike'?-.30:mode==='ride-rover'?-.12:mode==='ride-hover'?-.10:mode==='land'?.18:mode==='fall'?.08:mode==='crouch'?.20:0);
+ mix(rig,'z',mode==='wall'?.23:mode==='turn'||mode.startsWith('ride-')?Math.max(-.22,Math.min(.22,turn*.15)):0);mix(cape,'x',mode==='fly'?.8:mode==='dash'?.95:idle+pace*.20);
  mix(head,'y',mode==='idle'?Math.sin(time*.85)*.13:0);
- const offset=mode==='land'?-.17*Math.min(1,landing/.22):mode==='climb'||mode==='fly'||mode==='jump'||mode==='fall'?0:Math.abs(Math.sin(phase))*.055*pace+idle*.16;
- rig.position.y+=(offset-rig.position.y)*Math.min(1,delta*20);
+ const offset=mode==='roll'?-.40*Math.sin(Math.PI*roll/.35):mode==='slide'?-.48:mode==='ride-bike'||mode==='ride-rover'?-.43:mode==='land'?-.17*Math.min(1,landing/.22):mode==='climb'||mode==='fly'||mode==='jump'||mode==='fall'?0:Math.abs(Math.sin(phase))*.055*pace+idle*.16;
+ rig.position.y+=(offset-rig.position.y)*(1-Math.exp(-Math.max(0,delta)*20));
 }

@@ -71,14 +71,14 @@ export function swingStep(state,anchor,input,dt){
   if(speed>29){const f=29/speed;s.vx*=f;s.vy*=f;s.vz*=f;}
   s.x+=s.vx*h;s.y+=s.vy*h;s.z+=s.vz*h;
   let dx=s.x-anchor.x,dy=s.y-anchor.y,dz=s.z-anchor.z,d=Math.hypot(dx,dy,dz);
+  // Reel before projecting so the final state obeys the final rope length.
+  s.length=Math.max(5,s.length-h*2.1);
   if(d>s.length){
    dx/=d;dy/=d;dz/=d;
    s.x=anchor.x+dx*s.length;s.y=anchor.y+dy*s.length;s.z=anchor.z+dz*s.length;
    const radial=s.vx*dx+s.vy*dy+s.vz*dz;
    if(radial>0){s.vx-=radial*dx;s.vy-=radial*dy;s.vz-=radial*dz;}
   }
-  // Slowly reel in the tether, then let gravity carry momentum.
-  s.length=Math.max(5,s.length-h*2.1);
   s.time+=h;
  }
  return s;

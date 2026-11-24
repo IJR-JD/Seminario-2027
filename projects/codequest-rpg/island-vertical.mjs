@@ -51,29 +51,29 @@ export const platformList=courses.flatMap(c=>c.pads);
 export const onPlatform=(p,x,z,margin=.05)=>Math.abs(x-p.x)<=p.hx+margin&&Math.abs(z-p.z)<=p.hz+margin;
 export function landingSurface(surfaces,x,z,fromY,toY){
  if(toY>fromY)return null;
- return surfaces.filter(p=>onPlatform(p,x,z)&&fromY>=p.y-.07&&toY<=p.y+.001).sort((a,b)=>b.y-a.y)[0]??null;
+ let best=null;for(const p of surfaces)if(onPlatform(p,x,z)&&fromY>=p.y-.07&&toY<=p.y+.001&&(!best||p.y>best.y))best=p;return best;
 }
 export function approachVelocity(current,target,accel,dt){
  const delta=target-current,step=accel*dt;
  return Math.abs(delta)<=step?target:current+Math.sign(delta)*step;
 }
-export function horizontalStep(v,input,speed,grounded,dt){
+export function horizontalStep(v,input,speed,grounded,dt,airFactor=1){
  const n=Math.hypot(input.x,input.z),scale=n>1?1/n:1;
- const a=n>.001?(grounded?motion.groundAcceleration:motion.airAcceleration):grounded?motion.friction:4;
+ const a=n>.001?(grounded?motion.groundAcceleration:motion.airAcceleration*airFactor):grounded?motion.friction:4;
  const tx=input.x*scale*speed,tz=input.z*scale*speed;
  return {x:approachVelocity(v.x,tx,a,dt),z:approachVelocity(v.z,tz,a,dt)};
 }
 export function makeVertical(y,vy=0,grounded=true,support=null){return {y,vy,grounded,support,coyote:grounded?motion.coyote:0,buffer:0,landed:false};}
-export function verticalStep(prev,{x,z,ground,surfaces=[],dt,jump=false,release=false}){
+export function verticalStep(prev,{x,z,ground,surfaces=[],dt,jump=false,release=false,jumpScale=1}){
  const s={...prev,landed:false};
  s.buffer=jump?motion.buffer:Math.max(0,s.buffer-dt);
  s.coyote=s.grounded?motion.coyote:Math.max(0,s.coyote-dt);
  const support=s.support?surfaces.find(p=>p.id===s.support&&onPlatform(p,x,z)):null;
  if(s.grounded&&!s.support)s.y=ground;
- if(s.grounded&&s.support&&!support){s.grounded=false;s.support=null;}
+ if(s.grounded&&s.support&&!support){const adjacent=surfaces.find(p=>onPlatform(p,x,z)&&Math.abs(p.y-s.y)<.035);if(adjacent){s.support=adjacent.id;s.y=adjacent.y;}else{s.grounded=false;s.support=null;}}
  if(s.grounded&&support)s.y=support.y;
  if(s.buffer>0&&(s.grounded||s.coyote>0)){
-  s.vy=motion.jump;s.grounded=false;s.support=null;s.coyote=0;s.buffer=0;
+  s.vy=motion.jump*jumpScale;s.grounded=false;s.support=null;s.coyote=0;s.buffer=0;
  }
  if(release&&s.vy>6.8)s.vy=6.8;
  if(s.grounded){s.vy=0;return s;}

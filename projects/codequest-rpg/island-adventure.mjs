@@ -46,6 +46,7 @@ export function padResult(progress,index,count){
  return {next:0,complete:false,wrong:true};
 }
 export function segmentSafe(a,b){
+ if(![a?.x,a?.z,b?.x,b?.z].every(Number.isFinite))return false;
  const n=Math.ceil(Math.hypot(b.x-a.x,b.z-a.z)/.45);
  for(let i=0;i<=n;i++){const t=n?i/n:0;if(!groundSafe(a.x+(b.x-a.x)*t,a.z+(b.z-a.z)*t))return false;}
  return true;
