@@ -36,13 +36,23 @@ try{
   await prepare(desktop);
   console.log('QA desktop: island ready');
   await openIsland(desktop);
-  await desktop.locator('#islandDirectoryToggle').click();
+  assert(!(await desktop.locator('#exploreMenu').evaluate(el=>el.open)),'Explore menu initially compact');
+  assert(!(await desktop.locator('#powerMenu').evaluate(el=>el.open)),'Power bar initially compact');
+  await desktop.waitForFunction(()=>Number(document.querySelector('#overworldCanvas').dataset.colliders)>1000);
+  console.log('PASS active structural colliders '+await desktop.locator('#overworldCanvas').getAttribute('data-colliders'));
+  await desktop.waitForFunction(()=>Number(document.querySelector('#overworldCanvas').dataset.renderRatio)>0&&document.querySelector('#overworldCanvas').dataset.visibleLabels!==undefined);
+  assert(Number(await desktop.locator('#overworldCanvas').getAttribute('data-visible-labels'))<=6);
+  assert(await desktop.locator('#islandControlsHelp').isHidden());
+  await desktop.locator('#islandControlsToggle').click();assert(await desktop.locator('#islandControlsHelp').isVisible());
+  await desktop.locator('#islandControlsToggle').click();assert(await desktop.locator('#islandControlsHelp').isHidden());
+  console.log('PASS actual render resolution, proximity label budget and optional controls');
+  if(!(await desktop.locator('#exploreMenu').evaluate(el=>el.open)))await desktop.locator('#exploreMenu summary').click();await desktop.locator('#islandDirectoryToggle').click();
   assert.equal(await desktop.locator('#levelList .missionCard').count(),22);
   assert.equal(await desktop.locator('#levelList .missionCard[data-floor="2"]').count(),11,
     'Exactly eleven rooms should be on accessible upper floors');
   assert.equal(await desktop.locator('#levelList .missionCard[data-floor="1"]').count(),11);
-  await desktop.locator('#islandDirectoryToggle').click();
-  await desktop.locator('#islandTrailToggle').click();
+  if(!(await desktop.locator('#exploreMenu').evaluate(el=>el.open)))await desktop.locator('#exploreMenu summary').click();await desktop.locator('#islandDirectoryToggle').click();
+  if(!(await desktop.locator('#exploreMenu').evaluate(el=>el.open)))await desktop.locator('#exploreMenu summary').click();await desktop.locator('#islandTrailToggle').click();
   assert.equal(await desktop.locator('#islandTrailList .islandTrailEntry').count(),5,'Five Atlas entries');
   await desktop.locator('#islandTrailList button').first().click();
   assert.equal(await desktop.locator('#islandTrailList button').first().getAttribute('aria-pressed'),'true');
@@ -51,14 +61,14 @@ try{
   await desktop.locator('#islandCamera').click();
   assert.equal(await desktop.locator('#islandCamera').getAttribute('aria-pressed'),'true','Map mode toggles');
   await desktop.screenshot({path:'qa-codequest/island-desktop.png'});
-  await desktop.locator('#islandTrailToggle').click();
-  await desktop.locator('#islandDirectoryToggle').click();
+  if(!(await desktop.locator('#exploreMenu').evaluate(el=>el.open)))await desktop.locator('#exploreMenu summary').click();await desktop.locator('#islandTrailToggle').click();
+  if(!(await desktop.locator('#exploreMenu').evaluate(el=>el.open)))await desktop.locator('#exploreMenu summary').click();await desktop.locator('#islandDirectoryToggle').click();
   assert.equal(await desktop.locator('#levelList .missionCard').count(),22,'All 22 existing room doors remain in directory');
   await desktop.evaluate(()=>localStorage.setItem('cq-island-python-trail-v1',JSON.stringify(['variable-spring'])));
   await desktop.reload({waitUntil:'domcontentloaded'});
   await desktop.waitForFunction(()=>document.querySelector('#commandPalette')?.children.length>0);
   await desktop.locator('#continueAdventure').click();
-  await desktop.locator('#islandTrailToggle').click();
+  if(!(await desktop.locator('#exploreMenu').evaluate(el=>el.open)))await desktop.locator('#exploreMenu summary').click();await desktop.locator('#islandTrailToggle').click();
   assert((await desktop.locator('#islandTrailProgress').textContent()).includes('1 / 5'),'Discovery survives reload');
   assert((await desktop.locator('#islandTrailList .islandTrailEntry').first().textContent()).includes('distance = 4'),'Found landmark unlocks Python example');
 
@@ -97,10 +107,10 @@ try{
   assert.equal(await forward.getAttribute('data-active'),'true','Held pointer activates movement');
   await mobile.mouse.up();
   assert.equal(await forward.getAttribute('data-active'),'false','Released pointer stops movement');
-  await mobile.locator('#islandTrailToggle').click();
+  if(!(await mobile.locator('#exploreMenu').evaluate(el=>el.open)))await mobile.locator('#exploreMenu summary').click();await mobile.locator('#islandTrailToggle').click();
   assert.equal(await mobile.locator('#islandTrailList .islandTrailEntry').count(),5);
   await mobile.screenshot({path:'qa-codequest/island-mobile.png'});
-  await mobile.locator('#islandTrailToggle').click();
+  if(!(await mobile.locator('#exploreMenu').evaluate(el=>el.open)))await mobile.locator('#exploreMenu summary').click();await mobile.locator('#islandTrailToggle').click();
   await mobile.screenshot({path:'qa-codequest/island-mobile-neighborhood.png'});
   await mobile.close();
   assert.deepEqual(errors,[],'No uncaught browser errors');

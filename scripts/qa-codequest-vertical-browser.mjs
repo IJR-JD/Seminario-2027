@@ -24,7 +24,7 @@ try{
  await page.keyboard.up('Space');
  await page.waitForFunction(()=>document.querySelector('#parkourHUD')?.dataset.grounded==='true');
  console.log('PASS actual manual jump and return to ground');
- await page.locator('#parkourToggle').click();
+ if(!(await page.locator('#exploreMenu').evaluate(el=>el.open)))await page.locator('#exploreMenu summary').click();await page.locator('#parkourToggle').click();
  assert.equal(await page.locator('#parkourList article').count(),6);
  await page.locator('[data-course-route="course-0"]').click();
  await page.waitForFunction(()=>document.querySelector('#parkourHUD')?.dataset.course==='course-0'&&!document.querySelector('#parkourAssist').disabled,null,{timeout:60000});

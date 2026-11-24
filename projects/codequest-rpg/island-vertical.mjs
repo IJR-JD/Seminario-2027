@@ -48,10 +48,19 @@ export function createCourses(){
 }
 export const courses=createCourses();
 export const platformList=courses.flatMap(c=>c.pads);
-export const onPlatform=(p,x,z,margin=.05)=>Math.abs(x-p.x)<=p.hx+margin&&Math.abs(z-p.z)<=p.hz+margin;
-export function landingSurface(surfaces,x,z,fromY,toY){
+export const onPlatform=(p,x,z,margin=.10)=>Math.abs(x-p.x)<=p.hx+margin&&Math.abs(z-p.z)<=p.hz+margin;
+// The deck's collision uses the same footprint as the rendered top, with a small foot tolerance.
+export const footTolerance=.10;
+export function platformSideBlocked(surfaces,a,b,feet,bodyHeight=1.65){
+ for(const p of surfaces){
+  if(feet>=p.y-.065||feet+bodyHeight<=p.y-(p.thickness??.28)+.015)continue;
+  if(!onPlatform(p,a.x,a.z,.14)&&onPlatform(p,b.x,b.z,.14))return true;
+ }
+ return false;
+}
+export function landingSurface(surfaces,x,z,fromY,toY,fromX=x,fromZ=z){
  if(toY>fromY)return null;
- let best=null;for(const p of surfaces)if(onPlatform(p,x,z)&&fromY>=p.y-.07&&toY<=p.y+.001&&(!best||p.y>best.y))best=p;return best;
+ let best=null;for(const p of surfaces){if(fromY<p.y-.07||toY>p.y+.001)continue;const t=fromY===toY?1:Math.max(0,Math.min(1,(fromY-p.y)/(fromY-toY)));if(onPlatform(p,fromX+(x-fromX)*t,fromZ+(z-fromZ)*t,footTolerance)&&onPlatform(p,x,z,footTolerance)&&(!best||p.y>best.y))best=p;}return best;
 }
 export function approachVelocity(current,target,accel,dt){
  const delta=target-current,step=accel*dt;
@@ -64,7 +73,7 @@ export function horizontalStep(v,input,speed,grounded,dt,airFactor=1){
  return {x:approachVelocity(v.x,tx,a,dt),z:approachVelocity(v.z,tz,a,dt)};
 }
 export function makeVertical(y,vy=0,grounded=true,support=null){return {y,vy,grounded,support,coyote:grounded?motion.coyote:0,buffer:0,landed:false};}
-export function verticalStep(prev,{x,z,ground,surfaces=[],dt,jump=false,release=false,jumpScale=1}){
+export function verticalStep(prev,{x,z,ground,surfaces=[],dt,jump=false,release=false,jumpScale=1,fromX=x,fromZ=z}){
  const s={...prev,landed:false};
  s.buffer=jump?motion.buffer:Math.max(0,s.buffer-dt);
  s.coyote=s.grounded?motion.coyote:Math.max(0,s.coyote-dt);
@@ -80,7 +89,7 @@ export function verticalStep(prev,{x,z,ground,surfaces=[],dt,jump=false,release=
  const from=s.y;
  s.vy=Math.max(-motion.fallCap,s.vy-motion.gravity*dt);
  s.y+=s.vy*dt;
- const hit=landingSurface(surfaces,x,z,from,s.y);
+ const hit=landingSurface(surfaces,x,z,from,s.y,fromX,fromZ);
  if(hit&&s.vy<=0){s.y=hit.y;s.vy=0;s.grounded=true;s.support=hit.id;s.landed=true;}
  else if(s.y<=ground){s.y=ground;s.vy=0;s.grounded=true;s.support=null;s.landed=true;}
  return s;

@@ -1,9 +1,11 @@
-import {createOverworld} from './overworld.mjs?v=polish81';
+import {createOverworld} from './overworld.mjs?v=physics92';
+import {createRenderQuality,toastAllowed} from './playability.mjs';
 import {createIslandAvatar} from './island-avatar.mjs';
 import {shrines,travelGates,circuits} from './island-adventure.mjs';
 import {gear} from './island-airgear.mjs';
 import {buildings} from './island-interiors.mjs';
 import {courses} from './island-vertical.mjs';
+import {landmarks} from './island-landmarks.mjs';
 import {sectors,sectorProgress,depots,frontiers,vehicleTypes,earnedSkills} from './island-mobility.mjs';
 import {pythonWaystations} from './island-exploration.mjs';
 import {allRoomLocations} from './island-villages.mjs';
@@ -35,7 +37,7 @@ const setbacks=new Map();
 let flightFuel=0, logicState, conditionUsed=false, devices=[], spikeTraps=[];
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const log=m=>{const pre=$('consoleView');pre.textContent=(pre.textContent==='Choose a path to begin.'?'':pre.textContent+'\n')+m;pre.scrollTop=pre.scrollHeight;};
-const status=m=>{$('executionStatus').textContent=m;};
+const status=m=>{$('executionStatus').textContent=m;$('stopCode').disabled=m!=='EXECUTING';$('cameraStage').dataset.execution=m;};
 const message=m=>{$('worldMessage').textContent=m;};
 const banner=m=>{const b=$('worldBanner');b.textContent=m;b.classList.add('show');clearTimeout(banner.timer);banner.timer=setTimeout(()=>b.classList.remove('show'),1900);};
 function makeMat(color,roughness=.87){return new THREE.MeshStandardMaterial({color,roughness})}
@@ -67,7 +69,9 @@ function updateHero(){if(actor){scene.remove(actor);actor.traverse(o=>o.geometry
 const scene=new THREE.Scene();scene.background=new THREE.Color('#bed2ce');
 const camera=new THREE.OrthographicCamera(-1,1,1,-1,.1,65);
 const renderer=new THREE.WebGLRenderer({canvas:$('gameCanvas'),antialias:true,powerPreference:'high-performance'});
-renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+const roomQuality=createRenderQuality(renderer,$('gameCanvas'));
+$('graphicsQuality').value=roomQuality.mode();
+$('graphicsQuality').onchange=()=>{const mode=$('graphicsQuality').value;roomQuality.setMode(mode);overworld?.setQuality(mode);};
 renderer.outputColorSpace=THREE.SRGBColorSpace;
 renderer.shadowMap.enabled=true;
 renderer.shadowMap.type=THREE.PCFSoftShadowMap;
@@ -346,7 +350,7 @@ function coordinateText(cfg,x,z){
   return 'X '+x+' · Z '+z+(cfg.surfaces?' · H '+surfaceAt(cfg,x,z):'');
 }
 function setActorPosition(x,z){positions={x,z};const cfg=levels[level];actor.position.set(x,cfg.surfaces?surfaceAt(cfg,x,z):0,z);$('coordinateLabel').textContent=coordinateText(cfg,x,z);}
-function resetLevel(preserveEditor=false){updateRating();$('conditionCue').hidden=true;conditionUsed=false;logicState={open:new Set(),shield:false};syncLogic();traceLine(0);stopped=true;activeRun++;running=false;$('editor').readOnly=false;const cfg=levels[level];flightFuel=cfg.flightBudget??0;variables={};collected.clear();visited.clear();hasArithmetic=false;actions=0;success=false;setActorPosition(...cfg.start);actor.rotation.y=Math.PI/2;clearPose();actor.visible=true;if(!preserveEditor)$('editor').value=cfg.powers?'# Plan a route with movement and the available abilities.\n\n':'# Write your own movement variables below\n# Each line makes your hero move.\n\n';updateLines();for(const mesh of crystalMeshes)mesh.visible=true;for(const mesh of checkpointMeshes){mesh.traverse(o=>{if(o.material?.color)o.material.color.set('#6887af')})}updateHud();$('variableView').textContent='No variables defined';$('consoleView').textContent='Ready · '+cfg.title;$('nextLevel').hidden=true;$('returnToIsland').hidden=true;$('runCode').disabled=false;status('READY');message('Write code and press Run program.');$('toggleHint').textContent='Show a clue';$('hintText').hidden=true}
+function resetLevel(preserveEditor=false){roomCue('');updateRating();$('conditionCue').hidden=true;conditionUsed=false;logicState={open:new Set(),shield:false};syncLogic();traceLine(0);stopped=true;activeRun++;running=false;$('editor').readOnly=false;const cfg=levels[level];flightFuel=cfg.flightBudget??0;variables={};collected.clear();visited.clear();hasArithmetic=false;actions=0;success=false;setActorPosition(...cfg.start);actor.rotation.y=Math.PI/2;clearPose();actor.visible=true;if(!preserveEditor)$('editor').value=cfg.powers?'# Plan a route with movement and the available abilities.\n\n':'# Write your own movement variables below\n# Each line makes your hero move.\n\n';updateLines();for(const mesh of crystalMeshes)mesh.visible=true;for(const mesh of checkpointMeshes){mesh.traverse(o=>{if(o.material?.color)o.material.color.set('#6887af')})}updateHud();$('variableView').textContent='No variables defined';$('consoleView').textContent='Ready · '+cfg.title;$('nextLevel').hidden=true;$('returnToIsland').hidden=true;$('runCode').disabled=false;status('READY');message('Write code and press Run program.');$('toggleHint').textContent='Show a clue';$('hintText').hidden=true}
 function updateHud(){const cfg=levels[level];$('setbackHud').hidden=false;$('setbackCount').textContent=setbacks.get(level)??0;$('flightHud').hidden=!cfg.flightBudget;$('flightRange').textContent=flightFuel+' / '+(cfg.flightBudget??0);$('itemHud').hidden=cfg.crystals.length===0;$('itemCount').textContent=collected.size+' / '+cfg.crystals.length}
 function updateRating(steps){
   const best=bestSteps.get(level);
@@ -361,12 +365,14 @@ $('abilityPanel').hidden=!cfg.powers?.length;
 $('abilityPanel').textContent=cfg.powers?.map(mode=>['pulse','shield'].includes(mode)?mode+'()':mode+'(direction, distance)').join('  ·  ')??'';
 const flags=$('objectiveFlags');flags.innerHTML='';const notes=['Target ('+cfg.goal.join(', ')+')'];if(cfg.obstacles.length)notes.push('Avoid obstacles');if(cfg.crystals.length)notes.push('Collect '+cfg.crystals.length+' crystals');if(cfg.checkpoints.length)notes.push(cfg.ordered?'Relays: '+cfg.checkpoints.map(p=>'('+p.join(', ')+')').join(' → '):'Activate '+cfg.checkpoints.length+' waypoints');if(cfg.arithmetic)notes.push('Use arithmetic');for(const note of notes){const span=document.createElement('span');span.textContent=note;flags.append(span)}
 decorateWorld(cfg);addCoordinates(cfg);addLogicDevices(cfg);resetLevel();renderEditor();updateLevelProgress()}
+let lastIslandToast=null;
 function showIslandToast(message){
+  const now=performance.now();if(!toastAllowed(lastIslandToast,message,now))return;lastIslandToast={message,time:now};
   const toast=$('islandDiscoveryToast');
   toast.textContent=message;
   toast.hidden=false;
   clearTimeout(toast.hideTimer);
-  toast.hideTimer=setTimeout(()=>{toast.hidden=true;},5500);
+  toast.hideTimer=setTimeout(()=>{toast.hidden=true;},3500);
 }
 function openMissions(){
   const picker=$('missionPicker');
@@ -382,6 +388,10 @@ function openMissions(){
   const zones=[];
   const zoneForRoom=new Map();
   const enter=$('enterPortal');
+  const help=$('islandControlsHelp'),toggle=$('islandControlsToggle');help.hidden=true;toggle.setAttribute('aria-expanded','false');toggle.onclick=()=>{help.hidden=!help.hidden;toggle.setAttribute('aria-expanded',String(!help.hidden));};
+  $('contextAction').hidden=true;
+  const exploreMenu=$('exploreMenu'),powerMenu=$('powerMenu');exploreMenu.open=false;powerMenu.open=false;
+  exploreMenu.onclick=event=>{if(event.target.closest('button'))exploreMenu.open=false;};
   let activeZone;
   function selectZone(zone,focus=false){
     for(const entry of zones){
@@ -479,7 +489,7 @@ function openMissions(){
   selectZone(activeZone??zones[0]);
   let promptKey;
   portalEntered=i=>{
-    if(!isAvailable(i))return;
+    if(!isAvailable(i)){showIslandToast('Room locked · finish its prerequisite mission first.');return;}
     if(i!==level){
       level=i;
       updateLevelUI();
@@ -501,10 +511,10 @@ function openMissions(){
     if(promptKey===key)return;
     promptKey=key;
     const room=prompt.room, best=bestSteps.get(room);
-    $('doorAction').textContent=room===undefined?'R · Hablar':'Enter para ingresar';
+    $('doorAction').textContent=room===undefined?'R · Talk':isAvailable(room)?'Enter · Open room':'Locked · prerequisite required';
     $('doorTitle').textContent=room===undefined?prompt.guide:levels[room].title;
     $('doorStars').textContent=room===undefined?'':(roomLots[room].upper?'2F · ':'1F · ')+(best===undefined?
-      '☆☆☆ · 3★ en '+starTargets(room).three+' pasos':starsText(starsFor(room,best))+' · '+best+' pasos');
+      '☆☆☆ · 3★ en '+starTargets(room).three+' steps':starsText(starsFor(room,best))+' · '+best+' steps');
   };
   enter.hidden=true;
   enter.onclick=()=>{overworld?.interact();if(picker.open)$('overworldCanvas').focus();};
@@ -514,6 +524,28 @@ function openMissions(){
   const adventurePanel=$('islandAdventurePanel'),adventureToggle=$('islandAdventureToggle');
   const buildingDirectory=$('buildingDirectory'),buildingToggle=$('buildingDirectoryToggle'),interiorHUD=$('interiorHUD'),buildingEntrance=$('buildingEntrance');
   const parkourPanel=$('parkourPanel'),parkourToggle=$('parkourToggle'),parkourHUD=$('parkourHUD');
+  const landmarksPanel=$('landmarksPanel'),landmarksToggle=$('landmarksToggle');
+  let landmarkProgress={visited:[],total:landmarks.length};
+  function renderLandmarks(state){
+    landmarkProgress=state;$('landmarkSummary').textContent=state.visited.length+'/'+state.total+' discovered';
+    landmarksPanel.dataset.visited=state.visited.join(',');
+    for(const article of $('landmarkList').children)article.dataset.found=String(state.visited.includes(article.dataset.landmark));
+  }
+  function setLandmarksPanel(open){
+    landmarksPanel.hidden=!open;landmarksToggle.setAttribute('aria-expanded',String(open));
+    if(!open)return;
+    setMobilityPanel(false);setParkourPanel(false);setBuildingDirectory(false);setDirectory(false);setTrailPanel(false);setAdventurePanel(false);
+    const list=$('landmarkList');list.replaceChildren();
+    for(const l of landmarks){
+      const article=document.createElement('article');article.className='islandTrailEntry';article.dataset.landmark=l.id;
+      const title=document.createElement('h4');title.textContent=l.name;
+      const note=document.createElement('p');note.textContent=l.description;
+      const route=document.createElement('button');route.type='button';route.dataset.landmarkRoute=l.id;route.textContent='Walk to landmark';
+      route.onclick=()=>{if(overworld?.locateLandmark(l.id)){setLandmarksPanel(false);$('overworldCanvas').focus();}};
+      article.append(title,note,route);list.append(article);
+    }
+    renderLandmarks(overworld?.landmarkState()??landmarkProgress);
+  }
   const mobilityPanel=$('mobilityPanel'),mobilityToggle=$('mobilityToggle'),mobilityHUD=$('mobilityHUD');
   let mobilitySignature='';
   function renderMobility(state){
@@ -552,7 +584,7 @@ function openMissions(){
   }
   function setMobilityPanel(open){
     mobilityPanel.hidden=!open;mobilityToggle.setAttribute('aria-expanded',String(open));
-    if(open){setParkourPanel(false);setBuildingDirectory(false);setDirectory(false);setTrailPanel(false);setAdventurePanel(false);const state=overworld?.mobilityState();if(state){mobilitySignature='';renderMobility(state);}}
+    if(open){setLandmarksPanel(false);setParkourPanel(false);setBuildingDirectory(false);setDirectory(false);setTrailPanel(false);setAdventurePanel(false);const state=overworld?.mobilityState();if(state){mobilitySignature='';renderMobility(state);}}
   }
   let latestParkour=null;
   function renderParkour(state){
@@ -570,7 +602,7 @@ function openMissions(){
   function setParkourPanel(open){
     parkourPanel.hidden=!open;parkourToggle.setAttribute('aria-expanded',String(open));
     if(open){
-      setMobilityPanel(false);setBuildingDirectory(false);setDirectory(false);setTrailPanel(false);setAdventurePanel(false);
+      setLandmarksPanel(false);setMobilityPanel(false);setBuildingDirectory(false);setDirectory(false);setTrailPanel(false);setAdventurePanel(false);
       const list=$('parkourList');list.replaceChildren();
       for(const c of courses){
         const article=document.createElement('article');article.className='islandTrailEntry';article.dataset.courseEntry=c.id;article.dataset.found=String(latestParkour?.completed.includes(c.id)??false);
@@ -600,7 +632,7 @@ function openMissions(){
   }
   function setBuildingDirectory(open){
     buildingDirectory.hidden=!open;buildingToggle.setAttribute('aria-expanded',String(open));
-    if(open){setMobilityPanel(false);setParkourPanel(false);setDirectory(false);setTrailPanel(false);setAdventurePanel(false);renderBuildings();}
+    if(open){setLandmarksPanel(false);setMobilityPanel(false);setParkourPanel(false);setDirectory(false);setTrailPanel(false);setAdventurePanel(false);renderBuildings();}
   }
   function renderBuildingEntrance(building){
     buildingEntrance.hidden=!building;
@@ -611,7 +643,7 @@ function openMissions(){
     interiorHUD.hidden=!state;
     $('missionPicker').classList.toggle('insideBuilding',!!state);
     if(!state){interiorIdentity='';interiorAction=null;return;}
-    setMobilityPanel(false);setParkourPanel(false);setBuildingDirectory(false);setDirectory(false);setTrailPanel(false);setAdventurePanel(false);
+    setLandmarksPanel(false);setMobilityPanel(false);setParkourPanel(false);setBuildingDirectory(false);setDirectory(false);setTrailPanel(false);setAdventurePanel(false);
     buildingEntrance.hidden=true;enter.hidden=true;
     const identity=state.id+':'+state.floor;
     interiorHUD.dataset.building=state.id;interiorHUD.dataset.floor=String(state.floor);
@@ -661,7 +693,7 @@ function openMissions(){
   }
   function setAdventurePanel(open){
     adventurePanel.hidden=!open;adventureToggle.setAttribute('aria-expanded',String(open));
-    if(open){setMobilityPanel(false);setParkourPanel(false);setBuildingDirectory(false);setDirectory(false);setTrailPanel(false);if(overworld)renderAdventure(overworld.adventureState());}
+    if(open){setLandmarksPanel(false);setMobilityPanel(false);setParkourPanel(false);setBuildingDirectory(false);setDirectory(false);setTrailPanel(false);if(overworld)renderAdventure(overworld.adventureState());}
   }
   function renderPythonTrail(){
     if(!overworld)return;
@@ -705,18 +737,19 @@ function openMissions(){
   function setDirectory(open){
     directory.hidden=!open;
     directoryToggle.setAttribute('aria-expanded',String(open));
-    if(open){setMobilityPanel(false);setParkourPanel(false);setBuildingDirectory(false);trailPanel.hidden=true;trailToggle.setAttribute('aria-expanded','false');setAdventurePanel(false);}
+    if(open){setLandmarksPanel(false);setMobilityPanel(false);setParkourPanel(false);setBuildingDirectory(false);trailPanel.hidden=true;trailToggle.setAttribute('aria-expanded','false');setAdventurePanel(false);}
   }
   function setTrailPanel(open){
     trailPanel.hidden=!open;
     trailToggle.setAttribute('aria-expanded',String(open));
-    if(open){setMobilityPanel(false);setParkourPanel(false);setBuildingDirectory(false);setDirectory(false);setAdventurePanel(false);renderPythonTrail();}
+    if(open){setLandmarksPanel(false);setMobilityPanel(false);setParkourPanel(false);setBuildingDirectory(false);setDirectory(false);setAdventurePanel(false);renderPythonTrail();}
   }
   setDirectory(false);
   setTrailPanel(false);
   setAdventurePanel(false);
   setBuildingDirectory(false);setParkourPanel(false);setMobilityPanel(false);
   mobilityToggle.onclick=()=>setMobilityPanel(mobilityPanel.hidden);
+  landmarksToggle.onclick=()=>setLandmarksPanel(landmarksPanel.hidden);
   $('vehicleMount').onclick=()=>{overworld?.action('vehicle');$('overworldCanvas').focus();};
   $('vehicleBrake').onclick=()=>{overworld?.action('brake');$('overworldCanvas').focus();};
   $('frontierLift').onclick=()=>{overworld?.action('frontier');$('overworldCanvas').focus();};
@@ -786,7 +819,8 @@ function openMissions(){
         },
         onPrompt:prompt=>portalPrompt(prompt),
         onDialogue:guide=>showIslandToast(guide.name+' · '+guide.line),
-        onAdventure:renderAdventure,onAdventureToast:showIslandToast,onInterior:renderInterior,onInteriorDoor:renderBuildingEntrance,onParkour:renderParkour,onMobility:renderMobility,
+        onContext:cue=>{const el=$('contextAction');el.hidden=!cue;if(cue){$('contextKey').hidden=!cue.key;$('contextKey').textContent=cue.key;$('contextText').textContent=cue.text;}},
+        onAdventure:renderAdventure,onAdventureToast:showIslandToast,onInterior:renderInterior,onInteriorDoor:renderBuildingEntrance,onParkour:renderParkour,onMobility:renderMobility,onLandmarks:renderLandmarks,
         onTrailChange:()=>renderPythonTrail(),
         onWayfinder:hint=>{$('islandTrailDistance').textContent=hint;},
         onWaystation:(station,found,total)=>{
@@ -797,9 +831,9 @@ function openMissions(){
           $('islandDiscoveries').textContent=found+' / '+total+' discoveries';
           showIslandToast(relic.name+' · '+relic.note);
         }});
-      overworld.addZones(zones);
+      overworld.addZones(zones);overworld.setQuality($('graphicsQuality').value);
     }catch(error){
-      overworld=null;
+      console.error('Island initialization failed',error);overworld=null;
       $('overworldStage').hidden=true;
     }
   }
@@ -811,11 +845,11 @@ function openMissions(){
     $('islandDiscoveries').textContent=found+' / '+total+' discoveries';
     $('islandDiscoveryToast').hidden=true;
     overworld.setMapMode(false);
-    overworld.visit(level,isAvailable,bestSteps,completed);renderMobility(overworld.mobilityState());
+    overworld.visit(level,isAvailable,bestSteps,completed);renderMobility(overworld.mobilityState());renderLandmarks(overworld.landmarkState());
     renderPythonTrail();
     $('overworldCanvas').focus();
   }else{
-    cameraToggle.hidden=true;buildingToggle.hidden=true;parkourToggle.hidden=true;mobilityToggle.hidden=true;
+    cameraToggle.hidden=true;buildingToggle.hidden=true;parkourToggle.hidden=true;mobilityToggle.hidden=true;landmarksToggle.hidden=true;
     trailToggle.hidden=true;adventureToggle.hidden=true;
     setDirectory(true);
     $('portalStatus').classList.add('visible');
@@ -842,6 +876,7 @@ async function moveStep(dx,dz,token,runId){
 }
 async function animateMove(plan,direction,mode,runId){
   const cfg=levels[level];
+  roomCue((mode==='walk'?'Move':mode[0].toUpperCase()+mode.slice(1))+' · '+direction,direction);
   const from=actor.position.clone();
   from.y=plan.start;
   const to=new THREE.Vector3(plan.x,plan.end,plan.z);
@@ -1059,7 +1094,7 @@ async function run(){
     }
   }finally{
     if(runId===activeRun){
-      running=false;
+      roomCue('');running=false;
       $('editor').readOnly=false;
       $('runCode').disabled=false;
     }
@@ -1121,7 +1156,7 @@ function updateLevelProgress(){
   $('progressText').textContent=completed.size+' of '+levels.length+' complete';
 }
 
-$('runCode').onclick=run;$('stopCode').onclick=()=>{stopped=true;activeRun++;running=false;setActorPosition(positions.x,positions.z);clearPose();traceLine(0);$('conditionCue').hidden=true;$('editor').readOnly=false;status('STOPPED');message('Program stopped. Reset or run again.');$('runCode').disabled=false};$('resetWorld').onclick=()=>resetLevel(true);$('nextLevel').onclick=()=>{if(level<levels.length-1&&completed.has(level)){level++;updateLevelUI();store();recenterCamera()}};
+$('runCode').onclick=run;$('stopCode').onclick=()=>{stopped=true;activeRun++;running=false;setActorPosition(positions.x,positions.z);clearPose();traceLine(0);$('conditionCue').hidden=true;$('editor').readOnly=false;status('STOPPED');roomCue('');message('Program stopped. Your code is unchanged. Run again to restart from the entrance.');$('runCode').disabled=false};$('resetWorld').onclick=()=>resetLevel(true);$('nextLevel').onclick=()=>{if(level<levels.length-1&&completed.has(level)){level++;updateLevelUI();store();recenterCamera()}};
 $('toggleHint').onclick=()=>{const element=$('hintText');element.hidden=!element.hidden;$('toggleHint').textContent=element.hidden?'Show a clue':'Hide clue'};
 const editor=$('editor');
 const gutter=$('lineGutter');
@@ -1148,7 +1183,9 @@ function updateLines(){
   }));
   gutter.scrollTop=editor.scrollTop;
 }
+function roomCue(text,axis){const el=$('roomInteractionCue');el.hidden=!text;el.textContent=text||'';for(const node of document.querySelectorAll('.roomCompass [data-axis]'))node.classList.toggle('directionPreview',node.dataset.axis===axis);}
 function renderEditor(){
+  roomCue('');
   const cfg=levels[level],palette=$('commandPalette');
   palette.replaceChildren();
   const snippets=[['↑ Up','up = 1'],['→ Right','right = 1'],['↓ Down','down = 1'],['← Left','left = 1']];
@@ -1162,6 +1199,8 @@ function renderEditor(){
     button.type='button';
     button.textContent=label;
     button.title=code;
+    const axis=code.match(/^(up|down|left|right) =/)?.[1];
+    if(axis){const preview=()=>roomCue(axis+' moves along '+({up:'−Z',down:'+Z',left:'−X',right:'+X'}[axis])+'. Set the distance in your code.',axis);button.addEventListener('pointerenter',preview);button.addEventListener('focus',preview);button.addEventListener('pointerleave',()=>{if(document.activeElement!==button)roomCue('');});button.addEventListener('blur',()=>roomCue(''));}
     button.addEventListener('pointerdown',event=>event.preventDefault());
     button.onclick=()=>{
       if(editor.readOnly)return;
@@ -1237,7 +1276,7 @@ setupPreview();initHeroForm();updateHero();updateLevelUI();
 function resize(){
   const {clientWidth:w,clientHeight:h}=$('cameraStage');
   if(!w||!h)return;
-  renderer.setSize(w,h,false);
+  roomQuality.resize(w,h);
   const aspect=w/h;
   const halfHeight=Math.max(frameHeight,frameWidth/aspect)*1.045;
   camera.left=-halfHeight*aspect;
@@ -1250,6 +1289,7 @@ recenterCamera();
 new ResizeObserver(resize).observe($('cameraStage'));
 const clock=new THREE.Clock();function animate(){requestAnimationFrame(animate);const t=clock.getElapsedTime();
 if($('missionPicker').open&&overworld){overworld.frame(performance.now());return;}
+roomQuality.tick(performance.now(),$('cameraStage').clientWidth,$('cameraStage').clientHeight);
 for(const device of devices){
   device.rotor.rotation.y=t*(device.kind==='sentry'?2:.8);
   device.rotor.position.y=.68+Math.sin(t*2+device.x)*.15;

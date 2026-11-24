@@ -36,6 +36,11 @@ jobs:
           node --check projects/codequest-rpg/island-mobility.mjs
           node --check projects/codequest-rpg/island-vehicles.mjs
           node --check projects/codequest-rpg/island-rendering.mjs
+          node --check projects/codequest-rpg/island-landmarks.mjs
+          node --check projects/codequest-rpg/island-monuments.mjs
+          node --check projects/codequest-rpg/island-water.mjs
+          node --check projects/codequest-rpg/playability.mjs
+          node --check projects/codequest-rpg/world-physics.mjs
       - name: Test all CodeQuest room and island mechanics
         run: |
           node scripts/qa-codequest.mjs
@@ -48,6 +53,9 @@ jobs:
           node scripts/qa-codequest-vertical.mjs
           node scripts/qa-codequest-mobility.mjs
           node scripts/qa-codequest-models.mjs
+          node scripts/qa-codequest-landmarks.mjs
+          node scripts/qa-codequest-playability.mjs
+          node scripts/qa-codequest-physics.mjs
   browser:
     runs-on: ubuntu-24.04
     timeout-minutes: 12
@@ -250,6 +258,34 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: codequest-mobility-qa
+          path: qa-codequest/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  landmarks-water:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned browser dependencies
+        run: |
+          npm install --no-save --no-audit --no-fund playwright@1.56.1 three@0.170.0
+          npx playwright install chromium
+      - name: Explore four landmarks and check WebGL water
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/codequest-browser.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" || true' EXIT
+          sleep 2
+          node scripts/qa-codequest-landmarks-browser.mjs
+      - name: Save landmark and water evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: codequest-landmarks-water-qa
           path: qa-codequest/
           if-no-files-found: ignore
           retention-days: 7

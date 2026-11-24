@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {animateIslandAvatar} from './island-avatar.mjs';
 import {horizontalStep} from './island-vertical.mjs';
-import {bounds,landmarks,floorKey,floorPlan,indoorSafe,indoorRoute,nearestInteriorAction} from './island-interiors.mjs';
+import {bounds,landmarks,floorKey,floorPlan,indoorSafe,indoorSegment,indoorRoute,nearestInteriorAction} from './island-interiors.mjs';
 // Cutaway interior scenes are created only when visited. The exterior world is
 // retained untouched, and the same WebGL renderer is reused.
 export function createInterior({building,makeHero,available,marks,textures,initialFloor=1,onState,onTalk,onRoom,onExit,onVisit}){
@@ -20,7 +20,7 @@ export function createInterior({building,makeHero,available,marks,textures,initi
  }
  let portalRing,ground,stairMarker;
  const ownedTextures=new Set();
- function sign(text,x,y,z){const c=document.createElement('canvas');c.width=512;c.height=96;const ctx=c.getContext('2d');ctx.fillStyle='#142c35e8';ctx.roundRect(4,4,504,88,14);ctx.fill();ctx.strokeStyle='#d2b77b';ctx.lineWidth=3;ctx.stroke();ctx.fillStyle='#f6e8c8';ctx.font='bold 35px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(text,256,48,478);const t=new THREE.CanvasTexture(c);ownedTextures.add(t);const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:t,depthTest:false}));sprite.scale.set(3.2,.60,1);sprite.position.set(x,y,z);scene.add(sprite);return sprite;}
+ function sign(text,x,y,z){const c=document.createElement('canvas');c.width=512;c.height=96;const ctx=c.getContext('2d');ctx.fillStyle='#142c35e8';ctx.roundRect(4,4,504,88,14);ctx.fill();ctx.strokeStyle='#d2b77b';ctx.lineWidth=3;ctx.stroke();ctx.fillStyle='#f6e8c8';ctx.font='bold 35px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(text,256,48,478);const t=new THREE.CanvasTexture(c);ownedTextures.add(t);const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:t,depthTest:true,depthWrite:false}));sprite.scale.set(3.2,.60,1);sprite.position.set(x,y,z);scene.add(sprite);return sprite;}
 
  function destroyFloor(){
   if(!scene)return;
@@ -122,14 +122,16 @@ export function createInterior({building,makeHero,available,marks,textures,initi
   input.set(0,0,0);
   for(const k of keys){const v=controls[k];if(v){input.x+=v[0];input.z+=v[1];}}
   if(input.lengthSq()>0)route=[];
-  if(route.length){input.set(route[0].x-position.x,0,route[0].z-position.z);if(input.length()<.09){route.shift();input.set(0,0,0);}}
+  if(route.length){input.set(route[0].x-position.x,0,route[0].z-position.z);if(input.length()<.025){position.x=route[0].x;position.z=route[0].z;route.shift();input.set(0,0,0);}}
   const d=input.length(),speed=keys.has('Shift')?5.5:route.length?5.5:3.8;
   input.normalize();
   if(route.length){const step=Math.min(d,speed*delta);velocity={x:delta?input.x*step/delta:0,z:delta?input.z*step/delta:0};}
   else velocity=horizontalStep(velocity,input,speed,true,delta);
   const nx=position.x+velocity.x*delta,nz=position.z+velocity.z*delta;
-  if(indoorSafe(plan,nx,position.z))position.x=nx;else velocity.x=0;
-  if(indoorSafe(plan,position.x,nz))position.z=nz;else velocity.z=0;
+  if(route.length){const next={x:nx,z:nz};if(indoorSegment(plan,position,next)){position.x=nx;position.z=nz;}else{route=[];velocity={x:0,z:0};}}else{
+    if(indoorSegment(plan,position,{x:nx,z:position.z}))position.x=nx;else velocity.x=0;
+    if(indoorSegment(plan,position,{x:position.x,z:nz}))position.z=nz;else velocity.z=0;
+  }
   const actual=Math.hypot(velocity.x,velocity.z),moving=actual>.08;
   if(moving){const yaw=Math.atan2(velocity.x,velocity.z);hero.rotation.y+=Math.atan2(Math.sin(yaw-hero.rotation.y),Math.cos(yaw-hero.rotation.y))*(1-Math.exp(-delta*13));}
   hero.position.copy(position);pace+=(Math.min(1,actual/3.8)-pace)*(1-Math.exp(-delta*12));gait+=delta*actual*2.7;
