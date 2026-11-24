@@ -529,7 +529,15 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     if(interior||ride||lift||deck!==null||air>.7||climb||flying||jetting||swing||releaseMotion||wallRunning)return false;
     const d=depots.find(p=>p.id===id),v=fleet.find(p=>p.id===id&&canDrive(p.type,skills));const point=d??v;if(!point)return false;routeTo(point.x,point.z);return !!target;
   }
-  function mountVehicle(){
+  function selectVehicleType(type){
+    if(!vehicleTypes[type]||!canDrive(type,skills)||interior||lift)return false;
+    if(ride){if(ride.type!==type)return false;mountVehicle();return true;}
+    if(deck!==null||air>.25||climb||flying||jetting||swing||releaseMotion||wallRunning||crouched)return false;
+    const options=fleet.filter(v=>v.type===type&&!groundColumnHit(v,v,vehicleTypes[type].radius,1.3)).sort((a,b)=>Math.hypot(a.x-position.x,a.z-position.z)-Math.hypot(b.x-position.x,b.z-position.z));
+    for(const v of options){if(Math.hypot(v.x-position.x,v.z-position.z)<2.6&&columnRouteSegment(position,v)){mountVehicle(v.id);return true;}if(locateDepot(v.id)){notify('Route to '+vehicleTypes[type].name+' · M to mount when nearby.');return true;}}
+    return false;
+  }
+  function mountVehicle(requestedId=null){
     if(ride){
       if(ride.speed>.6){parking=true;notify('Braking · press M again after stopping.');return;}
       const side=[{x:ride.x+1.35,z:ride.z},{x:ride.x-1.35,z:ride.z},{x:ride.x,z:ride.z+1.6},{x:ride.x,z:ride.z-1.6}].find(p=>groundSafe(p.x,p.z)&&columnRouteSegment(ride,p)&&!lowCeiling(p.x,p.z));
@@ -537,7 +545,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
       ride.parked=true;ride.vx=ride.vz=ride.speed=0;ride=null;parking=false;exitPose=.28;position.set(side.x,0,side.z);safeSpot.copy(position);target=null;waypoints=[];vertical=null;air=velocity=0;moveVelocity={x:0,z:0};keys.clear();notify('Vehicle parked. Continue on foot.');return;
     }
     if(interior||lift||deck!==null||air>.25||climb||flying||jetting||swing||releaseMotion||wallRunning||crouched)return;
-    const id=mobilityState().nearest,selected=fleet.find(v=>v.id===id);
+    const id=requestedId??mobilityState().nearest,selected=fleet.find(v=>v.id===id&&canDrive(v.type,skills)&&Math.hypot(v.x-position.x,v.z-position.z)<2.6);
     if(!selected){notify('Walk beside an available vehicle · M to mount.');return;}
     if(groundColumnHit(selected,selected,vehicleTypes[selected.type].radius,1.3)){notify('Vehicle is obstructed. Choose another vehicle.');return;}
     ride=selected;ride.parked=false;parking=false;mountPose=.35;ride.vx=ride.vz=ride.speed=0;position.set(ride.x,0,ride.z);target=null;waypoints=[];assist=null;moveVelocity={x:0,z:0};vertical=null;keys.clear();notify(vehicleTypes[ride.type].name+' mounted · WASD drive, Space/P brake, M park.');
@@ -1344,7 +1352,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     }
     if(now-(frame.labelsAt??-1000)>180){frame.labelsAt=now;const labels=worldLabels.map(l=>{l.sprite.getWorldPosition(labelPos);return {l,d:labelPos.distanceTo(hero.position)};}).filter(({l,d})=>mapMode?l.sprite.userData.major:d<23).sort((a,b)=>a.d-b.d).slice(0,6);const visible=new Set(labels.map(x=>x.l.sprite));for(const {sprite} of worldLabels)sprite.visible=visible.has(sprite);canvas.dataset.visibleLabels=String(visible.size);}
     renderer.render(scene,camera);
-    if(now-(frame.metricsAt??-1000)>500){frame.metricsAt=now;canvas.dataset.drawCalls=String(renderer.info.render.calls);canvas.dataset.triangles=String(renderer.info.render.triangles);canvas.dataset.frameMs=avgFrame.toFixed(1);canvas.dataset.release='8.3-columns';canvas.dataset.columns=String(columns.count());canvas.dataset.columnContacts=String(columnContacts);canvas.dataset.playerX=position.x.toFixed(2);canvas.dataset.playerY=hero.position.y.toFixed(2);canvas.dataset.playerZ=position.z.toFixed(2);}
+    if(now-(frame.metricsAt??-1000)>500){frame.metricsAt=now;canvas.dataset.drawCalls=String(renderer.info.render.calls);canvas.dataset.triangles=String(renderer.info.render.triangles);canvas.dataset.frameMs=avgFrame.toFixed(1);canvas.dataset.release='8.4-wheel';canvas.dataset.columns=String(columns.count());canvas.dataset.columnContacts=String(columnContacts);canvas.dataset.playerX=position.x.toFixed(2);canvas.dataset.playerY=hero.position.y.toFixed(2);canvas.dataset.playerZ=position.z.toFixed(2);}
   }
   function setMapMode(enabled){
     if(interior)return;
@@ -1361,7 +1369,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     else if(activeGate)action('gate');
     else if(nearbyGuide)onDialogue?.(nearbyGuide);
   }
-  return {addZones,visit,travel,frame,setMapMode,adjustCamera,action,setMovementKey,interact,trailState,setWaypoint,adventureState,locateAdventure,locateBuilding,enterBuilding,interiorWalk:id=>interior?.walkTo(id),interiorInteract:id=>interior?.interact(id),interiorState:()=>interior?.state()??null,interiorProgress:()=>({...interiorProgress}),parkourState,locateCourse,assistJump,mobilityState,locateDepot,mountVehicle,activateFrontier,setSectorProgress,
+  return {addZones,visit,travel,frame,setMapMode,adjustCamera,action,setMovementKey,interact,trailState,setWaypoint,adventureState,locateAdventure,locateBuilding,enterBuilding,interiorWalk:id=>interior?.walkTo(id),interiorInteract:id=>interior?.interact(id),interiorState:()=>interior?.state()??null,interiorProgress:()=>({...interiorProgress}),parkourState,locateCourse,assistJump,mobilityState,locateDepot,mountVehicle,activateFrontier,setSectorProgress,selectVehicleType,clearGearInput:()=>{clearInput();last=0;},
     districtMap:()=>[...portals.values()].map(({index,x,z,upper,deck,topic,storeys})=>({index,x,z,upper,deck,topic,storeys})),
     discoveries:()=>[discovered.size,secrets.length]};
 }
