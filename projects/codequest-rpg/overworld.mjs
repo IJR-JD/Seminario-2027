@@ -455,7 +455,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   const surfaceList=()=>[...platformList,...towers.map((t,i)=>({id:'deck-'+i,deck:i,x:t.x,z:t.z,hx:1.72,hz:1.72,y:towerFloor(t)}))];
   function parkourState(){
     const pad=platformList.find(p=>p.id===vertical?.support);
-    const nearCourse=courses.find(c=>Math.hypot(position.x-c.entry.x,position.z-c.entry.z)<2.5);
+    const nearCourse=courses.find(c=>Math.hypot(position.x-c.entry.x,position.z-c.entry.z)<1.65);
     const active=pad?courses[pad.course]:nearCourse;
     return {completed:[...parkourDone],progress:[...parkourProgress],support:pad?.id??null,
       course:active?.id??null,step:pad?pad.index+1:0,grounded:vertical?.grounded??(!air&&!velocity),height:Math.round((hero?.position.y??0)*10)/10,
@@ -490,7 +490,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     }
     if(key==='building'){enterBuilding();return;}
     if(key==='parkour'){assistJump();return;}
-    if(key==='jumpRelease'){jumpRelease=true;return;}
+    if(key==='jumpRelease'){if(!jetting)jumpRelease=true;return;}
     if(key==='grapple'||key==='transfer'){
       if(!unlocked.has('grapple')){notify('Find the Tether Workshop to unlock the harness.');return;}
       const transfer=key==='transfer';
@@ -521,7 +521,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     if(key==='gate'){
       if(activeGate&&gateLock<=0&&!climb&&deck===null&&!flying){
         const destination=gateModels.find(g=>g.id===activeGate.to);
-        if(destination){position.set(destination.x,0,destination.z+1.8);safeSpot.copy(position);target=null;waypoints=[];keys.clear();gateLock=2.2;activeGate=null;air=velocity=0;dashLeft=0;wallRunning=false;notify('Portal travel · '+destination.name);}
+        if(destination){position.set(destination.x,0,destination.z+1.8);safeSpot.copy(position);target=null;waypoints=[];keys.clear();gateLock=2.2;activeGate=null;air=velocity=0;vertical=null;moveVelocity={x:0,z:0};assist=null;dashLeft=0;wallRunning=false;notify('Portal travel · '+destination.name);}
       }else notify('Approach a travel gate, then press G.');
       return;
     }
@@ -1031,7 +1031,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
       const active=trapActive(t,time);
       for(const spike of t.spikes)spike.position.y=THREE.MathUtils.lerp(spike.position.y,t.y+(active?.5:-.4),Math.min(1,delta*15));
       if(active&&!damageLock&&!climb&&deck===null&&!flying&&!wallRunning&&air<.72&&Math.hypot(position.x-t.x,position.z-t.z)<t.r){
-        position.copy(safeSpot);target=null;waypoints=[];dashLeft=0;air=velocity=0;damageLock=1.5;
+        position.copy(safeSpot);target=null;waypoints=[];dashLeft=0;air=velocity=0;vertical=null;moveVelocity={x:0,z:0};assist=null;damageLock=1.5;
         for(const [id,state] of trialState)if(!solved.has(id)){state.next=0;state.used=!circuits.find(c=>c.id===id).requires;}
         adventure.setbacks++;saveAdventure();notify('Trap triggered · returned to safe ground. Circuit reset.');
       }
@@ -1056,7 +1056,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     networkLines.visible=mapMode&&unlocked.has('grapple');
     details.update(time,delta,mapMode);
     light.intensity=2.05+.20*Math.sin(time*.035);
-    onTraversal?.(swing?'Tether swing · Y transfer · T release':releaseMotion?'Aerial release':jetting?'Jetpack · '+jetFuel.toFixed(1)+'s · '+air.toFixed(1)+'m':climb?'Climbing':flying?'Flying · '+flightLeft.toFixed(1)+'s':wallRunning?'Wall running':dashing?'Dash':activeGate?'Travel gate · G':ladder()>=0?'Ladder nearby · F':lowCeiling(position.x,position.z)?'Low passage · C':crouched?'Crouching':air>0?'Jumping':'');
+    onTraversal?.(swing?'Tether swing · Y transfer · T release':releaseMotion?'Aerial release':jetting?'Jetpack · '+jetFuel.toFixed(1)+'s · '+air.toFixed(1)+'m':climb?'Climbing':flying?'Flying · '+flightLeft.toFixed(1)+'s':wallRunning?'Wall running':dashing?'Dash':activeGate?'Travel gate · G':ladder()>=0?'Ladder nearby · F':lowCeiling(position.x,position.z)?'Low passage · C':crouched?'Crouching':vertical?.support?'Elevated platform':vertical&&!vertical.grounded?(velocity<0?'Falling':'Jumping'):air>0?'Jumping':'');
     publishAdventure();publishParkour();
     for(const {c,gem,end} of courseMarkers){gem.visible=!parkourDone.has(c.id);gem.rotation.y=time*1.4;gem.position.y=end.y+1.1+.15*Math.sin(time*3);}
     if(mapMode){
