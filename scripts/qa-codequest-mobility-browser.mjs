@@ -38,7 +38,9 @@ try{
  assert(await page.locator('#frontierLift').isDisabled());
  await page.screenshot({path:'qa-codequest/mobility-locked.png'});
  console.log('PASS locked expedition before completing sector');
- await go('[data-vehicle-route="rover-0"]');
+ await page.locator('#overworldCanvas').focus();await page.keyboard.down('Tab');
+ await page.locator('#gearWheel').waitFor({state:'visible'});await page.locator('[data-gear="rover"]').hover();await page.keyboard.up('Tab');
+ assert(await page.locator('#gearWheel').isHidden());console.log('PASS wheel selected rover and resumed world');
  await wait(()=>document.querySelector('#mobilityHUD')?.dataset.nearest==='rover-0');
  await page.locator('#vehicleMount').click();
  await wait(()=>document.querySelector('#mobilityHUD')?.dataset.vehicle==='rover-0');
