@@ -716,3 +716,10 @@ body:has(.roomStudio)>.topbar nav a:hover,body:has(.roomStudio)>.topbar nav butt
  #missionPicker .islandHelp{top:122px}
  .adventurePanel{top:136px;bottom:100px}
 }
+
+/* Larger gear inventory, with distinct active states and mobile controls. */
+.adventureHotbar{max-width:min(900px,calc(100% - 24px));width:max-content}
+.adventureHotbar [data-power="grapple"][data-unlocked="true"]{border-color:#78e1e7;background:#245762}
+.adventureHotbar [data-power="jetpack"][data-unlocked="true"]{border-color:#ffb67a;background:#70452d}
+.adventureHotbar button[aria-pressed="true"]{background:#e9cf8c!important;color:#193345!important}
+@media(max-width:700px){.adventureHotbar{width:calc(100% - 20px);max-width:none}.adventureHotbar #adventureProgress{flex-basis:100%;text-align:center}#missionPicker .islandTraversal{bottom:118px}#missionPicker .islandDpad{bottom:205px}}
