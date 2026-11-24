@@ -2,7 +2,7 @@ import {createOverworld} from './overworld.mjs?v=interiors6';
 import {createIslandAvatar} from './island-avatar.mjs';
 import {shrines,travelGates,circuits} from './island-adventure.mjs';
 import {gear} from './island-airgear.mjs';
-import {buildings,interiorStorage,floorKey} from './island-interiors.mjs';
+import {buildings} from './island-interiors.mjs';
 import {pythonWaystations} from './island-exploration.mjs';
 import {allRoomLocations} from './island-villages.mjs';
 import {starTargets,starsFor,starsText} from './room-stars.mjs';
@@ -648,7 +648,7 @@ function openMissions(){
   buildingToggle.onclick=()=>setBuildingDirectory(buildingDirectory.hidden);
   buildingEntrance.onclick=()=>{overworld?.enterBuilding();$('overworldCanvas').focus();};
   document.querySelectorAll('[data-interior-walk]').forEach(button=>{button.onclick=()=>{overworld?.interiorWalk(button.dataset.interiorWalk);$('overworldCanvas').focus();};});
-  $('interiorInteract').onclick=()=>{overworld?.interiorInteract(interiorAction);if(picker.open)$('overworldCanvas').focus();};
+  $('interiorInteract').onclick=()=>{overworld?.interiorInteract(interiorHUD.dataset.action);if(picker.open)$('overworldCanvas').focus();};
   adventureToggle.onclick=()=>setAdventurePanel(adventurePanel.hidden);
   directoryToggle.onclick=()=>setDirectory(directory.hidden);
   trailToggle.onclick=()=>setTrailPanel(trailPanel.hidden);
