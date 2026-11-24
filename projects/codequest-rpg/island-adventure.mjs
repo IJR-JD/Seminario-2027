@@ -52,26 +52,26 @@ export function segmentSafe(a,b){
  return true;
 }
 // A bounded grid search reroutes click-to-walk around solid village facades.
-export function routeAdventure(start,end){
+export function routeAdventure(start,end,{segment=segmentSafe}={}){
  if(!groundSafe(start.x,start.z)||!groundSafe(end.x,end.z))throw Error('Destination is not walkable');
  const route=planIslandRoute(start,end);let previous=start;
- if(route.every(p=>{const ok=segmentSafe(previous,p);previous=p;return ok;}))return route;
+ if(route.every(p=>{const ok=segment(previous,p);previous=p;return ok;}))return route;
  const step=2,grid=p=>({x:Math.round(p.x/step)*step,z:Math.round(p.z/step)*step}),key=p=>p.x+','+p.z;
  const initial=grid(start),goal=grid(end);
  const neighbors=p=>[[2,0],[-2,0],[0,2],[0,-2],[2,2],[2,-2],[-2,2],[-2,-2]].map(([x,z])=>({x:p.x+x,z:p.z+z}));
- const candidates=[initial,...neighbors(initial)].filter(p=>segmentSafe(start,p));
+ const candidates=[initial,...neighbors(initial)].filter(p=>segment(start,p));
  const queue=[],parents=new Map(),seen=new Set();
  for(const p of candidates){const k=key(p);if(!seen.has(k)){seen.add(k);queue.push(p);parents.set(k,null);}}
  let finish;
  for(let i=0;i<queue.length&&i<24000;i++){
   const p=queue[i];
-  if(Math.hypot(p.x-goal.x,p.z-goal.z)<=4&&segmentSafe(p,end)){finish=p;break;}
-  for(const n of neighbors(p)){const k=key(n);if(!seen.has(k)&&segmentSafe(p,n)){seen.add(k);parents.set(k,p);queue.push(n);}}
+  if(Math.hypot(p.x-goal.x,p.z-goal.z)<=4&&segment(p,end)){finish=p;break;}
+  for(const n of neighbors(p)){const k=key(n);if(!seen.has(k)&&segment(p,n)){seen.add(k);parents.set(k,p);queue.push(n);}}
  }
  if(!finish)throw Error('No safe path found');
  const path=[end];for(let p=finish;p;p=parents.get(key(p)))path.push(p);path.reverse();
  const smooth=[];let p=start;
- for(let i=0;i<path.length;){let j=path.length-1;while(j>i&&!segmentSafe(p,path[j]))j--;smooth.push(path[j]);p=path[j];i=j+1;}
+ for(let i=0;i<path.length;){let j=path.length-1;while(j>i&&!segment(p,path[j]))j--;smooth.push(path[j]);p=path[j];i=j+1;}
  return smooth;
 }
 
