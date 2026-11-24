@@ -41,7 +41,7 @@ try{
  await page.waitForFunction(first=>{const el=document.querySelector('#tetherNetwork');return el.dataset.lastTransfer&&el.dataset.lastTransfer!==first&&Number(el.dataset.transfers)>=1;},first,{timeout:10000});
  await page.screenshot({path:'qa-codequest/skyways-transfer.png'});
  console.log('PASS live transfer '+first+' -> '+await page.locator('#tetherNetwork').getAttribute('data-last-transfer'));
- if(await page.locator('[data-power="grapple"]').getAttribute('aria-pressed')==='true')await page.locator('#powerMenu').evaluate(el=>{if(!el.open)el.querySelector('summary').click();});await page.locator('[data-power="grapple"]').click();
+ if(await page.locator('[data-power="grapple"]').getAttribute('aria-pressed')==='true'){await page.locator('#powerMenu').evaluate(el=>{if(!el.open)el.querySelector('summary').click();});await page.locator('[data-power="grapple"]').click();}
  await page.waitForFunction(()=>document.querySelector('[data-power="grapple"]')?.getAttribute('aria-pressed')==='false');
  console.log('PASS physically discovered tether and entered swing mode');
  await open(20);
