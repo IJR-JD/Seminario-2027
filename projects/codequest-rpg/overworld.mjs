@@ -7,6 +7,8 @@ import {buildings,interiorStorage,loadInteriorProgress} from './island-interiors
 import {createInterior} from './interior-scene.mjs';
 import {gear,anchors,jetCapacity,grappleRange,anchorLinks,selectAnchor,swingStart,swingStep,jetStep} from './island-airgear.mjs';
 import {createIslandDetail} from './island-detail.mjs';
+import {sectors,sectorProgress,earnedSkills,depots,vehicles,vehicleTypes,canDrive,frontiers,frontierSurfaces,frontierStorage,restoreFrontiers,vehicleStep,vehiclePathSafe,movementMode} from './island-mobility.mjs';
+import {createVehicleFleet} from './island-vehicles.mjs';
 import {terrain,elevation,summits,courses,platformList,parkourStorage,restoreParkour,recordPad,makeVertical,verticalStep,horizontalStep,landingSurface,onPlatform} from './island-vertical.mjs';
 
 const river=z=>Math.abs(z)<3.3;
@@ -33,7 +35,7 @@ const towerFloor=tower=>terrain(tower.x,tower.z)+tower.h;
 const colors=['#528665','#b08656','#528baa','#618850','#71628f','#9b5d47'];
 const controls={ArrowUp:[0,-1],w:[0,-1],ArrowDown:[0,1],s:[0,1],ArrowLeft:[-1,0],a:[-1,0],ArrowRight:[1,0],d:[1,0]};
 
-export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscovery,onTraversal,onPrompt,onDialogue,onWaystation,onTrailChange,onWayfinder,onAdventure,onAdventureToast,onInterior,onInteriorDoor,onParkour}){
+export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscovery,onTraversal,onPrompt,onDialogue,onWaystation,onTrailChange,onWayfinder,onAdventure,onAdventureToast,onInterior,onInteriorDoor,onParkour,onMobility}){
   let interior=null,nearBuilding=null,returnInterior=null,roomAvailable=()=>true,roomMarks=new Map();
   let interiorProgress=loadInteriorProgress(null);
   try{interiorProgress=loadInteriorProgress(JSON.parse(localStorage.getItem(interiorStorage)||'null'));}catch{}
@@ -61,12 +63,12 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   }
   function enterBuilding(){
     if(interior)return interior.interact('exit');
-    if(!nearBuilding||deck!==null||climb||flying||jetting||swing||releaseMotion||wallRunning||air>.7){notify('Approach a building entrance on the ground.');return false;}
+    if(ride||lift||!nearBuilding||deck!==null||climb||flying||jetting||swing||releaseMotion||wallRunning||air>.7){notify('Approach a building entrance on the ground.');return false;}
     return openInterior(nearBuilding);
   }
   function locateBuilding(id){
     if(interior){notify('Exit the building before selecting another destination.');return false;}
-    if(deck!==null||climb||flying||jetting||swing||releaseMotion||wallRunning||air>.7)return false;
+    if(ride||lift||deck!==null||climb||flying||jetting||swing||releaseMotion||wallRunning||air>.7)return false;
     const b=buildings.find(p=>p.id===id);if(!b)return false;routeTo(b.x,b.z+1.7);return !!target;
   }
   const towers=originalTowers.map(t=>({...t}));
@@ -123,7 +125,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     scene.add(mesh);
     return mesh;
   }
-  const details=createIslandDetail(scene,{elevation,groundSafe,blocked,landmarks:[...shrines,...gear,...travelGates,...circuits,...pythonWaystations,...anchors,...platformList]});
+  const details=createIslandDetail(scene,{elevation,groundSafe,blocked,landmarks:[...shrines,...gear,...travelGates,...circuits,...pythonWaystations,...anchors,...platformList,...depots]});
   const water=new THREE.Mesh(new THREE.PlaneGeometry(420,420),new THREE.MeshStandardMaterial({color:'#258dac',roughness:.48,map:details.water}));
   water.rotation.x=-Math.PI/2;
   water.position.y=-1;
@@ -420,6 +422,30 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     const end=c.pads.at(-1),gem=new THREE.Mesh(new THREE.OctahedronGeometry(.43),new THREE.MeshStandardMaterial({color:c.color,emissive:c.color,emissiveIntensity:.7}));
     gem.position.set(end.x,end.y+1.1,end.z);scene.add(gem);courseMarkers.push({c,gem,end});
   }
+  // Mobility hubs and actual traversable elevated expedition terraces.
+  const {fleet,update:updateVehicle}=createVehicleFleet(scene,vehicles,elevation);
+  const frontierModels=[];
+  for(const f of frontiers){
+    const base=elevation(f.x,f.z),accent=material(courses[f.zone].color),metal=material('#506771'),stone=material('#a69c87');
+    box(4.5,.10,4.5,stone,f.x,base+.05,f.z);
+    for(const dx of [-1,1])for(const dz of [-1,1])box(.24,f.y-base,.24,metal,f.x+dx*2.85,base+(f.y-base)/2,f.z+dz*2.85);
+    const liftDeck=box(3.7,.20,3.7,accent,f.x,base+.12,f.z);
+    const marker=label('MOBILITY HUB',true);marker.position.set(f.x,base+2.65,f.z);scene.add(marker);
+    const group=new THREE.Group();scene.add(group);
+    function part(w,h,d,mat,x,y,z){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);m.position.set(x,y,z);group.add(m);return m;}
+    for(const p of f.surfaces){
+      part(p.hx*2,.34,p.hz*2,metal,p.x,p.y-.17,p.z);
+      part(p.hx*2-.05,.065,p.hz*2-.05,accent,p.x,p.y-.032,p.z);
+      for(const side of [-1,1])part(p.hx*2,.17,.13,stone,p.x,p.y+.1,p.z+side*(p.hz-.08));
+    }
+    for(const side of [-1,1]){
+      part(.18,2.4,.18,metal,f.x+side*5.3,f.y+1.2,f.z-1.7);
+      part(1.1,.23,.8,accent,f.x+side*5.3,f.y+2.5,f.z-1.7);
+    }
+    const sign=label(f.name,true);sign.position.set(f.x,f.y+3.4,f.z);group.add(sign);
+    const gem=new THREE.Mesh(new THREE.OctahedronGeometry(.52),new THREE.MeshStandardMaterial({color:courses[f.zone].color,emissive:courses[f.zone].color,emissiveIntensity:.8}));gem.position.set(f.beacon.x,f.y+1.25,f.beacon.z);group.add(gem);
+    frontierModels.push({f,group,liftDeck,gem});
+  }
   const networkPoints=new Map(anchorModels.map(p=>[p.id,p]));
   const linkVertices=[];
   for(const [a,b] of anchorLinks(anchorModels)){
@@ -450,10 +476,50 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   const trail=new THREE.Vector3();
   let hero,target,near,last=0,waypoints=[],gait=0,pace=0;
   let crouched=false,air=0,velocity=0,climb=null,deck=null,baseHeight=1;
+  let skills=new Set(),progress=sectorProgress([]),ride=null,parking=false,lift=null,slideTime=0,lastMobility='',turnAmount=0;
+  let visitedFrontiers=new Set(),cachedSurfaces=null;
+  try{visitedFrontiers=new Set(restoreFrontiers(JSON.parse(localStorage.getItem(frontierStorage)||'[]')));}catch{}
+  function setSectorProgress(completed){progress=sectorProgress(completed);skills=earnedSkills(completed);cachedSurfaces=null;lastMobility='';}
+  function mobilityState(){
+    const nearest=fleet.filter(v=>canDrive(v.type,skills)).map(v=>({v,d:Math.hypot(position.x-v.x,position.z-v.z)})).filter(p=>p.d<2.6).sort((a,b)=>a.d-b.d)[0]?.v;
+    const f=frontiers.find(p=>Math.hypot(position.x-p.x,position.z-p.z)<2.1);
+    const support=vertical?.support??'';
+    const inside=frontiers.find(p=>support.startsWith(p.id+'-'));
+    const grounded=!air&&!velocity&&deck===null&&!climb&&!flying&&!jetting&&!swing&&!releaseMotion&&!wallRunning;
+    return {sectors:progress.map(p=>({id:p.id,count:p.count,total:p.total,unlocked:p.unlocked})),skills:[...skills],visited:[...visitedFrontiers],
+      vehicle:ride?.id??null,type:ride?.type??null,speed:Math.round(ride?.speed??0),parking,nearest:!ride&&grounded?nearest?.id??null:null,
+      frontier:inside?.id??null,nearFrontier:f?.id??null,canLift:!!f&&!ride&&!lift&&((grounded&&skills.has(f.skill))||inside?.id===f.id),lifting:!!lift,
+      locomotion:ride?'ride-'+ride.type:slideTime>0?'slide':vertical&&!vertical.grounded?'airborne':Math.hypot(moveVelocity.x,moveVelocity.z)>.2?'running':'grounded'};
+  }
+  function publishMobility(){const m=mobilityState(),sig=JSON.stringify(m);if(sig!==lastMobility){lastMobility=sig;onMobility?.(m);}}
+  function locateDepot(id){
+    if(interior||ride||lift||deck!==null||air>.7||climb||flying||jetting||swing||releaseMotion||wallRunning)return false;
+    const d=depots.find(p=>p.id===id);if(!d)return false;routeTo(d.x,d.z);return !!target;
+  }
+  function mountVehicle(){
+    if(ride){
+      if(ride.speed>.6){parking=true;notify('Braking · press M again after stopping.');return;}
+      const side=[{x:ride.x+1.35,z:ride.z},{x:ride.x-1.35,z:ride.z},{x:ride.x,z:ride.z+1.6},{x:ride.x,z:ride.z-1.6}].find(p=>groundSafe(p.x,p.z));
+      if(!side){notify('No safe place to dismount.');return;}
+      ride.parked=true;ride=null;parking=false;position.set(side.x,0,side.z);safeSpot.copy(position);vertical=null;air=velocity=0;moveVelocity={x:0,z:0};keys.clear();notify('Vehicle parked. Continue on foot.');return;
+    }
+    if(lift||deck!==null||air>.25||climb||flying||jetting||swing||releaseMotion||wallRunning||crouched)return;
+    const id=mobilityState().nearest,selected=fleet.find(v=>v.id===id);
+    if(!selected){notify('Walk beside an available vehicle · M to mount.');return;}
+    ride=selected;ride.parked=false;parking=false;ride.vx=ride.vz=ride.speed=0;position.set(ride.x,0,ride.z);target=null;waypoints=[];assist=null;moveVelocity={x:0,z:0};vertical=null;keys.clear();notify(vehicleTypes[ride.type].name+' mounted · WASD drive, Space/P brake, M park.');
+  }
+  function activateFrontier(){
+    if(ride||lift||interior)return false;
+    const m=mobilityState(),f=frontiers.find(p=>p.id===m.nearFrontier);
+    if(!f||!m.canLift){notify(f&&!skills.has(f.skill)?'Complete '+sectors[f.zone].name+' to earn '+sectors[f.zone].skillName+'.':'Approach the lift at a mechanical depot.');return false;}
+    const down=m.frontier===f.id;lift={f,down,time:0,start:hero.position.y,end:down?elevation(f.x,f.z):f.y};
+    target=null;waypoints=[];keys.clear();assist=null;moveVelocity={x:0,z:0};vertical=null;air=velocity=0;
+    position.set(f.x,0,f.z);notify(down?'Descending to the island.':'Skill accepted · ascending to '+f.name);return true;
+  }
   let vertical=null,moveVelocity={x:0,z:0},jumpRequest=false,jumpRelease=false,landingTime=0,assist=null;
   let parkourDone=new Set(),parkourProgress=Array(courses.length).fill(0),parkourSignature='';
   try{parkourDone=new Set(restoreParkour(JSON.parse(localStorage.getItem(parkourStorage)||'[]')));}catch{}
-  const surfaceList=()=>[...platformList,...towers.map((t,i)=>({id:'deck-'+i,deck:i,x:t.x,z:t.z,hx:1.72,hz:1.72,y:towerFloor(t)}))];
+  const surfaceList=()=>cachedSurfaces??(cachedSurfaces=[...platformList,...towers.map((t,i)=>({id:'deck-'+i,deck:i,x:t.x,z:t.z,hx:1.72,hz:1.72,y:towerFloor(t)})),...frontierSurfaces(skills)]);
   function parkourState(){
     const pad=platformList.find(p=>p.id===vertical?.support);
     const nearCourse=courses.find(c=>Math.hypot(position.x-c.entry.x,position.z-c.entry.z)<1.65);
@@ -468,7 +534,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     if(sig!==parkourSignature){parkourSignature=sig;onParkour?.(state);}
   }
   function locateCourse(id){
-    if(interior||deck!==null||air>.7||climb||flying||jetting||swing||releaseMotion||wallRunning)return false;
+    if(interior||ride||lift||deck!==null||air>.7||climb||flying||jetting||swing||releaseMotion||wallRunning)return false;
     const c=courses.find(p=>p.id===id);if(!c)return false;routeTo(c.entry.x,c.entry.z);return !!target;
   }
   function assistJump(){
@@ -489,6 +555,10 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
       else if(key==='talk')interior.interact('talk');
       return;
     }
+    if(key==='vehicle'){mountVehicle();return;}
+    if(key==='frontier'){activateFrontier();return;}
+    if(lift)return;
+    if(ride){if(key==='jump'||key==='brake')parking=!parking;return;}
     if(key==='building'){enterBuilding();return;}
     if(key==='parkour'){assistJump();return;}
     if(key==='jumpRelease'){if(!jetting)jumpRelease=true;return;}
@@ -549,6 +619,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
       jumpRequest=true;
     }
     if(key==='crouch'&&!climb&&!air&&!velocity&&!flying&&!wallRunning){
+      if(keys.has('Shift')&&Math.hypot(moveVelocity.x,moveVelocity.z)>6){slideTime=.6;return;}
       if(crouched&&lowCeiling(position.x,position.z))return;
       crouched=!crouched;
     }
@@ -763,13 +834,13 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   });
   canvas.addEventListener('keydown',event=>{
     const key=event.key.length===1?event.key.toLowerCase():event.key;
-    if([' ','c','f','q','e','r','h','k','x','v','b','g','t','y','j','+','=','-'].includes(key)){
+    if([' ','c','f','q','e','r','h','k','m','p','u','x','v','b','g','t','y','j','+','=','-'].includes(key)){
       event.preventDefault();
       if(event.repeat)return;
       if(key==='q'||key==='e')adjustCamera(key==='q'?.3:-.3);
       else if(['+','=','-'].includes(key))adjustCamera(0,key==='-'?1.18:1/1.18);
       else if(key==='r'){if(interior)interior.interact('talk');else if(nearbyGuide)onDialogue?.(nearbyGuide);}
-      else action({' ':'jump',c:'crouch',f:'climb',x:'dash',v:'fly',b:'wall',g:'gate',t:'grapple',y:'transfer',j:'jetpack',h:'building',k:'parkour'}[key]);
+      else action({' ':'jump',c:'crouch',f:'climb',x:'dash',v:'fly',b:'wall',g:'gate',t:'grapple',y:'transfer',j:'jetpack',h:'building',k:'parkour',m:'vehicle',p:'brake',u:'frontier'}[key]);
       return;
     }
     if(key==='Shift'){keys.add(key);return;}
@@ -786,6 +857,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   canvas.addEventListener('keyup',event=>{const k=event.key.length===1?event.key.toLowerCase():event.key;keys.delete(k);if(k===' '||k==='c')jetInput=0;if(k===' '&&!jetting)jumpRelease=true;});
   canvas.addEventListener('blur',()=>{keys.clear();jetInput=0;});
   function routeTo(x,z){
+    if(ride||lift)return;
     waypoints=[];assist=null;moveVelocity={x:0,z:0};
     try{
       waypoints=routeAdventure({x:position.x,z:position.z},{x,z}).map(point=>new THREE.Vector3(point.x,0,point.z));
@@ -810,7 +882,9 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     if(deck!==null||climb||flying||jetting||swing||releaseMotion){notify('Return to ground before setting a route.');return false;}
     routeTo(p.x,p.z);return Boolean(target);
   }
-  function visit(index,available,marks){
+  function visit(index,available,marks,completed=[]){
+    if(ride){ride.parked=true;ride.speed=ride.vx=ride.vz=0;ride=null;}
+    parking=false;lift=null;slideTime=0;setSectorProgress(completed);
     const resume=returnInterior?.room===index?returnInterior:null;returnInterior=null;
     if(interior){interior.dispose();interior=null;interiorStatus();}
     roomAvailable=available;roomMarks=marks;nearBuilding=null;onInteriorDoor?.(null);
@@ -860,6 +934,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     const delta=last?Math.min(.05,(now-last)/1000):0;
     last=now;
     if(interior){interior.frame({renderer,width,height,delta,now,keys,controls});return;}
+    slideTime=Math.max(0,slideTime-delta);
     dashWait=Math.max(0,dashWait-delta);gateLock=Math.max(0,gateLock-delta);damageLock=Math.max(0,damageLock-delta);
     if(flying){flightLeft=Math.max(0,flightLeft-delta);air=THREE.MathUtils.lerp(air,3.1,Math.min(1,delta*5));if(flightLeft<=0)landFlight();}
     else if(!air&&!velocity)flightLeft=Math.min(flightLimit,flightLeft+delta*.8);
@@ -874,19 +949,29 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     if(target)trail.subVectors(target,position);
     if(assist)trail.set(assist.x-position.x,0,assist.z-position.z);
     const dashing=dashLeft>0;
-    if(jetting){const j=jetStep(jetFuel,jetHeight,jetInput,delta);jetFuel=j.fuel;jetHeight=j.height;air=jetHeight;if(!jetFuel){jetting=false;jetInput=0;if(!groundSafe(position.x,position.z)){position.copy(safeSpot);air=0;}velocity=0;}}
+    if(jetting){const j=jetStep(jetFuel,jetHeight,jetInput,delta);if(skills.has('thruster'))j.fuel=Math.min(jetCapacity,j.fuel+(jetFuel-j.fuel)*.35);jetFuel=j.fuel;jetHeight=j.height;air=jetHeight;if(!jetFuel){jetting=false;jetInput=0;if(!groundSafe(position.x,position.z)){position.copy(safeSpot);air=0;}velocity=0;}}
     else if(!air&&!swing&&!releaseMotion&&groundSafe(position.x,position.z))jetFuel=Math.min(jetCapacity,jetFuel+delta*1.25);
     const airborneGear=!!(swing||releaseMotion);
     if(dashing){trail.copy(dashVector);dashLeft=Math.max(0,dashLeft-delta);}
     if(wallRunning){trail.x=0;trail.z=Math.sign(trail.z);}
     if(climb)trail.set(0,0,0);
     if(jetting&&!airClear(position.x,position.z,elevation(position.x,position.z)+air,elevation)){jetHeight=Math.min(13,Math.max(jetHeight,air+1));air=jetHeight;jetInput=0;}
-    const normalMotion=!climb&&deck===null&&!flying&&!jetting&&!airborneGear&&!wallRunning;
+    const normalMotion=!ride&&!lift&&!climb&&deck===null&&!flying&&!jetting&&!airborneGear&&!wallRunning;
     const previousFeet=elevation(position.x,position.z)+air;
     if(normalMotion){if(!vertical)vertical=makeVertical(previousFeet,velocity,!air&&!velocity);}
     else{vertical=null;moveVelocity={x:0,z:0};assist=null;jumpRequest=jumpRelease=false;}
     const distance=trail.length();
-    if(airborneGear){
+    if(lift){
+      lift.time=Math.min(1,lift.time+delta/2.2);const t=lift.time*lift.time*(3-2*lift.time);const y=THREE.MathUtils.lerp(lift.start,lift.end,t);air=Math.max(0,y-elevation(position.x,position.z));
+      const model=frontierModels.find(p=>p.f.id===lift.f.id);model.liftDeck.position.y=y-.10;
+      if(lift.time===1){const f=lift.f,down=lift.down;vertical=makeVertical(lift.end,0,true,down?null:f.id+'-main');air=down?0:f.y-elevation(f.x,f.z);velocity=0;lift=null;}
+    }else if(ride){
+      const v=vehicleStep(ride,trail,ride.type,skills,delta,{boost:keys.has('Shift'),brake:parking});
+      const turn=Math.atan2(Math.sin(v.yaw-ride.yaw),Math.cos(v.yaw-ride.yaw));
+      if(vehiclePathSafe(ride.type,ride,v)){Object.assign(ride,v);position.set(v.x,0,v.z);safeSpot.copy(position);}
+      else{ride.vx=ride.vz=ride.speed=0;}
+      updateVehicle(ride,delta,turn*5);hero.rotation.y=ride.yaw;air=velocity=0;
+    }else if(airborneGear){
       const input=trail.clone();if(input.length()>1)input.normalize();
       const current=swing?swingStep(swing.state,swing.anchor,input,delta):{x:position.x+releaseMotion.vx*delta,y:elevation(position.x,position.z)+air+(releaseMotion.vy-=14*delta)*delta,z:position.z+releaseMotion.vz*delta};
       const groundY=elevation(current.x,current.z);
@@ -922,17 +1007,18 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     }else if(distance>.025||normalMotion&&!target&&Math.hypot(moveVelocity.x,moveVelocity.z)>.02){
       const heading=distance>.025?Math.atan2(trail.x,trail.z):Math.atan2(moveVelocity.x,moveVelocity.z);
       hero.rotation.y+=Math.atan2(Math.sin(heading-hero.rotation.y),Math.cos(heading-hero.rotation.y))*Math.min(1,delta*14);
-      const speed=dashing?27:jetting?19:flying?15:wallRunning?12:crouched?3.5:target?14:keys.has('Shift')?15:8;
+      const speed=dashing?27:jetting?19:flying?15:wallRunning?12:slideTime>0?12:crouched?3.5:target?14:keys.has('Shift')?(skills.has('servo')?18:15):8;
       const stride=target?Math.min(distance,delta*speed):assist?Math.min(distance,delta*5.8):delta*speed;
       trail.normalize();
       let dx=trail.x*stride,dz=trail.z*stride;
       if(normalMotion&&!target&&!dashing&&!assist){
-        moveVelocity=horizontalStep(moveVelocity,trail,speed,vertical.grounded,delta);
+        moveVelocity=horizontalStep(moveVelocity,slideTime>0?{x:Math.sin(hero.rotation.y),z:Math.cos(hero.rotation.y)}:trail,speed,vertical.grounded,delta,skills.has('stabilizer')?1.65:1);
         dx=moveVelocity.x*delta;dz=moveVelocity.z*delta;
       }else if(normalMotion){moveVelocity={x:0,z:0};}
       const nextX=position.x+dx,nextZ=position.z+dz;
       const onDeck=deck===null||(Math.abs(nextX-towers[deck].x)<1.72&&Math.abs(nextZ-towers[deck].z)<1.72);
-      const valid=jetting?airClear(nextX,nextZ,elevation(nextX,nextZ)+air,elevation):flying?airSafe(nextX,nextZ):wallRunning?onWallLane(nextX,nextZ)&&groundSafe(nextX,nextZ):segmentSafe(position,{x:nextX,z:nextZ});
+      const highSupport=vertical?.support?.startsWith('frontier-')||normalMotion&&air>15;
+      const valid=highSupport?shore(nextX,nextZ)<.91:jetting?airClear(nextX,nextZ,elevation(nextX,nextZ)+air,elevation):flying?airSafe(nextX,nextZ):wallRunning?onWallLane(nextX,nextZ)&&groundSafe(nextX,nextZ):segmentSafe(position,{x:nextX,z:nextZ});
       if(valid&&onDeck&&(flying||jetting||crouched||!lowCeiling(nextX,nextZ))){
         position.set(nextX,0,nextZ);
         if(groundSafe(nextX,nextZ)&&!flying&&!jetting&&!wallRunning&&!air&&!trapModels.some(t=>Math.hypot(t.x-nextX,t.z-nextZ)<t.r+1.2))safeSpot.copy(position);
@@ -946,7 +1032,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     }else if(target)target=waypoints.shift()??null;
     if(normalMotion){
       const before=vertical.support;
-      vertical=verticalStep(vertical,{x:position.x,z:position.z,ground:elevation(position.x,position.z),surfaces:surfaceList(),dt:delta,jump:jumpRequest,release:jumpRelease&&!assist});
+      vertical=verticalStep(vertical,{x:position.x,z:position.z,ground:elevation(position.x,position.z),surfaces:surfaceList(),dt:delta,jump:jumpRequest,release:jumpRelease&&!assist,jumpScale:!assist&&skills.has('spring')?1.20:1});
       jumpRequest=jumpRelease=false;
       air=Math.max(0,vertical.y-elevation(position.x,position.z));velocity=vertical.vy;
       if(vertical.landed){
@@ -970,7 +1056,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     }
     landingTime=Math.max(0,landingTime-delta);
     hero.position.copy(position);
-    hero.position.y=(deck===null?elevation(position.x,position.z):towerFloor(towers[deck]))+air+(wallRunning?1.35:0);
+    hero.position.y=(deck===null?elevation(position.x,position.z):towerFloor(towers[deck]))+air+(wallRunning?1.35:0)+(ride?(ride.type==='bike'?.72:ride.type==='rover'?.58:.44):0);
     hero.scale.y=THREE.MathUtils.lerp(hero.scale.y,baseHeight*(crouched?.56:1),Math.min(1,delta*15));
     if(climb){
       const tower=towers[climb.index];
@@ -1063,7 +1149,10 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     details.update(time,delta,mapMode);
     light.intensity=2.05+.20*Math.sin(time*.035);
     onTraversal?.(swing?'Tether swing · Y transfer · T release':releaseMotion?'Aerial release':jetting?'Jetpack · '+jetFuel.toFixed(1)+'s · '+air.toFixed(1)+'m':climb?'Climbing':flying?'Flying · '+flightLeft.toFixed(1)+'s':wallRunning?'Wall running':dashing?'Dash':activeGate?'Travel gate · G':ladder()>=0?'Ladder nearby · F':lowCeiling(position.x,position.z)?'Low passage · C':crouched?'Crouching':vertical?.support?'Elevated platform':vertical&&!vertical.grounded?(velocity<0?'Falling':'Jumping'):air>0?'Jumping':'');
-    publishAdventure();publishParkour();
+    publishAdventure();publishParkour();publishMobility();
+    for(const v of fleet)v.root.visible=canDrive(v.type,skills);
+    for(const {f,group,gem} of frontierModels){group.visible=skills.has(f.skill);gem.visible=!visitedFrontiers.has(f.id);gem.rotation.y=time*1.4;
+      if(vertical?.support?.startsWith(f.id+'-')&&Math.hypot(position.x-f.beacon.x,position.z-f.beacon.z)<1.2&&!visitedFrontiers.has(f.id)){visitedFrontiers.add(f.id);try{localStorage.setItem(frontierStorage,JSON.stringify([...visitedFrontiers]));}catch{}notify(f.name+' discovered · mechanical expedition complete!');}}
     for(const {c,gem,end} of courseMarkers){gem.visible=!parkourDone.has(c.id);gem.rotation.y=time*1.4;gem.position.y=end.y+1.1+.15*Math.sin(time*3);}
     if(mapMode){
       const extent=Math.max(132,163/aspect)*zoom;
@@ -1074,7 +1163,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
       survey.lookAt(0,0,0);
     }else{
       look.lerp(hero.position,1-Math.exp(-delta*8));
-      const distance=(aspect<1?15:13)*zoom*(swing||jetting||releaseMotion?1.20:1),horizontal=Math.cos(pitch)*distance;
+      const distance=(aspect<1?15:13)*zoom*(swing||jetting||releaseMotion||ride?1.20:1),horizontal=Math.cos(pitch)*distance;
       follow.position.set(look.x+Math.sin(yaw)*horizontal,look.y+Math.sin(pitch)*distance+.8,look.z+Math.cos(yaw)*horizontal);
       follow.lookAt(look.x,look.y+.9,look.z);
       follow.aspect=aspect;
@@ -1084,7 +1173,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     const moving=distance>.025||Math.hypot(moveVelocity.x,moveVelocity.z)>.3;
     pace+=(Number(moving)-pace)*Math.min(1,delta*12);
     gait+=delta*pace*(keys.has('Shift')&&!crouched?21:14);
-    const mode=swing?'grapple':jetting?'jetpack':releaseMotion?'jump':climb?'climb':flying?'fly':wallRunning?'wall':dashing?'dash':crouched?'crouch':vertical&&!vertical.grounded?(velocity<0?'fall':'jump'):landingTime>0?'land':!vertical&&air>0?'jump':keys.has('Shift')&&moving?'sprint':moving?'walk':'idle';
+    const mode=swing?'grapple':jetting?'jetpack':releaseMotion?'jump':climb?'climb':flying?'fly':wallRunning?'wall':dashing?'dash':crouched?'crouch':lift?'idle':movementMode({speed:ride?.speed??(target&&moving?8:Math.hypot(moveVelocity.x,moveVelocity.z)),sprint:keys.has('Shift'),grounded:vertical?.grounded??!air,vy:velocity,landing:landingTime,slide:slideTime,vehicle:ride?.type});
     animateIslandAvatar(hero,{time:now/1000,delta,pace,mode,phase:climb?climb.time*45:gait,gear:[...unlocked],landing:landingTime});
     for(const [i,ripple] of ripples.entries())ripple.scale.x=.75+.35*Math.sin(now*.0018+i);
     for(const relic of relics){
@@ -1134,12 +1223,12 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     let closest,best=2.9;
     for(const item of portals.values()){
       const distance=Math.hypot(position.x-item.x,position.z-(item.z+1.15));
-      if(distance<best&&deck===item.deck&&!climb&&!flying&&!jetting&&!swing&&!releaseMotion&&!wallRunning&&air<.8){best=distance;closest=item.index;}
+      if(!ride&&!lift&&distance<best&&deck===item.deck&&!climb&&!flying&&!jetting&&!swing&&!releaseMotion&&!wallRunning&&air<.8){best=distance;closest=item.index;}
       item.ring.position.y=item.y+1.12+.12*Math.sin(now*.002+item.index);
       item.ring.rotation.z=now*.00065;
       item.ring.material.emissiveIntensity=deck===item.deck&&distance<2.15?.92:.45+.17*Math.sin(now*.003+item.index);
     }
-    const entrance=deck===null&&!climb&&!flying&&!jetting&&!swing&&!releaseMotion&&!wallRunning&&air<.7?buildings.map(b=>({b,d:Math.hypot(position.x-b.x,position.z-(b.z+1.7))})).filter(p=>p.d<2.7).sort((a,b)=>a.d-b.d)[0]?.b??null:null;
+    const entrance=!ride&&!lift&&deck===null&&!climb&&!flying&&!jetting&&!swing&&!releaseMotion&&!wallRunning&&air<.7?buildings.map(b=>({b,d:Math.hypot(position.x-b.x,position.z-(b.z+1.7))})).filter(p=>p.d<2.7).sort((a,b)=>a.d-b.d)[0]?.b??null:null;
     if(entrance!==nearBuilding){nearBuilding=entrance;onInteriorDoor?.(nearBuilding);}
     if(closest!==near){
       near=closest;
@@ -1172,11 +1261,12 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   }
   function interact(){
     if(interior){interior.interact();return;}
+    if(ride||lift)return;
     if(near!==undefined)onEnter(near);
     else if(activeGate)action('gate');
     else if(nearbyGuide)onDialogue?.(nearbyGuide);
   }
-  return {addZones,visit,travel,frame,setMapMode,adjustCamera,action,setMovementKey,interact,trailState,setWaypoint,adventureState,locateAdventure,locateBuilding,enterBuilding,interiorWalk:id=>interior?.walkTo(id),interiorInteract:id=>interior?.interact(id),interiorState:()=>interior?.state()??null,interiorProgress:()=>({...interiorProgress}),parkourState,locateCourse,assistJump,
+  return {addZones,visit,travel,frame,setMapMode,adjustCamera,action,setMovementKey,interact,trailState,setWaypoint,adventureState,locateAdventure,locateBuilding,enterBuilding,interiorWalk:id=>interior?.walkTo(id),interiorInteract:id=>interior?.interact(id),interiorState:()=>interior?.state()??null,interiorProgress:()=>({...interiorProgress}),parkourState,locateCourse,assistJump,mobilityState,locateDepot,mountVehicle,activateFrontier,setSectorProgress,
     districtMap:()=>[...portals.values()].map(({index,x,z,upper,deck,topic,storeys})=>({index,x,z,upper,deck,topic,storeys})),
     discoveries:()=>[discovered.size,secrets.length]};
 }
