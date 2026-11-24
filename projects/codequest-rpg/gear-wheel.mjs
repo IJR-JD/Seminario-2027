@@ -57,6 +57,7 @@ export function createGearWheel({picker,canvas,button,panel,getWorld,onMessage})
  function open(hold=false){
   const w=getWorld();if(!picker.open||!w||w.interiorState()||canvas.closest('[hidden]'))return false;
   if(opened)return true;
+  const shortcuts=picker.querySelector('.adventureHotbar');if(shortcuts)shortcuts.open=false;
   previousFocus=document.activeElement;opened=true;held=hold;w.clearGearInput();refresh();choose(-1);
   panel.hidden=false;button.setAttribute('aria-expanded','true');picker.dataset.gearOpen='true';if(!hold)panel.focus();return true;
  }
@@ -67,7 +68,7 @@ export function createGearWheel({picker,canvas,button,panel,getWorld,onMessage})
   if(!commit||i<0||!w)return;
   const item=gearItems[i];
   if(state==='cooldown'||state==='unavailable'){onMessage?.('Equipment unavailable in the current movement state.');return;}
-  if(state==='locked'){if(item.type==='power'){if(!w.locateAdventure(item.id))onMessage?.('Return to ground to locate the unlock site.');}else onMessage?.('Complete the required sector to unlock the hoverboard.');return;}
+  if(state==='locked'){if(item.type==='power'){if(!w.locateAdventure(item.id))onMessage?.('Return to ground to locate the unlock site.');else onMessage?.('Following route to unlock '+item.label+'.');}else onMessage?.('Complete the required sector to unlock the hoverboard.');return;}
   if(item.type==='vehicle'){if(!w.selectVehicleType(item.id))onMessage?.('Return to ground or park your current vehicle first.');}
   else w.action(item.id);
  }
