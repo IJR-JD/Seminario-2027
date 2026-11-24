@@ -458,9 +458,9 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
       for(const side of [-1,1])box(.07,.055,2.28,accent,v.x+side*1.01,by+.03,v.z);
     }
     for(const dx of [-1,1])for(const dz of [-1,1]){
-      box(.24,f.y-base,.24,metal,f.x+dx*2.85,base+(f.y-base)/2,f.z+dz*2.85);
-      box(.60,.25,.60,stone,f.x+dx*2.85,base+.12,f.z+dz*2.85);
-      for(let y=base+2.5;y<f.y-.8;y+=3.8)box(.36,.12,.36,accent,f.x+dx*2.85,y,f.z+dz*2.85);
+      box(.24,f.y-base,.24,metal,f.x+dx*1.15,base+(f.y-base)/2,f.z+dz*2.85);
+      box(.60,.25,.60,stone,f.x+dx*1.15,base+.12,f.z+dz*2.85);
+      for(let y=base+2.5;y<f.y-.8;y+=3.8)box(.36,.12,.36,accent,f.x+dx*1.15,y,f.z+dz*2.85);
     }
     const liftDeck=box(3.7,.20,3.7,accent,f.x,base+.12,f.z);
     const marker=label('MOBILITY HUB',true);marker.position.set(f.x,base+2.65,f.z);scene.add(marker);
