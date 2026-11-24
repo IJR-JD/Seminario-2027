@@ -25,7 +25,7 @@ export const traps=[
  {x:54,z:17,r:1.3,phase:.7},{x:-63,z:59,r:1.2,phase:1.8}
 ];
 export const flightLimit=6,dashDuration=.32,dashCooldown=1.4;
-export const buildingFootprints=[...allRoomLocations(),...villageHouses].map(({x,z})=>({x,z:z-2.7,hx:2.23,hz:1.95}));
+export const buildingFootprints=[...allRoomLocations(),...villageHouses].map(({x,z,storeys=2})=>({x,z:z-2.7,hx:2.23,hz:1.95,height:storeys===2?8.1:5.1}));
 export const blocked=(x,z)=>buildingFootprints.some(b=>Math.abs(x-b.x)<b.hx&&Math.abs(z-b.z)<b.hz)||(Math.abs(x-wallLane.x)<.7&&z>wallLane.minZ-1&&z<wallLane.maxZ+1);
 export const groundSafe=(x,z)=>isIslandWalkable(x,z)&&!blocked(x,z);
 export const airSafe=(x,z)=>Number.isFinite(x)&&Number.isFinite(z)&&shore(x,z)<.89&&!blocked(x,z);
@@ -35,7 +35,7 @@ export const newProgress=()=>({powers:[],circuits:[],setbacks:0});
 export function restoreProgress(value){
  const base=newProgress();
  if(!value||typeof value!=='object')return base;
- if(Array.isArray(value.powers))base.powers=[...new Set(value.powers.filter(id=>shrines.some(s=>s.id===id)))];
+ if(Array.isArray(value.powers))base.powers=[...new Set(value.powers.filter(id=>shrines.some(s=>s.id===id)||['grapple','jetpack'].includes(id)))];
  if(Array.isArray(value.circuits))base.circuits=[...new Set(value.circuits.filter(id=>circuits.some(s=>s.id===id)))];
  if(Number.isSafeInteger(value.setbacks)&&value.setbacks>=0)base.setbacks=value.setbacks;
  return base;
@@ -72,4 +72,12 @@ export function routeAdventure(start,end){
  const smooth=[];let p=start;
  for(let i=0;i<path.length;){let j=path.length-1;while(j>i&&!segmentSafe(p,path[j]))j--;smooth.push(path[j]);p=path[j];i=j+1;}
  return smooth;
+}
+
+// Aerial gear can clear the roof; ordinary walking and low flight stay solid.
+export function airClear(x,z,y,elevation){
+ if(!Number.isFinite(x)||!Number.isFinite(z)||!Number.isFinite(y)||shore(x,z)>=.91)return false;
+ for(const b of buildingFootprints)if(Math.abs(x-b.x)<b.hx&&Math.abs(z-b.z)<b.hz&&y<elevation(b.x,b.z)+b.height+.35)return false;
+ if(Math.abs(x-wallLane.x)<.7&&z>wallLane.minZ-1&&z<wallLane.maxZ+1&&y<elevation(x,z)+3.65)return false;
+ return true;
 }

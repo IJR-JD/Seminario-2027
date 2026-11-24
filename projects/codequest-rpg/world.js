@@ -1,6 +1,7 @@
-import {createOverworld} from './overworld.mjs?v=adventure3';
+import {createOverworld} from './overworld.mjs?v=skyways5';
 import {createIslandAvatar} from './island-avatar.mjs';
 import {shrines,travelGates,circuits} from './island-adventure.mjs';
+import {gear} from './island-airgear.mjs';
 import {pythonWaystations} from './island-exploration.mjs';
 import {allRoomLocations} from './island-villages.mjs';
 import {starTargets,starsFor,starsText} from './room-stars.mjs';
@@ -510,20 +511,22 @@ function openMissions(){
   const adventurePanel=$('islandAdventurePanel'),adventureToggle=$('islandAdventureToggle');
   let journalSignature='';
   function renderAdventure(state){
-    $('adventureProgress').textContent=state.powers.length+'/3 powers · '+state.circuits.length+'/4 trials';
-    $('adventureFuel').textContent=state.powers.includes('fly')?'Flight '+state.flight.toFixed(1)+'s':'';
+    $('adventureProgress').textContent=state.powers.length+'/5 powers · '+state.circuits.length+'/4 trials';
+    $('adventureFuel').textContent=[state.powers.includes('fly')?'Flight '+state.flight.toFixed(1)+'s':'',state.powers.includes('jetpack')?'Jet '+state.jetFuel.toFixed(1)+'s':''].filter(Boolean).join(' · ');
     document.querySelectorAll('[data-power]').forEach(button=>{
       const id=button.dataset.power;button.dataset.unlocked=String(state.powers.includes(id));
-      button.setAttribute('aria-pressed',String(id==='fly'?state.flying:id==='wall'?state.wallRunning:false));
+      button.setAttribute('aria-pressed',String(id==='fly'?state.flying:id==='wall'?state.wallRunning:id==='grapple'?state.grappling:id==='jetpack'?state.jetting:false));
       button.title=state.powers.includes(id)?(id==='dash'&&!state.dashReady?'Recharging':'Power unlocked'):'Find the shrine to unlock';
     });
     $('adventureGate').dataset.unlocked=String(!!state.gate);
+    const transfer=$('tetherTransfer');transfer.disabled=!state.grappling||!state.nextAnchor;transfer.dataset.unlocked=String(!transfer.disabled);
+    const network=$('tetherNetwork');network.dataset.anchor=state.anchor??'';network.dataset.next=state.nextAnchor??'';network.dataset.transfers=String(state.transfers);network.dataset.lastTransfer=state.lastTransfer?.to??'';network.textContent=state.powers.includes('grapple')?state.anchorCount+' anchors · '+(state.grappling?(state.nextAnchor?'Y: next anchor ready':'Steer to next anchor'):(state.nextAnchor?'T: anchor ready':'Find a cyan tower'))+' · '+state.transfers+' transfers':'';
     const signature=JSON.stringify([state.powers,state.circuits,state.progress,state.setbacks]);
     if(signature===journalSignature)return;
     journalSignature=signature;
     const list=$('adventureList');list.replaceChildren();
-    for(const item of [...shrines,...circuits,...travelGates]){
-      const shrine=shrines.includes(item),circuit=circuits.includes(item);
+    for(const item of [...shrines,...gear,...circuits,...travelGates]){
+      const shrine=(shrines.includes(item)||gear.includes(item)),circuit=circuits.includes(item);
       const done=shrine?state.powers.includes(item.id):circuit?state.circuits.includes(item.id):false;
       const entry=document.createElement('article');entry.className='islandTrailEntry';entry.dataset.found=String(done);
       const title=document.createElement('h4');title.textContent=(done?'✓ ':shrine?'✦ ':circuit?'◇ ':'◎ ')+item.name;
@@ -621,7 +624,17 @@ function openMissions(){
     button.addEventListener('blur',release);
   });
   document.querySelectorAll('[data-traversal]').forEach(button=>{
-    button.onclick=()=>{overworld?.action(button.dataset.traversal);$('overworldCanvas').focus();};
+    const action=button.dataset.traversal;
+    if(action==='jump'||action==='crouch'){
+      let held=false;
+      button.addEventListener('pointerdown',e=>{
+        if(!overworld?.adventureState().jetting)return;
+        e.preventDefault();held=true;button.setPointerCapture(e.pointerId);overworld.action(action);
+      });
+      const release=()=>{if(held){overworld?.action('jetStop');setTimeout(()=>{held=false;},0);}};
+      for(const event of ['pointerup','pointercancel','lostpointercapture'])button.addEventListener(event,release);
+      button.onclick=()=>{if(!held){overworld?.action(action);if(overworld?.adventureState().jetting)overworld.action('jetStop');$('overworldCanvas').focus();}};
+    }else button.onclick=()=>{overworld?.action(action);$('overworldCanvas').focus();};
   });
   cameraToggle.onclick=()=>{
     const map=cameraToggle.getAttribute('aria-pressed')!=='true';

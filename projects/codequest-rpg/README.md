@@ -100,3 +100,15 @@ Original block-style character rig for the overworld, with joint-centered walkin
 Solid village facades now block walking; click routes search around obstacles and use the existing bridges. Larger roof eaves, door proportions, tiered trees and dynamic landmark effects are original assets, not Roblox assets. Adventure progress is stored separately under `cq-island-adventure-v3`; all 22 room IDs, scoring and Python Trail progress remain compatible.
 
 QA: `node scripts/qa-codequest-adventure.mjs` checks data, navigable placements, route collision, portal pairs, trial order, timing and persistence. `qa-codequest-adventure-browser.mjs` exercises actual physical Dash unlock, use, reload persistence and portal travel in Chromium. Full flight, wall and circuit playthroughs need further end-to-end coverage.
+
+## Dynamic Island v4
+The original block-style island receives procedural repeatable ground, masonry, roof and wood textures, animated water ripples, instanced grass, flowers, rocks and path shoulders, drifting clouds, birds and fireflies. Buildings gain framed windows, plinths, corner trim and eaves; avatars gain armor layers, a visible tether harness and twin-thruster pack. No external game assets are copied.
+
+Two new discoverable items extend the same adventure save (old unlocks and room scores survive).
+- Tether Workshop (-97,-59): T attaches to the nearest eligible cyan anchor within 25 world units. WASD steers a gravity-driven rope-constrained swing; T releases with momentum. Eleven elevated anchors extend across the meadow, river crossings and eastern region.
+- Jetpack Forge (88,54): J toggles jetpack, Space raises altitude and C lowers it (hold the touch Jump/Crouch controls on mobile). Nine seconds of nominal fuel, variable burn during climb/descent, recharge on safe ground. High flight can clear roofs, and unsafe landings recover to the last grounded position.
+
+Both systems are original simplified mechanics inspired by aerial traversal in action games; they are not reproductions of Spider-Man or Attack on Titan physics. All 22 programming rooms retain their existing interpreter and scoring. Node tests exercise the rope constraint and fuel model; Chromium tests exercise physical equipment discovery, swing/release, jetpack ascent and persistence.
+
+## Skyways v5
+Eight procedural corridors extend the original 11 anchors across both banks, all districts and the central region. Four original structural families (lattice spire, masonry arch, crane, obelisk) are rendered using shared instanced geometry. Cyan lines on the island map indicate neighboring anchor routes; golden target rings mark eligible anchors. T attaches/releases; Y transfers to another reachable anchor while preserving momentum. The HUD shows anchor availability and transfer count. Network QA checks safe sites, connectivity, alternate anchors near the workshop and velocity conservation; real Chromium QA exercises an actual transfer.
