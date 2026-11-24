@@ -58,6 +58,7 @@ jobs:
           node scripts/qa-codequest-airgear.mjs
           node scripts/qa-codequest-interiors.mjs
           node scripts/qa-codequest-vertical.mjs
+          node scripts/qa-codequest-columns.mjs
           node scripts/qa-codequest-mobility.mjs
       - name: Probe original ManimCE MP4 URLs (external availability)
         continue-on-error: true
@@ -91,7 +92,7 @@ jobs:
         run: |
           set -eu
           root="https://ijr-jd.github.io/Seminario-2027/projects/codequest-rpg"
-          for file in index.html world.css world.js overworld.mjs island-adventure.mjs island-avatar.mjs island-airgear.mjs island-detail.mjs island-interiors.mjs interior-scene.mjs island-vertical.mjs island-mobility.mjs island-vehicles.mjs island-rendering.mjs; do
+          for file in index.html world.css world.js overworld.mjs island-adventure.mjs island-avatar.mjs island-airgear.mjs island-detail.mjs island-interiors.mjs interior-scene.mjs island-vertical.mjs island-mobility.mjs island-vehicles.mjs island-rendering.mjs island-columns.mjs; do
             verified=false
             for attempt in {1..12}; do
               if curl -fsSL --max-time 20 "$root/$file?release=$GITHUB_SHA-$attempt" -o "/tmp/codequest-live-$file" && cmp -s "projects/codequest-rpg/$file" "/tmp/codequest-live-$file"; then
