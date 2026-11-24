@@ -1,4 +1,6 @@
-import {createOverworld} from './overworld.mjs?v=twostorey1';
+import {createOverworld} from './overworld.mjs?v=adventure3';
+import {createIslandAvatar} from './island-avatar.mjs';
+import {shrines,travelGates,circuits} from './island-adventure.mjs';
 import {pythonWaystations} from './island-exploration.mjs';
 import {allRoomLocations} from './island-villages.mjs';
 import {starTargets,starsFor,starsText} from './room-stars.mjs';
@@ -505,6 +507,37 @@ function openMissions(){
   const directory=$('islandDirectory'),directoryToggle=$('islandDirectoryToggle');
   const trailPanel=$('islandTrailPanel'),trailToggle=$('islandTrailToggle');
   const trailList=$('islandTrailList');
+  const adventurePanel=$('islandAdventurePanel'),adventureToggle=$('islandAdventureToggle');
+  let journalSignature='';
+  function renderAdventure(state){
+    $('adventureProgress').textContent=state.powers.length+'/3 powers · '+state.circuits.length+'/4 trials';
+    $('adventureFuel').textContent=state.powers.includes('fly')?'Flight '+state.flight.toFixed(1)+'s':'';
+    document.querySelectorAll('[data-power]').forEach(button=>{
+      const id=button.dataset.power;button.dataset.unlocked=String(state.powers.includes(id));
+      button.setAttribute('aria-pressed',String(id==='fly'?state.flying:id==='wall'?state.wallRunning:false));
+      button.title=state.powers.includes(id)?(id==='dash'&&!state.dashReady?'Recharging':'Power unlocked'):'Find the shrine to unlock';
+    });
+    $('adventureGate').dataset.unlocked=String(!!state.gate);
+    const signature=JSON.stringify([state.powers,state.circuits,state.progress,state.setbacks]);
+    if(signature===journalSignature)return;
+    journalSignature=signature;
+    const list=$('adventureList');list.replaceChildren();
+    for(const item of [...shrines,...circuits,...travelGates]){
+      const shrine=shrines.includes(item),circuit=circuits.includes(item);
+      const done=shrine?state.powers.includes(item.id):circuit?state.circuits.includes(item.id):false;
+      const entry=document.createElement('article');entry.className='islandTrailEntry';entry.dataset.found=String(done);
+      const title=document.createElement('h4');title.textContent=(done?'✓ ':shrine?'✦ ':circuit?'◇ ':'◎ ')+item.name;
+      const body=document.createElement('p');body.textContent=item.description??'Paired gate · press G beside the arch to travel.';
+      const location=document.createElement('small');location.textContent='X '+item.x+' · Z '+item.z+(circuit?' · '+(state.progress[item.id]??0)+'/'+item.steps.length+' pads':'');
+      const route=document.createElement('button');route.type='button';route.dataset.adventureRoute=item.id;route.textContent='Walk to '+item.name;
+      route.onclick=()=>{if(overworld?.locateAdventure(item.id)){setAdventurePanel(false);$('overworldCanvas').focus();}};
+      entry.append(title,body,location,route);list.append(entry);
+    }
+  }
+  function setAdventurePanel(open){
+    adventurePanel.hidden=!open;adventureToggle.setAttribute('aria-expanded',String(open));
+    if(open){setDirectory(false);setTrailPanel(false);if(overworld)renderAdventure(overworld.adventureState());}
+  }
   function renderPythonTrail(){
     if(!overworld)return;
     const progress=overworld.trailState();
@@ -547,15 +580,17 @@ function openMissions(){
   function setDirectory(open){
     directory.hidden=!open;
     directoryToggle.setAttribute('aria-expanded',String(open));
-    if(open){trailPanel.hidden=true;trailToggle.setAttribute('aria-expanded','false');}
+    if(open){trailPanel.hidden=true;trailToggle.setAttribute('aria-expanded','false');setAdventurePanel(false);}
   }
   function setTrailPanel(open){
     trailPanel.hidden=!open;
     trailToggle.setAttribute('aria-expanded',String(open));
-    if(open){setDirectory(false);renderPythonTrail();}
+    if(open){setDirectory(false);setAdventurePanel(false);renderPythonTrail();}
   }
   setDirectory(false);
   setTrailPanel(false);
+  setAdventurePanel(false);
+  adventureToggle.onclick=()=>setAdventurePanel(adventurePanel.hidden);
   directoryToggle.onclick=()=>setDirectory(directory.hidden);
   trailToggle.onclick=()=>setTrailPanel(trailPanel.hidden);
   cameraToggle.setAttribute('aria-pressed','false');
@@ -597,7 +632,7 @@ function openMissions(){
   };
   if(!overworld){
     try{
-      overworld=createOverworld({canvas:$('overworldCanvas'),stage:$('overworldStage'),makeHero:createHero,
+      overworld=createOverworld({canvas:$('overworldCanvas'),stage:$('overworldStage'),makeHero:settings=>createIslandAvatar(settings??hero),
         onNear:i=>portalChanged(i),onEnter:i=>portalEntered(i),
         onTraversal:state=>{
           const output=$('islandTraversalStatus');
@@ -605,6 +640,7 @@ function openMissions(){
         },
         onPrompt:prompt=>portalPrompt(prompt),
         onDialogue:guide=>showIslandToast(guide.name+' · '+guide.line),
+        onAdventure:renderAdventure,onAdventureToast:showIslandToast,
         onTrailChange:()=>renderPythonTrail(),
         onWayfinder:hint=>{$('islandTrailDistance').textContent=hint;},
         onWaystation:(station,found,total)=>{
@@ -624,7 +660,7 @@ function openMissions(){
   portalChanged(undefined);
   if(overworld){
     cameraToggle.hidden=false;
-    trailToggle.hidden=false;
+    trailToggle.hidden=false;adventureToggle.hidden=false;renderAdventure(overworld.adventureState());
     const [found,total]=overworld.discoveries();
     $('islandDiscoveries').textContent=found+' / '+total+' discoveries';
     $('islandDiscoveryToast').hidden=true;
@@ -634,7 +670,7 @@ function openMissions(){
     $('overworldCanvas').focus();
   }else{
     cameraToggle.hidden=true;
-    trailToggle.hidden=true;
+    trailToggle.hidden=true;adventureToggle.hidden=true;
     setDirectory(true);
     $('portalStatus').classList.add('visible');
     $('portalStatus').textContent='3D map unavailable. Select a room below.';
