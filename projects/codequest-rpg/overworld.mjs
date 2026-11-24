@@ -365,6 +365,10 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     const y=elevation(p.x,p.z),top=y+p.h,x=p.x,z=p.z,h=p.h;
     const steel='#586e78',brace='#8b9e9d',copper='#bb9b65',stone='#87939a',dark='#3b4e5a';
     sp(stone,x,y+.14,z,3.5,.28,3.1);
+    for(const side of [-1,1]){
+      sp(dark,x+side*1.45,y+.28,z,.18,.17,2.82);
+      for(const sz of [-1,1])sp(copper,x+side*1.37,y+.34,z+sz*1.19,.23,.12,.23);
+    }
     if(p.kind==='arch'){
       for(const side of [-1,1]){
         sp(stone,x+side*1.55,y+(h-1)/2,z,.72,h-1,.85);
@@ -417,6 +421,12 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
       for(const dx of [-1,1])for(const dz of [-1,1]){
         box(.20,Math.max(.2,h-.25),.20,dark,p.x+dx*1.20,base+(h-.25)/2,p.z+dz*1.20);
       }
+      // Distinct solid deck, inset edge plates and support feet.
+      for(const dx of [-1,1])for(const dz of [-1,1]){
+        const bx=p.x+dx*1.2,bz=p.z+dz*1.2,by=elevation(bx,bz);
+        box(.48,.13,.48,stonework,bx,by+.065,bz);
+        box(.32,.22,.32,trim,bx,p.y-.33,bz);
+      }
       box(3.24,.28,3.24,stonework,p.x,p.y-.14,p.z);
       box(3.18,.055,3.18,trim,p.x,p.y-.028,p.z);
       for(const dz of [-1,1])box(3.25,.12,.10,dark,p.x,p.y-.075,p.z+dz*1.61);
@@ -432,7 +442,17 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   for(const f of frontiers){
     const base=elevation(f.x,f.z),accent=material(courses[f.zone].color),metal=material('#506771'),stone=material('#a69c87');
     box(4.5,.10,4.5,stone,f.x,base+.05,f.z);
-    for(const dx of [-1,1])for(const dz of [-1,1])box(.24,f.y-base,.24,metal,f.x+dx*2.85,base+(f.y-base)/2,f.z+dz*2.85);
+    const depot=depots[f.zone];
+    for(const v of depot.vehicles){
+      const by=elevation(v.x,v.z);
+      box(2.15,.045,2.35,stone,v.x,by+.023,v.z);
+      for(const side of [-1,1])box(.07,.055,2.28,accent,v.x+side*1.01,by+.03,v.z);
+    }
+    for(const dx of [-1,1])for(const dz of [-1,1]){
+      box(.24,f.y-base,.24,metal,f.x+dx*2.85,base+(f.y-base)/2,f.z+dz*2.85);
+      box(.60,.25,.60,stone,f.x+dx*2.85,base+.12,f.z+dz*2.85);
+      for(let y=base+2.5;y<f.y-.8;y+=3.8)box(.36,.12,.36,accent,f.x+dx*2.85,y,f.z+dz*2.85);
+    }
     const liftDeck=box(3.7,.20,3.7,accent,f.x,base+.12,f.z);
     const marker=label('MOBILITY HUB',true);marker.position.set(f.x,base+2.65,f.z);scene.add(marker);
     const group=new THREE.Group();scene.add(group);
@@ -676,6 +696,13 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     roof.rotation.y=Math.PI/4;
     roof.position.set(x,hallY+height+.85,hallZ);
     scene.add(roof);
+    // District identity is carried by trim, facade panels and roof caps;
+    // preserve the exact existing roof silhouette and navigation footprint.
+    box(.43,.23,.43,gold,x,hallY+height+1.77,hallZ);
+    for(const side of [-1,1]){
+      box(.21,.12,3.7,accent,x+side*1.98,hallY+height+.09,hallZ);
+      box(.13,.11,.8,ivory,x+side*1.08,hallY+.48,hallZ+1.73);
+    }
     // Architectural trim: plinth, corner pilasters, framed windows, sills and eaves.
     box(4.02,.35,3.48,stonework,x,hallY+.17,hallZ);
     box(4.12,.18,3.58,timber,x,hallY+height-.07,hallZ);
@@ -701,6 +728,20 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
         box(.49,.68,.08,glow,x+side*1.08,hallY+4.57,hallZ+1.66);
         box(3.95,.18,3.45,ivory,x,hallY+3.06,hallZ);
       }
+    }
+    // Ground doorway frame, plaque, and shallow decorative steps are kept
+    // within the existing facade and porch, clear of approach and portal.
+    box(1.91,.13,.19,gold,x,hallY+2.43,hallZ+1.76);
+    for(const side of [-1,1])box(.13,2.35,.18,timber,x+side*.83,hallY+1.20,hallZ+1.76);
+    box(1.88,.09,.42,stonework,x,hallY+.045,hallZ+1.9);
+    if(zoneIndex===0||zoneIndex===1){
+      for(const side of [-1,1])box(.38,.42,.21,accent,x+side*1.40,hallY+.62,hallZ+1.75);
+    }else if(zoneIndex===2||zoneIndex===4){
+      for(const side of [-1,1]){box(.33,.48,.13,stonework,x+side*1.43,hallY+.87,hallZ+1.74);box(.19,.16,.14,glow,x+side*1.43,hallY+.87,hallZ+1.82);}
+    }else if(zoneIndex===3){
+      for(const side of [-1,1]){box(.53,.24,.23,timber,x+side*1.39,hallY+.68,hallZ+1.78);box(.43,.28,.18,material('#71945c'),x+side*1.39,hallY+.93,hallZ+1.80);}
+    }else{
+      for(const side of [-1,1]){box(.32,.42,.15,stonework,x+side*1.42,hallY+1.0,hallZ+1.76);box(.18,.22,.16,material('#c28d5e'),x+side*1.42,hallY+1.0,hallZ+1.84);}
     }
     let ladderIndex=null;
     if(storeys===2){
