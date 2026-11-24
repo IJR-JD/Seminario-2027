@@ -13,4 +13,6 @@ assert.equal(gearStatus(item('jetpack'),{...a,powers:['jetpack']},{...m,vehicle:
 assert.equal(gearStatus(item('rover'),a,{...m,vehicle:'rover-0',type:'rover'}),'active');
 assert.equal(radialIndex(0,0),-1);
 for(let i=0;i<8;i++){const t=i*Math.PI/4;assert.equal(radialIndex(Math.sin(t)*100,-Math.cos(t)*100),i);}
+assert.equal(gearStatus(item('hover'),a,{...m,availableSkills:['hover']}),'ready');
+for(const i of gearItems)assert.equal(gearStatus(i,{...a,powers:['dash','fly','wall','grapple','jetpack']},{...m,availableSkills:['hover']}),'ready');
 console.log('PASS eight radial sectors, unlocks, cooldowns, active and vehicle context states.');
