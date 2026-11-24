@@ -25,8 +25,9 @@ export function floorPlan(building,floor){
  const obstacles=[
   {x:-4.35,z:-4.2,hx:.75,hz:1.65,type:'shelf'},
   {x:4.35,z:1.4,hx:.72,hz:1.75,type:'workbench'},
-  {x:-3.5,z:2.55,hx:1.0,hz:.58,type:'table'},
-  {x:-4.25,z:-.45,hx:.6,hz:.6,type:'crate'}
+  {x:-3.5,z:floor===2?3.35:2.55,hx:1.0,hz:.58,type:'table'},
+  {x:-4.25,z:-.45,hx:.6,hz:.6,type:'crate'},
+  {x:2.95,z:-5.65,hx:1.22,hz:.48,type:'display'}
  ];
  return {building,floor,theme,room,npc,obstacles,stairs:building.storeys===2,exit:floor===1};
 }
