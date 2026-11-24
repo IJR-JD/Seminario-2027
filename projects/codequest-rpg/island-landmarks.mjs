@@ -5,12 +5,12 @@ import {courses,platformList,elevation} from './island-vertical.mjs';
 import {anchors,gear} from './island-airgear.mjs';
 import {depots,vehicles} from './island-mobility.mjs';
 import {pythonWaystations,shore} from './island-exploration.mjs';
-const reserved=[...allRoomLocations(),...villageHouses,...shrines,...travelGates,...gear,...pythonWaystations,...traps,...circuits.flatMap(c=>[...c.steps,c.reward]),...platformList,...courses.map(c=>c.entry),...depots,...vehicles,...anchors,
+const reserved=[...allRoomLocations(),...villageHouses,...shrines,...travelGates,...gear,...pythonWaystations,...traps,...circuits.flatMap(c=>[...c.steps,c.reward]),...platformList,...courses.map(c=>c.entry),...depots,...vehicles,
  {x:23,z:24},{x:25,z:-53},{x:14,z:46},{x:-76,z:11},{x:24,z:-44},{x:-33,z:66},{x:-38,z:77},{x:126,z:29},{x:25,z:-55},{x:-65,z:-7},{x:20,z:41},{x:-14,z:-46},{x:63,z:11},{x:wallLane.x,z:wallLane.z}];
 const specs=[
  {id:'giza',name:'Giza Pyramid Complex',kind:'pyramids',preferred:{x:-18,z:-26},radius:10,description:'Three sandstone pyramids, a stepped ascent and a survey plaza.'},
  {id:'liberty',name:'Liberty Monument',kind:'liberty',preferred:{x:114,z:-25},radius:6.4,description:'Copper-green statue, raised torch, crown and tablet on a stone pedestal.'},
- {id:'eiffel',name:'Eiffel Tower',kind:'eiffel',preferred:{x:23,z:77},radius:7.5,description:'Four lattice legs, iron trusses and two observation platforms.'}
+ {id:'eiffel',name:'Eiffel Tower',kind:'eiffel',preferred:{x:23,z:77},radius:7.5,description:'Four lattice legs, iron trusses and three observation levels.'}
 ];
 export function createLandmarks(){
  const sites=[];
@@ -19,7 +19,7 @@ export function createLandmarks(){
   for(let z=-99;z<=99;z+=3)for(let x=-127;x<=127;x+=3){
    const r=spec.radius,p={x,z};
    if(Math.abs(z)<r+8||shore(x,z)>.79)continue;
-   if(reserved.some(q=>Math.hypot(x-q.x,z-q.z)<r+3.5)||sites.some(q=>Math.hypot(x-q.x,z-q.z)<r+q.radius+6))continue;
+   if(reserved.some(q=>Math.hypot(x-q.x,z-q.z)<r+3.5)||anchors.some(q=>Math.hypot(x-q.x,z-q.z)<r+1.6)||sites.some(q=>Math.hypot(x-q.x,z-q.z)<r+q.radius+6))continue;
    if(![[0,0],[r,0],[-r,0],[0,r],[0,-r],[r*.7,r*.7],[-r*.7,-r*.7],[-r*.7,r*.7],[r*.7,-r*.7]].every(([dx,dz])=>groundSafe(x+dx,z+dz)))continue;
    const approach={x,z:z+r+1.8};
    if(!groundSafe(approach.x,approach.z)||!segmentSafe(approach,{x,z:z+r*.8}))continue;
