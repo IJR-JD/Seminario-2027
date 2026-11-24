@@ -1,4 +1,4 @@
-import {createOverworld} from './overworld.mjs?v=dynamic4';
+import {createOverworld} from './overworld.mjs?v=skyways5';
 import {createIslandAvatar} from './island-avatar.mjs';
 import {shrines,travelGates,circuits} from './island-adventure.mjs';
 import {gear} from './island-airgear.mjs';
@@ -519,6 +519,8 @@ function openMissions(){
       button.title=state.powers.includes(id)?(id==='dash'&&!state.dashReady?'Recharging':'Power unlocked'):'Find the shrine to unlock';
     });
     $('adventureGate').dataset.unlocked=String(!!state.gate);
+    const transfer=$('tetherTransfer');transfer.disabled=!state.grappling||!state.nextAnchor;transfer.dataset.unlocked=String(!transfer.disabled);
+    const network=$('tetherNetwork');network.dataset.anchor=state.anchor??'';network.dataset.next=state.nextAnchor??'';network.dataset.transfers=String(state.transfers);network.textContent=state.powers.includes('grapple')?state.anchorCount+' anchors · '+(state.grappling?(state.nextAnchor?'Y: next anchor ready':'Steer to next anchor'):(state.nextAnchor?'T: anchor ready':'Find a cyan tower'))+' · '+state.transfers+' transfers':'';
     const signature=JSON.stringify([state.powers,state.circuits,state.progress,state.setbacks]);
     if(signature===journalSignature)return;
     journalSignature=signature;
