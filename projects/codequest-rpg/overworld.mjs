@@ -524,7 +524,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   function mountVehicle(){
     if(ride){
       if(ride.speed>.6){parking=true;notify('Braking · press M again after stopping.');return;}
-      const side=[{x:ride.x+1.35,z:ride.z},{x:ride.x-1.35,z:ride.z},{x:ride.x,z:ride.z+1.6},{x:ride.x,z:ride.z-1.6}].find(p=>groundSafe(p.x,p.z)&&segmentSafe(ride,p)&&!lowCeiling(p.x,p.z));
+      const side=[{x:ride.x+1.35,z:ride.z},{x:ride.x-1.35,z:ride.z},{x:ride.x,z:ride.z+1.6},{x:ride.x,z:ride.z-1.6}].find(p=>landmarkGround(p.x,p.z)&&segmentSafe(ride,p)&&landmarkSegment(ride,p)&&!lowCeiling(p.x,p.z));
       if(!side){notify('No safe place to dismount.');return;}
       ride.parked=true;ride.vx=ride.vz=ride.speed=0;ride=null;parking=false;exitPose=.28;position.set(side.x,0,side.z);safeSpot.copy(position);target=null;waypoints=[];vertical=null;air=velocity=0;moveVelocity={x:0,z:0};keys.clear();notify('Vehicle parked. Continue on foot.');return;
     }
@@ -607,7 +607,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     }
     if(key==='jetpack'){
       if(!unlocked.has('jetpack')){notify('Find the Jetpack Forge to unlock the thrusters.');return;}
-      if(jetting){jetting=false;jetInput=0;if(!groundSafe(position.x,position.z)){position.copy(safeSpot);air=0;notify('Safe landing · returned to last grounded position.');}else velocity=0;return;}
+      if(jetting){jetting=false;jetInput=0;if(!landmarkGround(position.x,position.z)){position.copy(safeSpot);air=0;notify('Safe landing · returned to last grounded position.');}else velocity=0;return;}
       if(climb||deck!==null||crouched||swing||releaseMotion||flying||wallRunning||jetFuel<.5)return;
       jetting=true;jetHeight=Math.max(2,air);velocity=0;dashLeft=0;target=null;waypoints=[];notify('Jetpack active · Space ascend / C descend / J land.');return;
     }
@@ -878,7 +878,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     const hit=ray.intersectObjects(pickables)[0];
     if(!hit){
       const groundHit=ray.intersectObject(island)[0];
-      if(groundHit&&groundSafe(groundHit.point.x,groundHit.point.z))routeTo(groundHit.point.x,groundHit.point.z);
+      if(groundHit&&landmarkGround(groundHit.point.x,groundHit.point.z))routeTo(groundHit.point.x,groundHit.point.z);
       return;
     }
     if(hit.object.userData.waystation){setWaypoint(hit.object.userData.waystation);return;}
@@ -1045,7 +1045,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
               length:Math.max(current.length,Math.hypot(position.x-swing.anchor.x,lift-swing.anchor.y,position.z-swing.anchor.z))};
             air=lift-base;
           }else{
-            if(!groundSafe(position.x,position.z))position.copy(safeSpot);
+            if(!landmarkGround(position.x,position.z))position.copy(safeSpot);
             swing=null;releaseMotion=null;air=0;velocity=0;
           }
         }else{
