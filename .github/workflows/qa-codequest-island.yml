@@ -40,6 +40,7 @@ jobs:
           node --check projects/codequest-rpg/island-monuments.mjs
           node --check projects/codequest-rpg/island-water.mjs
           node --check projects/codequest-rpg/playability.mjs
+          node --check projects/codequest-rpg/world-physics.mjs
       - name: Test all CodeQuest room and island mechanics
         run: |
           node scripts/qa-codequest.mjs
@@ -54,6 +55,7 @@ jobs:
           node scripts/qa-codequest-models.mjs
           node scripts/qa-codequest-landmarks.mjs
           node scripts/qa-codequest-playability.mjs
+          node scripts/qa-codequest-physics.mjs
   browser:
     runs-on: ubuntu-24.04
     timeout-minutes: 12
