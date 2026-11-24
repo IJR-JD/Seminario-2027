@@ -878,7 +878,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     for(const mesh of staticBoxes)if(!movingDecks.has(mesh))registerMesh(mesh);
     for(const item of physicsExtras)registerMesh(item.mesh,item.kind,item.enabled);
     canvas.dataset.colliders=String(physics.count());
-    canvas.dataset.physics='shared-static-sweep';
+    canvas.dataset.physics='shared-static-sweep';canvas.dataset.physicsGroups=JSON.stringify(physics.inventory().reduce((counts,p)=>(counts[p.kind]=(counts[p.kind]??0)+1,counts),{}));
     const excluded=new Set([...pickables,...ripples,...padModels.map(p=>p.top),...movingDecks]);
     const stats=batchStaticMeshes(scene,staticBoxes,{exclude:excluded});
     canvas.dataset.staticMeshes=String(stats.originals);canvas.dataset.staticBatches=String(stats.batches);canvas.dataset.staticDrawSavings=String(stats.saved);
@@ -1110,8 +1110,8 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
         dx=moveVelocity.x*delta;dz=moveVelocity.z*delta;
       }else if(normalMotion){moveVelocity={x:0,z:0};}
       const nextX=position.x+dx,nextZ=position.z+dz;
-      const feet=deck!==null?towerFloor(towers[deck]):vertical?.y??previousFeet;
-      const onGround=normalMotion&&vertical?.grounded&&!vertical.support&&!jumpRequest;
+      const feet=deck!==null?towerFloor(towers[deck]):vertical?.y??(elevation(position.x,position.z)+air);
+      const onGround=normalMotion&&vertical?.grounded&&(!vertical.support||Math.abs(vertical.y-floorAt(position.x,position.z))<.05)&&!jumpRequest;
       const height=crouched?BODY.crouch:BODY.height;
       const validMove=(x,z)=>{const p={x,z};
         const terrainValid=wallRunning?onWallLane(x,z)&&walkable(x,z):onGround?segmentSafe(position,p):shore(x,z)<.91;
