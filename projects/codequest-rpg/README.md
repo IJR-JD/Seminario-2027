@@ -73,3 +73,13 @@ node scripts/qa-codequest-villages.mjs
 ```
 
 The CodeQuest pull request workflow additionally runs `scripts/qa-codequest-browser.mjs` in Chromium. Its dedicated tests verify that an upstairs room cannot be entered from the ground, then perform the real climb, find the upper portal and enter the room. Inspect desktop/mobile screenshots from the corresponding Actions run as well.
+
+## Room Studio — viewport-first programming workspace
+
+All 22 missions share one responsive workspace. The left 3D viewport occupies the available desktop height; the right command dock contains the mission brief, room-specific commands, editor, execution controls, variables, log, and hints. Brief and output sections collapse independently. Focus view temporarily hides the dock and Escape restores it; camera controls and progress stay accessible. At widths of 900 px or less the world and command dock stack vertically. The room interpreter, room IDs, progression, scoring, village positions and island interaction remain unchanged.
+
+Design references:
+- CodeCombat educational play view: game and typed code editor side by side (https://github.com/codecombat/codecombat).
+- Godot Editor: a primary viewport, adjacent docks and distraction-free mode (https://docs.godotengine.org/en/stable/getting_started/introduction/first_look_at_the_editor.html).
+
+The `qa-codequest-room-studio.mjs` Chromium suite checks all 22 room states at laptop resolution, 3D focus, camera switching, code execution and reset, full-HD and narrow-screen layouts. Its screenshots are included in the CodeQuest CI artifacts.
