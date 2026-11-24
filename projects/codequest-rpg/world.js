@@ -349,7 +349,7 @@ function updateRating(steps){
     '3★ ≤ '+three+' · 2★ ≤ '+two+' · 1★ above '+two+
     (best===undefined?'':' · Best: '+starsText(starsFor(level,best))+' in '+best+' steps');
 }
-function updateLevelUI(){updateRating();const cfg=levels[level];$('zoneLabel').textContent=(cfg.conditional?'LOGIC WORLDS · ':cfg.powers?'EXPEDITION · ':'CHAPTER 01 · ')+cfg.zone.toUpperCase();$('worldTitle').textContent=cfg.title;$('worldDesc').textContent=cfg.description;$('levelIndex').textContent=String(level+1).padStart(2,'0')+' / '+levels.length;$('missionLabel').textContent=cfg.objective;$('objective').textContent=cfg.objective;$('instruction').textContent=cfg.instruction;$('hintText').textContent=cfg.hint;$('concept').textContent=cfg.concept;
+function updateLevelUI(){updateRating();const cfg=levels[level];$('zoneLabel').textContent=(cfg.conditional?'LOGIC WORLDS · ':cfg.powers?'EXPEDITION · ':'CHAPTER 01 · ')+cfg.zone.toUpperCase();$('worldTitle').textContent=cfg.title;$('worldDesc').textContent=cfg.description;$('levelIndex').textContent=String(level+1).padStart(2,'0')+' / '+levels.length;$('missionLabel').textContent=cfg.objective;$('objective').textContent=cfg.objective;$('instruction').textContent=cfg.instruction;$('hintText').textContent=cfg.hint;$('concept').textContent=cfg.concept;$('briefConcept').textContent=cfg.concept.split(' · ').at(-1);
 $('editorContext').textContent=cfg.conditional?'LOGIC · SENSORS':cfg.powers?'EXPEDITION · '+cfg.powers.join(' / '):'CHAPTER 01 · VARIABLES';
 $('abilityPanel').hidden=!cfg.powers?.length;
 $('abilityPanel').textContent=cfg.powers?.map(mode=>['pulse','shield'].includes(mode)?mode+'()':mode+'(direction, distance)').join('  ·  ')??'';
@@ -1006,7 +1006,21 @@ editor.addEventListener('keydown',event=>{
     updateLines();
   }
 });
-$('editorActions').replaceWith($('programActions'));
+// The run controls now live directly in the shared command dock.
+const roomStudio=$('roomStudio'),focusRoom=$('focusRoom');
+function setRoomFocus(enabled){
+  roomStudio.classList.toggle('roomFocus',enabled);
+  focusRoom.setAttribute('aria-pressed',String(enabled));
+  focusRoom.textContent=enabled?'Show commands':'Focus view';
+  focusRoom.title=enabled?'Restore the programming workspace':'Expand the 3D viewport';
+  resize();
+}
+focusRoom.onclick=()=>setRoomFocus(focusRoom.getAttribute('aria-pressed')!=='true');
+document.addEventListener('keydown',event=>{
+  if(event.key==='Escape'&&roomStudio.classList.contains('roomFocus')&&!$('missionPicker').open){
+    setRoomFocus(false);
+  }
+});
 function openGuide(){const intro=$('intro');if(!intro.hidden)intro.hidden=true;$('guideOverlay').hidden=false}
 $('openGuide').onclick=openGuide;$('navGuide').onclick=openGuide;$('closeGuide').onclick=()=>{$('guideOverlay').hidden=true};$('guideDone').onclick=()=>{$('guideOverlay').hidden=true};
 $('navLevels').onclick=openMissions;
@@ -1042,7 +1056,7 @@ function resize(){
   if(!w||!h)return;
   renderer.setSize(w,h,false);
   const aspect=w/h;
-  const halfHeight=Math.max(frameHeight,frameWidth/aspect)*1.1;
+  const halfHeight=Math.max(frameHeight,frameWidth/aspect)*1.045;
   camera.left=-halfHeight*aspect;
   camera.right=halfHeight*aspect;
   camera.top=halfHeight;
