@@ -357,6 +357,9 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   }
   const sp=structuralPart;
   const anchorRingGeometry=new THREE.TorusGeometry(.58,.13,10,24);
+  const anchorIdleMaterial=new THREE.MeshStandardMaterial({color:'#8cece7',emissive:'#55c8d6',emissiveIntensity:.65});
+  const anchorActiveMaterial=anchorIdleMaterial.clone();anchorActiveMaterial.emissiveIntensity=1.5;
+  const anchorTargetMaterial=anchorIdleMaterial.clone();anchorTargetMaterial.emissiveIntensity=1.8;
   const anchorModels=anchors.map(p=>{
     const y=elevation(p.x,p.z),top=y+p.h,x=p.x,z=p.z,h=p.h;
     const steel='#586e78',brace='#8b9e9d',copper='#bb9b65',stone='#87939a',dark='#3b4e5a';
@@ -393,7 +396,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
       sp(copper,x,top-.4,z,2.45,.25,1.6);
       sp(dark,x,top-.8,z,1.15,.42,1.08);
     }
-    const ring=new THREE.Mesh(anchorRingGeometry,new THREE.MeshStandardMaterial({color:'#8cece7',emissive:'#55c8d6',emissiveIntensity:.65}));
+    const ring=new THREE.Mesh(anchorRingGeometry,anchorIdleMaterial);
     ring.position.set(x,top,z);scene.add(ring);
     return {...p,y:top,ring};
   });
@@ -476,7 +479,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   const trail=new THREE.Vector3();
   let hero,target,near,last=0,waypoints=[],gait=0,pace=0;
   let crouched=false,air=0,velocity=0,climb=null,deck=null,baseHeight=1;
-  let skills=new Set(),progress=sectorProgress([]),ride=null,parking=false,lift=null,slideTime=0,lastMobility='',turnAmount=0;
+  let skills=new Set(),progress=sectorProgress([]),ride=null,parking=false,lift=null,slideTime=0,lastMobility='',turnAmount=0,mountPose=0,exitPose=0,rollTime=0;
   let visitedFrontiers=new Set(),cachedSurfaces=null;
   try{visitedFrontiers=new Set(restoreFrontiers(JSON.parse(localStorage.getItem(frontierStorage)||'[]')));}catch{}
   function setSectorProgress(completed){progress=sectorProgress(completed);skills=earnedSkills(completed);cachedSurfaces=null;lastMobility='';}
@@ -501,12 +504,12 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
       if(ride.speed>.6){parking=true;notify('Braking · press M again after stopping.');return;}
       const side=[{x:ride.x+1.35,z:ride.z},{x:ride.x-1.35,z:ride.z},{x:ride.x,z:ride.z+1.6},{x:ride.x,z:ride.z-1.6}].find(p=>groundSafe(p.x,p.z));
       if(!side){notify('No safe place to dismount.');return;}
-      ride.parked=true;ride=null;parking=false;position.set(side.x,0,side.z);safeSpot.copy(position);vertical=null;air=velocity=0;moveVelocity={x:0,z:0};keys.clear();notify('Vehicle parked. Continue on foot.');return;
+      ride.parked=true;ride=null;parking=false;exitPose=.28;position.set(side.x,0,side.z);safeSpot.copy(position);vertical=null;air=velocity=0;moveVelocity={x:0,z:0};keys.clear();notify('Vehicle parked. Continue on foot.');return;
     }
     if(lift||deck!==null||air>.25||climb||flying||jetting||swing||releaseMotion||wallRunning||crouched)return;
     const id=mobilityState().nearest,selected=fleet.find(v=>v.id===id);
     if(!selected){notify('Walk beside an available vehicle · M to mount.');return;}
-    ride=selected;ride.parked=false;parking=false;ride.vx=ride.vz=ride.speed=0;position.set(ride.x,0,ride.z);target=null;waypoints=[];assist=null;moveVelocity={x:0,z:0};vertical=null;keys.clear();notify(vehicleTypes[ride.type].name+' mounted · WASD drive, Space/P brake, M park.');
+    ride=selected;ride.parked=false;parking=false;mountPose=.35;ride.vx=ride.vz=ride.speed=0;position.set(ride.x,0,ride.z);target=null;waypoints=[];assist=null;moveVelocity={x:0,z:0};vertical=null;keys.clear();notify(vehicleTypes[ride.type].name+' mounted · WASD drive, Space/P brake, M park.');
   }
   function activateFrontier(){
     if(ride||lift||interior)return false;
@@ -884,7 +887,8 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   }
   function visit(index,available,marks,completed=[]){
     if(ride){ride.parked=true;ride.speed=ride.vx=ride.vz=0;ride=null;}
-    parking=false;lift=null;slideTime=0;setSectorProgress(completed);
+    parking=false;lift=null;slideTime=mountPose=exitPose=rollTime=0;setSectorProgress(completed);
+    for(const {f,liftDeck} of frontierModels)liftDeck.position.y=elevation(f.x,f.z)+.12;
     const resume=returnInterior?.room===index?returnInterior:null;returnInterior=null;
     if(interior){interior.dispose();interior=null;interiorStatus();}
     roomAvailable=available;roomMarks=marks;nearBuilding=null;onInteriorDoor?.(null);
@@ -934,7 +938,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     const delta=last?Math.min(.05,(now-last)/1000):0;
     last=now;
     if(interior){interior.frame({renderer,width,height,delta,now,keys,controls});return;}
-    slideTime=Math.max(0,slideTime-delta);turnAmount*=Math.exp(-delta*10);
+    slideTime=Math.max(0,slideTime-delta);mountPose=Math.max(0,mountPose-delta);exitPose=Math.max(0,exitPose-delta);rollTime=Math.max(0,rollTime-delta);turnAmount*=Math.exp(-delta*10);
     dashWait=Math.max(0,dashWait-delta);gateLock=Math.max(0,gateLock-delta);damageLock=Math.max(0,damageLock-delta);
     if(flying){flightLeft=Math.max(0,flightLeft-delta);air=THREE.MathUtils.lerp(air,3.1,Math.min(1,delta*5));if(flightLeft<=0)landFlight();}
     else if(!air&&!velocity)flightLeft=Math.min(flightLimit,flightLeft+delta*.8);
@@ -1032,12 +1036,13 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
       }else {target=null;waypoints=[];moveVelocity={x:0,z:0};assist=null;}
     }else if(target)target=waypoints.shift()??null;
     if(normalMotion){
-      const before=vertical.support;
+      const before=vertical.support,impact=vertical.vy;
       vertical=verticalStep(vertical,{x:position.x,z:position.z,ground:elevation(position.x,position.z),surfaces:surfaceList(),dt:delta,jump:jumpRequest,release:jumpRelease&&!assist,jumpScale:!assist&&skills.has('spring')?1.20:1});
       jumpRequest=jumpRelease=false;
       air=Math.max(0,vertical.y-elevation(position.x,position.z));velocity=vertical.vy;
       if(vertical.landed){
         landingTime=.22;
+        if(impact<-13&&Math.hypot(moveVelocity.x,moveVelocity.z)>4)rollTime=.35;
         if(assist)assist=null;
         const hit=surfaceList().find(p=>p.id===vertical.support);
         if(hit?.deck!==undefined){deck=hit.deck;air=velocity=0;vertical=null;}
@@ -1144,7 +1149,8 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     for(const [i,fx] of jetFx.entries()){fx.visible=jetting;fx.position.set(hero.position.x+(i?1:-1)*.27*Math.cos(hero.rotation.y)-.30*Math.sin(hero.rotation.y),hero.position.y+.43,hero.position.z-(i?1:-1)*.27*Math.sin(hero.rotation.y)-.30*Math.cos(hero.rotation.y));fx.scale.y=.65+.4*Math.sin(time*24+i);}
     const origin={x:position.x,y:elevation(position.x,position.z)+(swing||releaseMotion?air:Math.max(air,2.5)),z:position.z};
     nextAnchor=unlocked.has('grapple')?selectAnchor(origin,anchorModels,{x:Math.sin(hero.rotation.y),z:Math.cos(hero.rotation.y)},swing?.anchor.id??(releaseMotion?lastAnchor:null)):null;
-    for(const a of anchorModels){a.ring.rotation.y=time*.7;a.ring.material.emissiveIntensity=swing?.anchor===a?1.5:nextAnchor===a?1.8:.45+.12*Math.sin(time*3);}
+    anchorIdleMaterial.emissiveIntensity=.45+.12*Math.sin(time*3);
+    for(const a of anchorModels){a.ring.rotation.y=time*.7;a.ring.material=swing?.anchor===a?anchorActiveMaterial:nextAnchor===a?anchorTargetMaterial:anchorIdleMaterial;}
     targetRing.visible=!!nextAnchor&&!mapMode;
     if(nextAnchor){targetRing.position.copy(nextAnchor.ring.position);targetRing.quaternion.copy(follow.quaternion);targetRing.scale.setScalar(1+.12*Math.sin(time*5));}
     networkLines.visible=mapMode&&unlocked.has('grapple');
@@ -1175,8 +1181,8 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     const moving=distance>.025||Math.hypot(moveVelocity.x,moveVelocity.z)>.3;
     pace+=(Number(moving)-pace)*Math.min(1,delta*12);
     gait+=delta*pace*(keys.has('Shift')&&!crouched?21:14);
-    const mode=swing?'grapple':jetting?'jetpack':releaseMotion?'jump':climb?'climb':flying?'fly':wallRunning?'wall':dashing?'dash':crouched?'crouch':lift?'idle':movementMode({speed:ride?.speed??(target&&moving?8:Math.hypot(moveVelocity.x,moveVelocity.z)),sprint:keys.has('Shift'),grounded:vertical?.grounded??!air,vy:velocity,landing:landingTime,slide:slideTime,vehicle:ride?.type,turn:turnAmount});
-    animateIslandAvatar(hero,{time:now/1000,delta,pace,mode,phase:climb?climb.time*45:gait,gear:[...unlocked],landing:landingTime,turn:turnAmount});
+    const mode=swing?'grapple':jetting?'jetpack':releaseMotion?'jump':climb?'climb':flying?'fly':wallRunning?'wall':dashing?'dash':crouched?'crouch':lift?'idle':mountPose>0?'mount':exitPose>0?'dismount':rollTime>0?'roll':movementMode({speed:ride?.speed??(target&&moving?8:Math.hypot(moveVelocity.x,moveVelocity.z)),sprint:keys.has('Shift'),grounded:vertical?.grounded??!air,vy:velocity,landing:landingTime,slide:slideTime,vehicle:ride?.type,turn:turnAmount});
+    animateIslandAvatar(hero,{time:now/1000,delta,pace,mode,phase:climb?climb.time*45:gait,gear:[...unlocked],landing:landingTime,turn:turnAmount,roll:rollTime});
     for(const [i,ripple] of ripples.entries())ripple.scale.x=.75+.35*Math.sin(now*.0018+i);
     for(const relic of relics){
       if(!relic.gem.visible)continue;
