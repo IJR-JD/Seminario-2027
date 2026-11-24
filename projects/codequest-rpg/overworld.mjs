@@ -77,6 +77,8 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   let adventure=restoreProgress(null);
   try{adventure=restoreProgress(JSON.parse(localStorage.getItem(adventureKey)||'null'));}catch{}
   const unlocked=new Set(adventure.powers),solved=new Set(adventure.circuits);
+  const equipped=new Set(['dash','fly','wall','grapple','jetpack']);
+  const freeSkills=new Set(sectors.map(s=>s.skill));
   const trialState=new Map(circuits.map(c=>[c.id,{next:0,used:!c.requires}]));
   let dashLeft=0,dashWait=0,flightLeft=flightLimit,flying=false,wallRunning=false,gateLock=0,damageLock=0;
   let jetting=false,jetFuel=jetCapacity,jetHeight=2,swing=null,releaseMotion=null,jetInput=0;
@@ -89,7 +91,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   }
   function notify(message){onAdventureToast?.(message);}
   function adventureState(){
-    return {powers:[...unlocked],circuits:[...solved],setbacks:adventure.setbacks,
+    return {powers:[...equipped],discoveredPowers:[...unlocked],circuits:[...solved],setbacks:adventure.setbacks,
       flying,wallRunning,jetting,jetFuel:Math.ceil(jetFuel*10)/10,grappling:!!swing,anchor:swing?.anchor.id??null,nextAnchor:nextAnchor?.id??null,anchorCount:anchors.length,transfers,lastTransfer,flight:Math.ceil(flightLeft*10)/10,dashReady:dashWait<=0,gate:activeGate?.name??null,
       progress:Object.fromEntries([...trialState].map(([id,p])=>[id,p.next]))};
   }
@@ -514,23 +516,27 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   try{visitedFrontiers=new Set(restoreFrontiers(JSON.parse(localStorage.getItem(frontierStorage)||'[]')));}catch{}
   function setSectorProgress(completed){progress=sectorProgress(completed);skills=earnedSkills(completed);cachedSurfaces=null;lastMobility='';}
   function mobilityState(){
-    const nearest=fleet.filter(v=>canDrive(v.type,skills)).map(v=>({v,d:Math.hypot(position.x-v.x,position.z-v.z)})).filter(p=>p.d<2.6).sort((a,b)=>a.d-b.d)[0]?.v;
+    const nearest=fleet.filter(v=>canDrive(v.type,freeSkills)).map(v=>({v,d:Math.hypot(position.x-v.x,position.z-v.z)})).filter(p=>p.d<2.6).sort((a,b)=>a.d-b.d)[0]?.v;
     const f=frontiers.find(p=>Math.hypot(position.x-p.x,position.z-p.z)<2.1);
     const support=vertical?.support??'';
     const inside=frontiers.find(p=>support.startsWith(p.id+'-'));
     const grounded=!air&&!velocity&&deck===null&&!climb&&!flying&&!jetting&&!swing&&!releaseMotion&&!wallRunning;
-    return {sectors:progress.map(p=>({id:p.id,count:p.count,total:p.total,unlocked:p.unlocked})),skills:[...skills],visited:[...visitedFrontiers],
+    return {sectors:progress.map(p=>({id:p.id,count:p.count,total:p.total,unlocked:p.unlocked})),skills:[...skills],availableSkills:[...freeSkills],visited:[...visitedFrontiers],
       vehicle:ride?.id??null,type:ride?.type??null,speed:Math.round(ride?.speed??0),parking,nearest:!ride&&grounded?nearest?.id??null:null,
-      frontier:inside?.id??null,nearFrontier:f?.id??null,canLift:!!f&&!ride&&!lift&&((grounded&&skills.has(f.skill))||inside?.id===f.id),lifting:!!lift,
+      frontier:inside?.id??null,nearFrontier:f?.id??null,canLift:!!f&&!ride&&!lift&&((grounded&&freeSkills.has(f.skill))||inside?.id===f.id),lifting:!!lift,
       locomotion:ride?'ride-'+ride.type:slideTime>0?'slide':vertical&&!vertical.grounded?'airborne':Math.hypot(moveVelocity.x,moveVelocity.z)>.2?'running':'grounded'};
   }
   function publishMobility(){const m=mobilityState(),sig=JSON.stringify(m);if(sig!==lastMobility){lastMobility=sig;onMobility?.(m);}}
   function locateDepot(id){
     if(interior||ride||lift||deck!==null||air>.7||climb||flying||jetting||swing||releaseMotion||wallRunning)return false;
-    const d=depots.find(p=>p.id===id),v=fleet.find(p=>p.id===id&&canDrive(p.type,skills));const point=d??v;if(!point)return false;routeTo(point.x,point.z);return !!target;
+    const d=depots.find(p=>p.id===id),v=fleet.find(p=>p.id===id&&canDrive(p.type,freeSkills));const point=d??v;if(!point)return false;routeTo(point.x,point.z);return !!target;
+  }
+  function selectGearPower(id){
+    if(id==='wall'&&!wallRunning&&!onWallLane(position.x,position.z)&&!ride&&!lift&&!interior&&!air&&deck===null&&!climb&&!flying&&!jetting&&!swing&&!releaseMotion&&!crouched){routeTo(wallLane.sideX,(wallLane.minZ+wallLane.maxZ)/2);if(target){notify('Route to the wall lane · select Wall run again when nearby.');return;}}
+    action(id);
   }
   function selectVehicleType(type){
-    if(!vehicleTypes[type]||!canDrive(type,skills)||interior||lift)return false;
+    if(!vehicleTypes[type]||!canDrive(type,freeSkills)||interior||lift)return false;
     if(ride){if(ride.type!==type)return false;mountVehicle();return true;}
     if(deck!==null||air>.25||climb||flying||jetting||swing||releaseMotion||wallRunning||crouched)return false;
     const options=fleet.filter(v=>v.type===type&&!groundColumnHit(v,v,vehicleTypes[type].radius,1.3)).sort((a,b)=>Math.hypot(a.x-position.x,a.z-position.z)-Math.hypot(b.x-position.x,b.z-position.z));
@@ -545,7 +551,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
       ride.parked=true;ride.vx=ride.vz=ride.speed=0;ride=null;parking=false;exitPose=.28;position.set(side.x,0,side.z);safeSpot.copy(position);target=null;waypoints=[];vertical=null;air=velocity=0;moveVelocity={x:0,z:0};keys.clear();notify('Vehicle parked. Continue on foot.');return;
     }
     if(interior||lift||deck!==null||air>.25||climb||flying||jetting||swing||releaseMotion||wallRunning||crouched)return;
-    const id=requestedId??mobilityState().nearest,selected=fleet.find(v=>v.id===id&&canDrive(v.type,skills)&&Math.hypot(v.x-position.x,v.z-position.z)<2.6);
+    const id=requestedId??mobilityState().nearest,selected=fleet.find(v=>v.id===id&&canDrive(v.type,freeSkills)&&Math.hypot(v.x-position.x,v.z-position.z)<2.6);
     if(!selected){notify('Walk beside an available vehicle · M to mount.');return;}
     if(groundColumnHit(selected,selected,vehicleTypes[selected.type].radius,1.3)){notify('Vehicle is obstructed. Choose another vehicle.');return;}
     ride=selected;ride.parked=false;parking=false;mountPose=.35;ride.vx=ride.vz=ride.speed=0;position.set(ride.x,0,ride.z);target=null;waypoints=[];assist=null;moveVelocity={x:0,z:0};vertical=null;keys.clear();notify(vehicleTypes[ride.type].name+' mounted · WASD drive, Space/P brake, M park.');
@@ -553,7 +559,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   function activateFrontier(){
     if(ride||lift||interior)return false;
     const m=mobilityState(),f=frontiers.find(p=>p.id===m.nearFrontier);
-    if(!f||!m.canLift){notify(f&&!skills.has(f.skill)?'Complete '+sectors[f.zone].name+' to earn '+sectors[f.zone].skillName+'.':'Approach the lift at a mechanical depot.');return false;}
+    if(!f||!m.canLift){notify(f&&!freeSkills.has(f.skill)?'Complete '+sectors[f.zone].name+' to earn '+sectors[f.zone].skillName+'.':'Approach the lift at a mechanical depot.');return false;}
     const down=m.frontier===f.id;lift={f,down,time:0,start:hero.position.y,end:down?elevation(f.x,f.z):f.y};
     frontierModels.find(p=>p.f.id===f.id).liftDeck.position.y=lift.start-.10;
     target=null;waypoints=[];keys.clear();assist=null;moveVelocity={x:0,z:0};vertical=null;air=velocity=0;
@@ -562,7 +568,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   let vertical=null,moveVelocity={x:0,z:0},jumpRequest=false,jumpRelease=false,landingTime=0,assist=null;
   let parkourDone=new Set(),parkourProgress=Array(courses.length).fill(0),parkourSignature='';
   try{parkourDone=new Set(restoreParkour(JSON.parse(localStorage.getItem(parkourStorage)||'[]')));}catch{}
-  const deckSurfaces=()=>cachedSurfaces??(cachedSurfaces=[...platformList,...towers.map((t,i)=>({id:'deck-'+i,deck:i,x:t.x,z:t.z+(t.kind==='village'?.42:0),hx:t.kind==='village'?2.10:2,hz:t.kind==='village'?1.55:2,y:towerFloor(t),thickness:.26})),...frontierSurfaces(skills)]);
+  const deckSurfaces=()=>cachedSurfaces??(cachedSurfaces=[...platformList,...towers.map((t,i)=>({id:'deck-'+i,deck:i,x:t.x,z:t.z+(t.kind==='village'?.42:0),hx:t.kind==='village'?2.10:2,hz:t.kind==='village'?1.55:2,y:towerFloor(t),thickness:.26})),...frontierSurfaces(freeSkills)]);
   const surfaceList=(x=position.x,z=position.z)=>[...deckSurfaces(),...columns.surfaces(x,z)];
   function parkourState(){
     const pad=platformList.find(p=>p.id===vertical?.support);
@@ -607,7 +613,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     if(key==='parkour'){assistJump();return;}
     if(key==='jumpRelease'){if(!jetting)jumpRelease=true;return;}
     if(key==='grapple'||key==='transfer'){
-      if(!unlocked.has('grapple')){notify('Find the Tether Workshop to unlock the harness.');return;}
+      
       const transfer=key==='transfer';
       if(swing&&!transfer){releaseMotion={vx:swing.state.vx,vy:swing.state.vy,vz:swing.state.vz};lastAnchor=swing.anchor.id;swing=null;rope.visible=false;return;}
       if(transfer&&!swing){notify('Attach a tether first, then Y to switch anchors.');return;}
@@ -624,7 +630,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
       notify(transfer?'Anchor transferred · momentum retained.':'Tether attached · steer with WASD, Y transfer, T release.');return;
     }
     if(key==='jetpack'){
-      if(!unlocked.has('jetpack')){notify('Find the Jetpack Forge to unlock the thrusters.');return;}
+      
       if(jetting){jetting=false;jetInput=0;if(!groundSafe(position.x,position.z)){position.copy(safeSpot);air=0;notify('Safe landing · returned to last grounded position.');}else velocity=0;return;}
       if(climb||deck!==null||crouched||swing||releaseMotion||flying||wallRunning||jetFuel<.5)return;
       jetting=true;jetHeight=Math.max(2,air);velocity=0;dashLeft=0;target=null;waypoints=[];notify('Jetpack active · Space ascend / C descend / J land.');return;
@@ -641,19 +647,19 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
       return;
     }
     if(key==='dash'){
-      if(!unlocked.has('dash')){notify('Find the Wind Shrine to unlock Dash.');return;}
+      
       if(dashWait>0||climb||deck!==null||flying||wallRunning||crouched)return;
       dashVector.set(Math.sin(hero.rotation.y),0,Math.cos(hero.rotation.y));
       dashLeft=dashDuration;dashWait=dashCooldown;target=null;waypoints=[];return;
     }
     if(key==='fly'){
-      if(!unlocked.has('fly')){notify('Find the Sky Shrine to unlock Flight.');return;}
+      
       if(flying){landFlight();return;}
       if(climb||deck!==null||crouched||wallRunning||flightLeft<.5)return;
       flying=true;dashLeft=0;velocity=0;target=null;waypoints=[];return;
     }
     if(key==='wall'){
-      if(!unlocked.has('wall')){notify('Find the Stone Shrine to unlock Wall run.');return;}
+      
       if(wallRunning){wallRunning=false;return;}
       if(deck!==null||climb||flying||crouched||!onWallLane(position.x,position.z)){notify('Wall run starts beside the marked violet wall.');return;}
       wallRunning=true;dashLeft=0;target=null;waypoints=[];return;
@@ -1052,7 +1058,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     }else if(ride){
       const v=vehicleStep(ride,trail,ride.type,skills,delta,{boost:keys.has('Shift'),brake:parking});
       const turn=Math.atan2(Math.sin(v.yaw-ride.yaw),Math.cos(v.yaw-ride.yaw));
-      if(vehiclePathSafe(ride.type,ride,v)&&!groundColumnHit(ride,v,vehicleTypes[ride.type].radius,1.3)&&!lowCeiling(v.x,v.z)&&!fleet.some(other=>other!==ride&&canDrive(other.type,skills)&&Math.hypot(v.x-other.x,v.z-other.z)<vehicleTypes[ride.type].radius+vehicleTypes[other.type].radius)){Object.assign(ride,v);position.set(v.x,0,v.z);safeSpot.copy(position);}
+      if(vehiclePathSafe(ride.type,ride,v)&&!groundColumnHit(ride,v,vehicleTypes[ride.type].radius,1.3)&&!lowCeiling(v.x,v.z)&&!fleet.some(other=>other!==ride&&canDrive(other.type,freeSkills)&&Math.hypot(v.x-other.x,v.z-other.z)<vehicleTypes[ride.type].radius+vehicleTypes[other.type].radius)){Object.assign(ride,v);position.set(v.x,0,v.z);safeSpot.copy(position);}
       else{ride.vx=ride.vz=ride.speed=0;}
       updateVehicle(ride,delta,turn*5);hero.rotation.y=ride.yaw;air=velocity=0;
     }else if(airborneGear){
@@ -1179,7 +1185,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     for(const p of shrineModels){
       p.gem.rotation.y=time*1.6;p.gem.position.y=p.y+1.65+.15*Math.sin(time*3);
       if(!ride&&!lift&&!unlocked.has(p.id)&&deck===null&&!flying&&!jetting&&!swing&&!releaseMotion&&air<.7&&!climb&&Math.hypot(position.x-p.x,position.z-p.z)<1.85){
-        unlocked.add(p.id);saveAdventure();notify(p.name+' · '+p.description);
+        unlocked.add(p.id);saveAdventure();notify(p.name+' · discovery recorded');
       }
       p.gem.material.emissiveIntensity=unlocked.has(p.id)?.18:.75;
     }
@@ -1201,7 +1207,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     }
     if(touched!==activePad&&touched){
       const c=touched.circuit,state=trialState.get(c.id);
-      if(c.requires&&!unlocked.has(c.requires))notify('Unlock '+c.requires+' before this trial.');
+      if(c.requires&&!equipped.has(c.requires))notify('Unlock '+c.requires+' before this trial.');
       else{
         const outcome=padResult(state.next,touched.index,c.steps.length);state.next=outcome.next;
         if(outcome.wrong){state.used=!c.requires;notify(c.name+' · Wrong order. Begin again at pad 1.');}
@@ -1240,18 +1246,18 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     if(swing){const p=ropeGeometry.attributes.position;p.setXYZ(0,hero.position.x,hero.position.y+1.45,hero.position.z);p.setXYZ(1,swing.anchor.x,swing.anchor.y,swing.anchor.z);p.needsUpdate=true;}
     for(const [i,fx] of jetFx.entries()){fx.visible=jetting;fx.position.set(hero.position.x+(i?1:-1)*.27*Math.cos(hero.rotation.y)-.30*Math.sin(hero.rotation.y),hero.position.y+.43,hero.position.z-(i?1:-1)*.27*Math.sin(hero.rotation.y)-.30*Math.cos(hero.rotation.y));fx.scale.y=.65+.4*Math.sin(time*24+i);}
     const origin={x:position.x,y:elevation(position.x,position.z)+(swing||releaseMotion?air:Math.max(air,2.5)),z:position.z};
-    nextAnchor=unlocked.has('grapple')?selectAnchor(origin,anchorModels,{x:Math.sin(hero.rotation.y),z:Math.cos(hero.rotation.y)},swing?.anchor.id??(releaseMotion?lastAnchor:null)):null;
+    nextAnchor=equipped.has('grapple')?selectAnchor(origin,anchorModels,{x:Math.sin(hero.rotation.y),z:Math.cos(hero.rotation.y)},swing?.anchor.id??(releaseMotion?lastAnchor:null)):null;
     anchorIdleMaterial.emissiveIntensity=.45+.12*Math.sin(time*3);
     for(const a of anchorModels){a.ring.rotation.y=time*.7;a.ring.material=swing?.anchor===a?anchorActiveMaterial:nextAnchor===a?anchorTargetMaterial:anchorIdleMaterial;}
     targetRing.visible=!!nextAnchor&&!mapMode;
     if(nextAnchor){targetRing.position.copy(nextAnchor.ring.position);targetRing.quaternion.copy(follow.quaternion);targetRing.scale.setScalar(1+.12*Math.sin(time*5));}
-    networkLines.visible=mapMode&&unlocked.has('grapple');
+    networkLines.visible=mapMode&&equipped.has('grapple');
     details.update(time,delta,mapMode);
     light.intensity=2.05+.20*Math.sin(time*.035);
     onTraversal?.(ride?vehicleTypes[ride.type].name+' · '+Math.round(ride.speed)+' units/s'+(parking?' · BRAKE':''):lift?'Mechanical lift':swing?'Tether swing · Y transfer · T release':releaseMotion?'Aerial release':jetting?'Jetpack · '+jetFuel.toFixed(1)+'s · '+air.toFixed(1)+'m':climb?'Climbing':flying?'Flying · '+flightLeft.toFixed(1)+'s':wallRunning?'Wall running':dashing?'Dash':activeGate?'Travel gate · G':ladder()>=0?'Ladder nearby · F':lowCeiling(position.x,position.z)?'Low passage · C':crouched?'Crouching':vertical?.support?'Elevated platform':vertical&&!vertical.grounded?(velocity<0?'Falling':'Jumping'):air>0?'Jumping':'');
     publishAdventure();publishParkour();publishMobility();
-    for(const v of fleet)v.root.visible=canDrive(v.type,skills);
-    for(const {f,group,gem} of frontierModels){group.visible=skills.has(f.skill);gem.visible=!visitedFrontiers.has(f.id);gem.rotation.y=time*1.4;
+    for(const v of fleet)v.root.visible=canDrive(v.type,freeSkills);
+    for(const {f,group,gem} of frontierModels){group.visible=freeSkills.has(f.skill);gem.visible=!visitedFrontiers.has(f.id);gem.rotation.y=time*1.4;
       if(vertical?.support?.startsWith(f.id+'-')&&Math.hypot(position.x-f.beacon.x,position.z-f.beacon.z)<1.2&&!visitedFrontiers.has(f.id)){visitedFrontiers.add(f.id);try{localStorage.setItem(frontierStorage,JSON.stringify([...visitedFrontiers]));}catch{}notify(f.name+' discovered · mechanical expedition complete!');}}
     for(const {c,gem,end} of courseMarkers){gem.visible=!parkourDone.has(c.id);gem.rotation.y=time*1.4;gem.position.y=end.y+1.1+.15*Math.sin(time*3);}
     if(mapMode){
@@ -1275,7 +1281,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     pace+=(Math.min(1,actualSpeed/5)-pace)*(1-Math.exp(-delta*12));
     gait+=delta*Math.min(24,actualSpeed*1.45);
     const mode=swing?'grapple':jetting?'jetpack':releaseMotion?'jump':climb?'climb':flying?'fly':wallRunning?'wall':dashing?'dash':crouched?'crouch':lift?'idle':mountPose>0?'mount':exitPose>0?'dismount':rollTime>0?'roll':movementMode({speed:ride?.speed??(target&&moving?8:Math.hypot(moveVelocity.x,moveVelocity.z)),sprint:keys.has('Shift'),grounded:vertical?.grounded??!air,vy:velocity,landing:landingTime,slide:slideTime,vehicle:ride?.type,turn:turnAmount});
-    animateIslandAvatar(hero,{time:now/1000,delta,pace,mode,phase:climb?climb.time*45:gait,gear:[...unlocked],landing:landingTime,turn:turnAmount,roll:rollTime});
+    animateIslandAvatar(hero,{time:now/1000,delta,pace,mode,phase:climb?climb.time*45:gait,gear:[...equipped],landing:landingTime,turn:turnAmount,roll:rollTime});
     for(const [i,ripple] of ripples.entries())ripple.scale.x=.75+.35*Math.sin(now*.0018+i);
     for(const relic of relics){
       if(!relic.gem.visible)continue;
@@ -1352,7 +1358,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     }
     if(now-(frame.labelsAt??-1000)>180){frame.labelsAt=now;const labels=worldLabels.map(l=>{l.sprite.getWorldPosition(labelPos);return {l,d:labelPos.distanceTo(hero.position)};}).filter(({l,d})=>mapMode?l.sprite.userData.major:d<23).sort((a,b)=>a.d-b.d).slice(0,6);const visible=new Set(labels.map(x=>x.l.sprite));for(const {sprite} of worldLabels)sprite.visible=visible.has(sprite);canvas.dataset.visibleLabels=String(visible.size);}
     renderer.render(scene,camera);
-    if(now-(frame.metricsAt??-1000)>500){frame.metricsAt=now;canvas.dataset.drawCalls=String(renderer.info.render.calls);canvas.dataset.triangles=String(renderer.info.render.triangles);canvas.dataset.frameMs=avgFrame.toFixed(1);canvas.dataset.release='8.4-wheel';canvas.dataset.columns=String(columns.count());canvas.dataset.columnContacts=String(columnContacts);canvas.dataset.playerX=position.x.toFixed(2);canvas.dataset.playerY=hero.position.y.toFixed(2);canvas.dataset.playerZ=position.z.toFixed(2);}
+    if(now-(frame.metricsAt??-1000)>500){frame.metricsAt=now;canvas.dataset.drawCalls=String(renderer.info.render.calls);canvas.dataset.triangles=String(renderer.info.render.triangles);canvas.dataset.frameMs=avgFrame.toFixed(1);canvas.dataset.release='8.5-equipment';canvas.dataset.columns=String(columns.count());canvas.dataset.columnContacts=String(columnContacts);canvas.dataset.playerX=position.x.toFixed(2);canvas.dataset.playerY=hero.position.y.toFixed(2);canvas.dataset.playerZ=position.z.toFixed(2);}
   }
   function setMapMode(enabled){
     if(interior)return;
@@ -1369,7 +1375,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     else if(activeGate)action('gate');
     else if(nearbyGuide)onDialogue?.(nearbyGuide);
   }
-  return {addZones,visit,travel,frame,setMapMode,adjustCamera,action,setMovementKey,interact,trailState,setWaypoint,adventureState,locateAdventure,locateBuilding,enterBuilding,interiorWalk:id=>interior?.walkTo(id),interiorInteract:id=>interior?.interact(id),interiorState:()=>interior?.state()??null,interiorProgress:()=>({...interiorProgress}),parkourState,locateCourse,assistJump,mobilityState,locateDepot,mountVehicle,activateFrontier,setSectorProgress,selectVehicleType,clearGearInput:()=>{clearInput();last=0;},
+  return {addZones,visit,travel,frame,setMapMode,adjustCamera,action,setMovementKey,interact,trailState,setWaypoint,adventureState,locateAdventure,locateBuilding,enterBuilding,interiorWalk:id=>interior?.walkTo(id),interiorInteract:id=>interior?.interact(id),interiorState:()=>interior?.state()??null,interiorProgress:()=>({...interiorProgress}),parkourState,locateCourse,assistJump,mobilityState,locateDepot,mountVehicle,activateFrontier,setSectorProgress,selectVehicleType,selectGearPower,clearGearInput:()=>{clearInput();last=0;},
     districtMap:()=>[...portals.values()].map(({index,x,z,upper,deck,topic,storeys})=>({index,x,z,upper,deck,topic,storeys})),
     discoveries:()=>[discovered.size,secrets.length]};
 }

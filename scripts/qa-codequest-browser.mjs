@@ -36,7 +36,7 @@ try{
   await prepare(desktop);
   console.log('QA desktop: island ready');
   await openIsland(desktop);
-  await desktop.waitForFunction(()=>document.querySelector('#overworldCanvas')?.dataset.release==='8.4-wheel');
+  await desktop.waitForFunction(()=>document.querySelector('#overworldCanvas')?.dataset.release==='8.5-equipment');
   const metrics=await desktop.locator('#overworldCanvas').evaluate(c=>({...c.dataset}));
   assert(Number(metrics.visibleLabels)<=6);assert(Number(metrics.triangles)>0);assert(Number(metrics.renderRatio)>0);console.log('PASS live renderer diagnostics '+JSON.stringify(metrics));
   assert(Number(metrics.columns)>=144,'Registered solid columns');
@@ -44,8 +44,10 @@ try{
   await desktop.locator('#overworldCanvas').focus();await desktop.keyboard.down('Tab');
   await wheel.waitFor({state:'visible'});
   assert.equal(await wheel.locator('[data-gear]').count(),8);
-  assert.equal(await wheel.locator('[data-gear="dash"]').getAttribute('data-state'),'locked');
-  assert.equal(await wheel.locator('[data-gear="hover"]').getAttribute('data-state'),'locked');
+  assert.equal(await wheel.locator('.gearWedge').count(),8);
+  assert.equal(await wheel.locator('[data-gear][data-state="ready"]').count(),8);
+  assert.equal(await wheel.locator('[data-gear="dash"]').getAttribute('data-state'),'ready');
+  assert.equal(await wheel.locator('[data-gear="hover"]').getAttribute('data-state'),'ready');
   assert.equal(await wheel.locator('[data-gear="rover"]').getAttribute('data-state'),'ready');
   await desktop.keyboard.press('ArrowRight');
   assert.equal(await wheel.locator('[data-gear="dash"]').getAttribute('aria-pressed'),'true');
@@ -55,7 +57,7 @@ try{
   await desktop.screenshot({path:'qa-codequest/wheel-closed.png'});
   await desktop.locator('#gearWheelToggle').click();await wheel.waitFor({state:'visible'});await desktop.screenshot({path:'qa-codequest/wheel-desktop.png'});
   await wheel.locator('#gearCancel').click();
-  console.log('PASS hold Tab, cancel, release without selection, locked gear and click access');
+  console.log('PASS hold Tab, cancel, release without selection, all gear available and click access');
   await desktop.locator('#overworldCanvas').focus();
   await desktop.keyboard.down('d');await desktop.keyboard.down('w');
   try{await desktop.waitForFunction(()=>Number(document.querySelector('#overworldCanvas').dataset.columnContacts)>0,null,{timeout:12000});}finally{await desktop.keyboard.up('d');await desktop.keyboard.up('w');}

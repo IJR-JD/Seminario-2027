@@ -799,3 +799,25 @@ body:has(.roomStudio)>.topbar nav a:hover,body:has(.roomStudio)>.topbar nav butt
 .gearSecondary button:disabled{opacity:.4;cursor:not-allowed}
 .gearFooter{font:400 11px system-ui;color:#b9ccce;text-align:center;margin:0}
 @media(max-width:700px){#missionPicker .adventureHotbar{right:8px;bottom:8px}#gearWheelToggle{bottom:8px}.gearRing{width:min(94vw,52vh)}.gearFooter{font-size:10px}#missionPicker .islandTraversal{bottom:72px}#missionPicker .islandDpad{bottom:155px}}
+
+/* V8.5 — geometric equipment dial, compositor-only motion. */
+#gearWheel{background:radial-gradient(ellipse at center,#0b2028d9 0%,#09151ff2 78%);gap:12px}
+.gearHeading{width:min(560px,96%);letter-spacing:.14em}.gearHeading b{color:#e6ce98}.gearHeading small{display:block;font-size:9px;letter-spacing:.18em;color:#93bcb7;margin-top:4px}
+.gearRing{width:min(520px,94vw,57vh);--radius:35%;border:0;background:transparent;animation:gearEnter 220ms cubic-bezier(.2,.75,.3,1) both}
+.gearDial{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.gearWedge{fill:#18353eea;stroke:#54777c;stroke-width:1;transition:fill 150ms,stroke 150ms}
+.gearWedge[data-type=vehicle]{fill:#303b40;stroke:#817962}
+.gearWedge.selected{fill:#326762;stroke:#f4d394;stroke-width:2}
+.gearSlot,.gearSlot[data-state=locked],.gearSlot[data-state=cooldown],.gearSlot[data-state=unavailable]{background:transparent;border:0;border-radius:10px;box-shadow:none;transition:color 150ms,transform 150ms,opacity 150ms;animation:gearSlotIn 230ms both;animation-delay:calc(var(--slot)*12ms)}
+.gearSlot[aria-pressed=true]{background:transparent;outline:0;box-shadow:none;transform:translate(-50%,-50%) scale(1.07);color:#fff1c5}
+.gearSlot[data-state=active] .gearStatus{color:#ffe19c}.gearIcon svg{width:clamp(24px,5vw,38px);height:clamp(24px,5vw,38px);display:block}
+.gearCenter{width:38%;padding:4px;box-sizing:border-box}
+#gearCategory{display:block;font:600 clamp(8px,1.1vw,10px) system-ui;letter-spacing:.13em;color:#9cc6c1;margin-bottom:5px}
+#gearEnergy{height:4px;background:#36545a;margin:10px auto 0;border-radius:4px;overflow:hidden;width:72%}#gearEnergy span{display:block;background:#dbbd80;height:100%;transition:width 180ms ease}
+#gearEnergy[hidden]{display:none}
+.gearSecondary button{transition:background 150ms,transform 150ms}.gearSecondary button:not(:disabled):hover{background:#42645f;transform:translateY(-2px)}
+.gearSecondary button:disabled{opacity:.55}
+@keyframes gearEnter{from{opacity:0;transform:scale(.9) rotate(-4deg)}to{opacity:1;transform:scale(1) rotate(0)}}
+@keyframes gearSlotIn{from{opacity:0}to{opacity:1}}
+@media(max-width:700px){.gearRing{width:min(96vw,50vh)}.gearSlot{gap:0}.gearCenter p{font-size:9px}.gearSecondary button{font-size:10px;padding:6px}}
+@media(prefers-reduced-motion:reduce){.gearRing,.gearSlot{animation:none!important}.gearSlot,.gearWedge,.gearSecondary button,#gearEnergy span{transition:none!important}}

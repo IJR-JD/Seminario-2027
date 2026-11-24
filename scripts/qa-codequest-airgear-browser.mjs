@@ -27,22 +27,21 @@ async function open(room){
 async function unlock(id){
  await page.locator('#islandAdventureToggle').click();
  await page.locator('[data-adventure-route="'+id+'"]').click();
- await page.waitForFunction(id=>document.querySelector('[data-power="'+id+'"]')?.dataset.unlocked==='true',id,{timeout:60000});
+ await page.waitForFunction(id=>JSON.parse(localStorage.getItem('cq-island-adventure-v3')||'{"powers":[]}').powers.includes(id),id,{timeout:60000});
 }
 try{
  await open(4);
  await page.screenshot({path:'qa-codequest/dynamic-village.png'});
  await unlock('grapple');
- await page.locator('.adventureHotbar').evaluate(el=>el.open=true);
- await page.locator('[data-power="grapple"]').click();
+ await page.locator('#overworldCanvas').focus();await page.keyboard.down('Tab');await page.locator('[data-gear="grapple"]').hover();await page.keyboard.up('Tab');
  await page.waitForFunction(()=>document.querySelector('#islandTraversalStatus')?.textContent.includes('Tether swing'),null,{timeout:15000});
  await page.waitForFunction(()=>document.querySelector('#tetherNetwork')?.dataset.next&&document.querySelector('#tetherNetwork')?.dataset.anchor,null,{timeout:12000});
  const first=await page.locator('#tetherNetwork').getAttribute('data-anchor');
- await page.locator('#tetherTransfer').click();
+ await page.locator('#gearWheelToggle').click();await page.locator('[data-wheel-action="transfer"]').click();
  await page.waitForFunction(first=>{const el=document.querySelector('#tetherNetwork');return el.dataset.lastTransfer&&el.dataset.lastTransfer!==first&&Number(el.dataset.transfers)>=1;},first,{timeout:10000});
  await page.screenshot({path:'qa-codequest/skyways-transfer.png'});
  console.log('PASS live transfer '+first+' -> '+await page.locator('#tetherNetwork').getAttribute('data-last-transfer'));
- if(await page.locator('[data-power="grapple"]').getAttribute('aria-pressed')==='true')await page.locator('[data-power="grapple"]').click();
+ if(await page.locator('[data-power="grapple"]').getAttribute('aria-pressed')==='true'){await page.locator('#gearWheelToggle').click();await page.locator('[data-gear="grapple"]').click();}
  await page.waitForFunction(()=>document.querySelector('[data-power="grapple"]')?.getAttribute('aria-pressed')==='false');
  console.log('PASS physically discovered tether and entered swing mode');
  await open(20);

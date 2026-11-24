@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#171b19"><meta name="description" content="CodeQuest — a 3D programming adventure at Instituto Jorge Robledo"><title>CodeQuest · Logic Worlds · Seminario 2027</title><link rel="stylesheet" href="./world.css?v=wheel84">
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#171b19"><meta name="description" content="CodeQuest — a 3D programming adventure at Instituto Jorge Robledo"><title>CodeQuest · Logic Worlds · Seminario 2027</title><link rel="stylesheet" href="./world.css?v=equipment85">
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script></head>
 <body>
 <header class="topbar"><a class="brand" href="../../"><span class="ijr">IJR</span><span><small>INSTITUTO JORGE ROBLEDO · 2027</small><strong>CODEQUEST <i>WORLD OF CODE</i></strong></span></a><nav><a href="../../">Seminario</a><a href="../?project=video-game-design">Game Design</a><button id="navLevels" type="button">World map</button><button id="navHero" type="button">My hero</button><button id="navGuide" type="button">Guide</button><a href="./skills.html" class="navSkillLink">Skill Studio ✦</a></nav></header>
@@ -77,7 +77,7 @@
      <button type="button" data-traversal="climb">Climb</button>
    </div>
    <details class="adventureHotbar" aria-label="Adventure powers"><summary>Shortcuts</summary><div class="shortcutItems">
-     <span id="adventureProgress">0/5 powers · 0/4 trials</span>
+     <span id="adventureProgress">5/5 powers available · 0/5 sites · 0/4 trials</span>
      <button type="button" data-traversal="dash" data-power="dash">X · Dash</button>
      <button type="button" data-traversal="fly" data-power="fly">V · Flight</button>
      <button type="button" data-traversal="wall" data-power="wall">B · Wall</button>
@@ -86,17 +86,17 @@
    </div></details>
    <button type="button" id="gearWheelToggle" aria-controls="gearWheel" aria-expanded="false"><kbd>Tab</kbd> Gear</button>
    <section id="gearWheel" role="group" aria-label="Equipment selector" tabindex="-1" hidden>
-     <div class="gearHeading"><span>CODEQUEST / EQUIPMENT</span><button type="button" id="gearCancel" aria-label="Cancel equipment selection">✕</button></div>
-     <div class="gearRing"><div class="gearCenter"><strong id="gearTitle">Equipment</strong><p id="gearDetail">Choose an item</p></div></div>
+     <div class="gearHeading"><span><b>CODEQUEST</b> / EQUIPMENT <small>FREE EXPLORATION</small></span><button type="button" id="gearCancel" aria-label="Cancel equipment selection">✕</button></div>
+     <div class="gearRing"><svg class="gearDial" viewBox="0 0 400 400" aria-hidden="true"></svg><div class="gearCenter"><span id="gearCategory">SELECT EQUIPMENT</span><strong id="gearTitle">Equipment</strong><p id="gearDetail">Choose an item</p><div id="gearEnergy" hidden><span></span></div></div></div>
      <div class="gearSecondary"><button type="button" data-wheel-action="transfer">Y · Transfer</button><button type="button" data-wheel-action="gate">G · Gate</button><button type="button" data-wheel-action="frontier">U · Lift</button><button type="button" data-wheel-action="brake">P · Brake</button><button type="button" data-wheel-action="vehicle">M · Park / exit</button></div>
-     <p class="gearFooter">Hold Tab · point at a slot · release to select. Click or tap to select. Esc cancels.</p>
+     <p class="gearFooter">TAB release to equip · arrows to browse · ESC cancel</p>
    </section>
    <aside id="islandAdventurePanel" class="islandTrailPanel adventurePanel" hidden aria-label="Adventure journal">
-     <h3>Adventure journal</h3><p>Discover shrines to unlock powers. Walk to each site, solve its circuit, and collect the reward. Room scores are independent.</p>
+     <h3>Adventure journal</h3><p>All powers are available. Discover the five equipment sites, solve circuits and collect rewards. Room scores are independent.</p>
      <div id="adventureList" class="islandTrailList"></div>
    </aside>
    <aside id="mobilityPanel" class="islandTrailPanel" hidden aria-label="Sector progression and vehicles">
-    <h3>Mechanical expedition</h3><p id="mobilitySummary">0/6 mechanical skills</p><p>Complete every coding room in a sector to earn its skill and unlock a new elevated expedition area. Use M to mount or park, P to brake, U at a lift.</p>
+    <h3>Mechanical expedition</h3><p id="mobilitySummary">0/6 mechanical skills</p><p>All vehicles and lifts are available. Complete coding sectors to earn mechanical bonuses and record academic progress. Use M to mount or park, P to brake, U at a lift.</p>
     <div id="mobilityList" class="islandTrailList"></div>
    </aside>
    <div id="mobilityHUD" class="mobilityHUD" hidden>
@@ -145,5 +145,5 @@ else:
     left = 1</pre></div><div class="guideFooter"><span>Movement first · no functions, cycles, enemies or combat.</span><button class="primaryBtn" type="button" id="guideDone">Explore the world →</button></div></section></div>
 <div class="overlay" id="intro"><section class="welcomeCard" aria-label="New game introduction"><div class="welcomeArt"><div class="artOrbit orbitA"></div><div class="artOrbit orbitB"></div><div class="artSymbol">◇</div><span>CHAPTER 01 · THE FIRST JOURNEY</span></div><div class="welcomeBody"><div class="eyebrow">PROGRAMMING ADVENTURE · SEMINARIO 2027</div><h2>A world that listens<br>to your code.</h2><p>Create a hero, learn four movement variables, and discover your own way across increasingly complex 3D landscapes. Solutions are never given away.</p><div class="introSteps"><span>01 <b>Create your hero</b></span><span>02 <b>Choose a mission</b></span><span>03 <b>Program a journey</b></span></div><div class="welcomeButtons"><button type="button" class="primaryBtn" id="startAdventure">Create my hero →</button><button type="button" id="continueAdventure">Continue adventure</button></div><small>No sign-in required. Progress is saved on this browser.</small></div></section></div>
 <div class="overlay" id="heroOverlay" hidden><section class="heroModal" aria-label="Character creator"><div class="creatorLeft"><span class="eyebrow">CHARACTER STUDIO · YOUR AVATAR</span><h2>Make this hero yours.</h2><p>A unique adventurer for every programmer.</p><div id="heroPreview" class="heroPreview"></div><span class="previewNote">Live 3D preview · rotate slowly</span></div><div class="creatorRight"><div class="creatorTop"><strong>CUSTOMIZE YOUR HERO</strong><button type="button" id="closeCreator" aria-label="Close creator">✕</button></div><div class="creatorScroll"><label>Hero name<input id="heroName" maxlength="22" value="Code Explorer"></label><div class="formPair"><label>Style<select id="heroStyle"><option value="guardian">Guardian</option><option value="scout">Explorer</option><option value="mage">Mystic</option></select></label><label>Personality<select id="heroPersonality"><option value="brave">Brave</option><option value="calm">Calm</option><option value="playful">Playful</option></select></label></div><div class="formPair"><label>Skin color<input type="color" id="skinColor" value="#d7a880"></label><label>Armor color<input type="color" id="armorColor" value="#48796b"></label></div><div class="formPair"><label>Hair color<input type="color" id="hairColor" value="#292b31"></label><label>Cape color<input type="color" id="capeColor" value="#b4a27f"></label></div><div class="formPair"><label>Hair style<select id="hairStyle"><option value="short">Short</option><option value="crest">Crest</option><option value="long">Long</option><option value="none">None</option></select></label><label>Accessory<select id="heroAccessory"><option value="satchel">Satchel</option><option value="scarf">Scarf</option><option value="staff">Staff</option><option value="none">None</option></select></label></div><div class="formPair"><label>Height<input type="range" min="85" max="120" value="100" id="heroHeight"></label><label>Build<input type="range" min="80" max="125" value="100" id="heroBuild"></label></div><p class="creatorHelp">Appearance only. Every hero learns the same commands and can complete the same missions.</p></div><div class="creatorFooter"><button type="button" id="randomHero">Surprise me</button><button type="button" class="primaryBtn" id="saveHero">Save hero &amp; open the map →</button></div></div></section></div>
-<script type="module" src="./world.js?v=wheel84"></script>
+<script type="module" src="./world.js?v=equipment85"></script>
 </body></html>
