@@ -36,9 +36,16 @@ try{
   await prepare(desktop);
   console.log('QA desktop: island ready');
   await openIsland(desktop);
-  await desktop.waitForFunction(()=>document.querySelector('#overworldCanvas')?.dataset.release==='8.2-live');
+  await desktop.waitForFunction(()=>document.querySelector('#overworldCanvas')?.dataset.release==='8.3-columns');
   const metrics=await desktop.locator('#overworldCanvas').evaluate(c=>({...c.dataset}));
   assert(Number(metrics.visibleLabels)<=6);assert(Number(metrics.triangles)>0);assert(Number(metrics.renderRatio)>0);console.log('PASS live renderer diagnostics '+JSON.stringify(metrics));
+  assert(Number(metrics.columns)>=144,'Registered solid columns');
+  await desktop.locator('#overworldCanvas').focus();
+  await desktop.keyboard.down('d');await desktop.keyboard.down('w');
+  try{await desktop.waitForFunction(()=>Number(document.querySelector('#overworldCanvas').dataset.columnContacts)>0,null,{timeout:12000});}finally{await desktop.keyboard.up('d');await desktop.keyboard.up('w');}
+  console.log('PASS actual player contact with a porch column: '+await desktop.locator('#overworldCanvas').getAttribute('data-column-contact'));
+  await desktop.screenshot({path:'qa-codequest/column-contact.png'});
+  await openIsland(desktop);
   await desktop.locator('#islandDirectoryToggle').click();
   assert.equal(await desktop.locator('#levelList .missionCard').count(),22);
   assert.equal(await desktop.locator('#levelList .missionCard[data-floor="2"]').count(),11,
