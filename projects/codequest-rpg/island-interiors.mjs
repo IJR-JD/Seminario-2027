@@ -1,5 +1,5 @@
 // Stable building identities, interior layouts and navigation independent of WebGL.
-import {allRoomLocations,villageHouses,islandDistricts} from './island-villages.mjs';
+import {allRoomLocations,villageHouses} from './island-villages.mjs';
 export const interiorStorage='cq-interiors-v6';
 export const themes=[
  {name:'Explorer Guild',color:'#698d72',role:'Pathfinder',hint:'A variable stores a value. Change the value, then predict how far the avatar moves.',props:'library'},
@@ -19,9 +19,10 @@ export const landmarks={entry:{x:0,z:5.2},exit:{x:0,z:5.5},stairs:{x:4.15,z:-3.6
 export const floorKey=(id,floor)=>id+':'+floor;
 export function floorPlan(building,floor){
  const theme=themes[building.zoneIndex];
+ if(!theme)throw Error('Invalid interior building');
  if(!Number.isInteger(floor)||floor<1||floor>building.storeys)throw Error('Invalid interior floor');
  const room=building.room!==undefined&&floor===(building.upper?2:1)?building.room:null;
- const npc={id:floorKey(building.id,floor),name:names[(buildings.indexOf(building)+floor-1)%names.length]+' · '+theme.role,line:theme.hint+(room!==null?' The mission portal is at the far end of this floor.':building.storeys===2?' Explore both floors to find more information.':' Use the exit to return to the island.'),...landmarks.npc};
+ const npc={id:floorKey(building.id,floor),name:names[(Math.max(0,buildings.findIndex(b=>b.id===building.id))+floor-1)%names.length]+' · '+theme.role,line:theme.hint+(room!==null?' The mission portal is at the far end of this floor.':building.storeys===2?' Explore both floors to find more information.':' Use the exit to return to the island.'),...landmarks.npc};
  const obstacles=[
   {x:-4.35,z:-4.2,hx:.75,hz:1.65,type:'shelf'},
   {x:4.35,z:1.4,hx:.72,hz:1.75,type:'workbench'},
@@ -35,6 +36,7 @@ export function indoorSafe(plan,x,z){
  return Number.isFinite(x)&&Number.isFinite(z)&&Math.abs(x)<=bounds.x-.36&&Math.abs(z)<=bounds.z-.36&&!plan.obstacles.some(o=>Math.abs(x-o.x)<o.hx+.32&&Math.abs(z-o.z)<o.hz+.32);
 }
 export function indoorSegment(plan,a,b){
+ if(![a?.x,a?.z,b?.x,b?.z].every(Number.isFinite))return false;
  const n=Math.max(1,Math.ceil(Math.hypot(b.x-a.x,b.z-a.z)/.2));
  for(let i=0;i<=n;i++){const t=i/n;if(!indoorSafe(plan,a.x+(b.x-a.x)*t,a.z+(b.z-a.z)*t))return false;}return true;
 }
