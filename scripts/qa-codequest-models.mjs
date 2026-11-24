@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import {createIslandAvatar,animateIslandAvatar} from '../projects/codequest-rpg/island-avatar.mjs';
 import {createVehicleFleet} from '../projects/codequest-rpg/island-vehicles.mjs';
 import {vehicles,vehicleTypes,vehicleStep,earnedSkills,sectors} from '../projects/codequest-rpg/island-mobility.mjs';
+import {batchStaticMeshes} from '../projects/codequest-rpg/island-rendering.mjs';
 import {elevation} from '../projects/codequest-rpg/island-vertical.mjs';
 const poses=['idle','walk','run','sprint','turn','jump','takeoff','jump-apex','fall','land','climb','crouch','slide','roll','mount','dismount','ride-bike','ride-rover','ride-hover','dash','fly','grapple','jetpack','wall'];
 function finite(root){
@@ -26,4 +27,10 @@ for(const v of fleet){
  finite(v.root);
  assert(v.speed<=vehicleTypes[v.type].speed*(v.type==='rover'?1.35:1)+1e-9);
 }
+const batchScene=new THREE.Scene(),material=new THREE.MeshStandardMaterial(),boxes=[];
+for(let i=0;i<10;i++){const m=new THREE.Mesh(new THREE.BoxGeometry(1+i*.1,2,3),material);m.position.set(i,1,0);batchScene.add(m);boxes.push(m);}
+const stats=batchStaticMeshes(batchScene,boxes,{exclude:new Set([boxes[0]])});
+assert.deepEqual(stats,{originals:9,batches:1,saved:8});assert(batchScene.children.includes(boxes[0]));
+const batch=batchScene.children.find(x=>x.isInstancedMesh);assert.equal(batch.count,9);finite(batch);
+console.log('PASS static mesh batching, transforms and preserved interactive exclusion.');
 console.log('PASS 24 animation states x 4 avatar presets, 18 vehicle models, finite transforms and speed bounds.');
