@@ -41,8 +41,8 @@ try{
  await page.locator('#overworldCanvas').focus();await page.keyboard.down('Tab');
  await page.locator('#gearWheel').waitFor({state:'visible'});await page.locator('[data-gear="rover"]').hover();await page.keyboard.up('Tab');
  assert(await page.locator('#gearWheel').isHidden());console.log('PASS wheel selected rover and resumed world');
- await wait(()=>document.querySelector('#mobilityHUD')?.dataset.nearest==='rover-0');
- await page.locator('#vehicleMount').click();
+ await wait(()=>{const h=document.querySelector('#mobilityHUD');return h?.dataset.nearest==='rover-0'||h?.dataset.vehicle==='rover-0';});
+ if(await page.locator('#mobilityHUD').getAttribute('data-vehicle')!=='rover-0')await page.locator('#vehicleMount').click();
  await wait(()=>document.querySelector('#mobilityHUD')?.dataset.vehicle==='rover-0');
  await page.screenshot({path:'qa-codequest/mobility-rover.png'});
  await page.keyboard.down('d');
