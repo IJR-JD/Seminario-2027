@@ -51,7 +51,7 @@ export const platformList=courses.flatMap(c=>c.pads);
 export const onPlatform=(p,x,z,margin=.05)=>Math.abs(x-p.x)<=p.hx+margin&&Math.abs(z-p.z)<=p.hz+margin;
 export function landingSurface(surfaces,x,z,fromY,toY){
  if(toY>fromY)return null;
- return surfaces.filter(p=>onPlatform(p,x,z)&&fromY>=p.y-.07&&toY<=p.y+.001).sort((a,b)=>b.y-a.y)[0]??null;
+ let best=null;for(const p of surfaces)if(onPlatform(p,x,z)&&fromY>=p.y-.07&&toY<=p.y+.001&&(!best||p.y>best.y))best=p;return best;
 }
 export function approachVelocity(current,target,accel,dt){
  const delta=target-current,step=accel*dt;
@@ -70,7 +70,7 @@ export function verticalStep(prev,{x,z,ground,surfaces=[],dt,jump=false,release=
  s.coyote=s.grounded?motion.coyote:Math.max(0,s.coyote-dt);
  const support=s.support?surfaces.find(p=>p.id===s.support&&onPlatform(p,x,z)):null;
  if(s.grounded&&!s.support)s.y=ground;
- if(s.grounded&&s.support&&!support){s.grounded=false;s.support=null;}
+ if(s.grounded&&s.support&&!support){const adjacent=surfaces.find(p=>onPlatform(p,x,z)&&Math.abs(p.y-s.y)<.035);if(adjacent){s.support=adjacent.id;s.y=adjacent.y;}else{s.grounded=false;s.support=null;}}
  if(s.grounded&&support)s.y=support.y;
  if(s.buffer>0&&(s.grounded||s.coyote>0)){
   s.vy=motion.jump*jumpScale;s.grounded=false;s.support=null;s.coyote=0;s.buffer=0;
