@@ -3,7 +3,7 @@ import {fileURLToPath} from 'node:url';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
-export const root=fileURLToPath(new URL('../',import.meta.url));
+export const root=path.resolve(fileURLToPath(new URL('../',import.meta.url)));
 export const runtimeRoots=['index.html','assets','learning','projects'];
 export const threePrefix='https://cdn.jsdelivr.net/npm/three@0.170.0/';
 export const localizeThree=s=>s.replaceAll(threePrefix,'../../vendor/three/');
