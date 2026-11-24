@@ -23,9 +23,9 @@ export function sectorProgress(completed){
 }
 export const earnedSkills=completed=>new Set(sectorProgress(completed).filter(s=>s.unlocked).map(s=>s.skill));
 export const vehicleTypes={
- bike:{name:'Trail bike',speed:20,acceleration:18,brake:29,turn:5.5,radius:.40},
- rover:{name:'Explorer rover',speed:22,acceleration:13,brake:24,turn:3.4,radius:.72},
- hover:{name:'Hoverboard',speed:26,acceleration:20,brake:26,turn:5.7,radius:.38,skill:'hover'}
+ bike:{name:'Trail bike',speed:20,acceleration:18,brake:29,turn:5.5,radius:.82},
+ rover:{name:'Explorer rover',speed:22,acceleration:13,brake:24,turn:3.4,radius:1.12},
+ hover:{name:'Hoverboard',speed:26,acceleration:20,brake:26,turn:5.7,radius:.82,skill:'hover'}
 };
 export const canDrive=(type,skills)=>!!vehicleTypes[type]&&(!vehicleTypes[type].skill||skills.has(vehicleTypes[type].skill));
 const reserved=[...allRoomLocations(),...villageHouses,...shrines,...travelGates,...gear,...pythonWaystations,...traps,...circuits.flatMap(c=>[...c.steps,c.reward]),...platformList,
@@ -34,7 +34,7 @@ export function createDepots(){
  const sites=[];
  for(const c of courses){
   let found=null;
-  for(let r=7;r<=25&&!found;r+=2)for(let i=0;i<24&&!found;i++){
+  for(let r=7;r<=37&&!found;r+=2)for(let i=0;i<24&&!found;i++){
    const theta=i*Math.PI/12,x=Math.round(c.entry.x+Math.cos(theta)*r),z=Math.round(c.entry.z+Math.sin(theta)*r);
    const points=[{x,z},{x:x-2.8,z:z+2},{x:x+2.8,z:z+2},{x,z:z-3.3}];
    if(points.every(p=>shore(p.x,p.z)<.88&&Math.abs(p.z)>6&&groundSafe(p.x,p.z)&&reserved.every(q=>Math.hypot(p.x-q.x,p.z-q.z)>4.2)&&anchors.every(q=>Math.hypot(p.x-q.x,p.z-q.z)>2.5)&&sites.every(q=>Math.hypot(p.x-q.x,p.z-q.z)>10))&&
@@ -63,14 +63,16 @@ export function vehicleStep(state,input,type,skills,dt,{boost=false,brake=false}
  const cfg=vehicleTypes[type],n=Math.hypot(input.x,input.z),speed=cfg.speed*(type==='rover'&&boost&&skills.has('turbo')?1.35:1);
  const tx=n>.01&&!brake?input.x/n*speed:0,tz=n>.01&&!brake?input.z/n*speed:0;
  const accel=n>.01&&!brake?cfg.acceleration:cfg.brake;
- const vx=approachVelocity(state.vx,tx,accel,dt),vz=approachVelocity(state.vz,tz,accel,dt);
+ let vx=approachVelocity(state.vx,tx,accel,dt),vz=approachVelocity(state.vz,tz,accel,dt);
+ const magnitude=Math.hypot(vx,vz);if(magnitude>speed){vx*=speed/magnitude;vz*=speed/magnitude;}
  const target=Math.hypot(vx,vz)>.15?Math.atan2(vx,vz):state.yaw;
  const yaw=state.yaw+Math.atan2(Math.sin(target-state.yaw),Math.cos(target-state.yaw))*Math.min(1,cfg.turn*dt);
  return {x:state.x+vx*dt,z:state.z+vz*dt,vx,vz,yaw,speed:Math.hypot(vx,vz)};
 }
 export function vehiclePathSafe(type,a,b){
  const r=vehicleTypes[type].radius;
- return [[0,0],[r,0],[-r,0],[0,r],[0,-r]].every(([dx,dz])=>segmentSafe({x:a.x+dx,z:a.z+dz},{x:b.x+dx,z:b.z+dz}));
+ const diagonal=r/Math.sqrt(2);
+ return [[0,0],[r,0],[-r,0],[0,r],[0,-r],[diagonal,diagonal],[-diagonal,diagonal],[diagonal,-diagonal],[-diagonal,-diagonal]].every(([dx,dz])=>segmentSafe({x:a.x+dx,z:a.z+dz},{x:b.x+dx,z:b.z+dz}));
 }
 export function movementMode({speed=0,sprint=false,grounded=true,vy=0,landing=0,slide=0,vehicle=null,turn=0}){
  if(vehicle)return 'ride-'+vehicle;
