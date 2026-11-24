@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import {landmarks,pyramidParts} from './island-landmarks.mjs';
 // All original procedural geometry, stylized to match the existing island.
-export function createMonuments(scene,{box,material,elevation,label}){
+export function createMonuments(scene,{box,material,elevation,label,onSolid}){
  const sand=material('#c8ad78'),sandLight=material('#e5d0a0'),sandDark=material('#a58a5e'),stone=material('#929b9b'),stoneLight=material('#d4d7cb'),iron=material('#536267'),ironLight=material('#788a8c'),blue=material('#448baf'),copper=material('#65a79a'),patina=material('#48867e'),gold=material('#f4c56f'),dark=material('#344c56');
  const geo=new Map();
- function mesh(key,make,mat,x,y,z){if(!geo.has(key))geo.set(key,make());const m=new THREE.Mesh(geo.get(key),mat);m.position.set(x,y,z);scene.add(m);return m;}
+ function mesh(key,make,mat,x,y,z){if(!geo.has(key))geo.set(key,make());const m=new THREE.Mesh(geo.get(key),mat);m.position.set(x,y,z);scene.add(m);if(!key.startsWith('flame'))onSolid?.(m,key.startsWith('cyl0,')?'roof':'monument');return m;}
  function beam(a,b,w,mat){const av=new THREE.Vector3(...a),bv=new THREE.Vector3(...b),d=bv.clone().sub(av),mid=av.clone().add(bv).multiplyScalar(.5);const m=box(w,d.length(),w,mat,mid.x,mid.y,mid.z);m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize());return m;}
  const orb=(x,y,z,r,mat)=>mesh('sphere'+r,()=>new THREE.SphereGeometry(r,12,8),mat,x,y,z);
  const cylinder=(x,y,z,r1,r2,h,mat,n=12)=>mesh('cyl'+[r1,r2,h,n],()=>new THREE.CylinderGeometry(r1,r2,h,n),mat,x,y,z);
