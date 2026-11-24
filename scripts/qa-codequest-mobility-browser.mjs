@@ -35,9 +35,9 @@ try{
  await open(false);
  await go('[data-depot-route="depot-0"]');
  await wait(()=>document.querySelector('#mobilityHUD')?.dataset.nearFrontier==='frontier-0');
- assert(await page.locator('#frontierLift').isDisabled());
+ assert(await page.locator('#frontierLift').isEnabled());assert.equal(await page.locator('#mobilityHUD').getAttribute('data-skills'),'');
  await page.screenshot({path:'qa-codequest/mobility-locked.png'});
- console.log('PASS locked expedition before completing sector');
+ console.log('PASS expedition available before completing sector, no fabricated academic skills');
  await page.locator('#overworldCanvas').focus();await page.keyboard.down('Tab');
  await page.locator('#gearWheel').waitFor({state:'visible'});await page.locator('[data-gear="rover"]').hover();await page.keyboard.up('Tab');
  assert(await page.locator('#gearWheel').isHidden());console.log('PASS wheel selected rover and resumed world');
@@ -48,9 +48,9 @@ try{
  await page.keyboard.down('d');
  await wait(()=>Number(document.querySelector('#mobilityHUD')?.dataset.speed)>3,null,15000);
  await page.keyboard.up('d');
- await page.locator('#vehicleBrake').click();
+ await page.locator('#gearWheelToggle').click();await page.locator('[data-wheel-action="brake"]').click();
  await wait(()=>document.querySelector('#mobilityHUD')?.dataset.speed==='0',null,15000);
- await page.locator('#vehicleMount').click();
+ await page.locator('#gearWheelToggle').click();await page.locator('[data-wheel-action="vehicle"]').click();
  await wait(()=>document.querySelector('#mobilityHUD')?.dataset.vehicle==='');
  console.log('PASS real rover mount, drive, brake, park, dismount');
  await open(true);
