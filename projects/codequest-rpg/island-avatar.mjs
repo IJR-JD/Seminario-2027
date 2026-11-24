@@ -56,7 +56,7 @@ export function createIslandAvatar(settings={}){
  root.scale.set((Number(settings.build)||100)/100,(Number(settings.height)||100)/100,(Number(settings.build)||100)/100);
  root.userData={rig,arms,legs,knees,elbows,cape,head,wings,harness,pack};return root;
 }
-export function animateIslandAvatar(hero,{time=0,delta=.016,pace=0,mode='idle',phase=0,gear=[],landing=0,turn=0}={}){
+export function animateIslandAvatar(hero,{time=0,delta=.016,pace=0,mode='idle',phase=0,gear=[],landing=0,turn=0,roll=0}={}){
  const {rig,arms,legs,cape,head,wings,harness,pack}=hero.userData;
  harness.visible=gear.includes('grapple');pack.visible=gear.includes('jetpack');cape.visible=!pack.visible;
  const smooth=Math.min(1,delta*17),mix=(obj,axis,value)=>obj.rotation[axis]+=(value-obj.rotation[axis])*smooth;
@@ -68,6 +68,8 @@ export function animateIslandAvatar(hero,{time=0,delta=.016,pace=0,mode='idle',p
   if(mode==='jump'||mode==='takeoff'){leg=i?-.85:.45;arm=-1.0;knee=i?1.05:.48;elbow=.48;}
   if(mode==='jump-apex'){leg=i?-.76:-.38;arm=-.62;spread=sign*.36;knee=1.15;elbow=.5;}
   if(mode==='turn'){leg=sign*swing*.6;arm=-sign*swing*.6;spread=sign*.15;}
+  if(mode==='mount'||mode==='dismount'){leg=i?-.70:-.3;knee=i?1.10:.6;arm=-.75;elbow=.55;}
+  if(mode==='roll'){leg=-.85;knee=1.45;arm=-1.4;elbow=.95;}
   if(mode==='slide'){leg=i?-.62:-1.18;arm=.42;knee=i?1.05:.22;elbow=.6;}
   if(mode==='ride-bike'){leg=-1.12+sign*Math.sin(phase)*.12;knee=1.45;arm=-.95;elbow=.35;}
   if(mode==='ride-rover'){leg=-1.15;knee=1.25;arm=-.92;elbow=.65;}
@@ -83,9 +85,9 @@ export function animateIslandAvatar(hero,{time=0,delta=.016,pace=0,mode='idle',p
   mix(legs[i],'x',leg);mix(knees[i],'x',knee);mix(elbows[i],'x',-elbow);mix(arms[i],'x',arm+idle);mix(arms[i],'z',spread);
   wings[i].visible=mode==='fly';mix(wings[i],'z',Math.sin(time*8)*.25*sign);
  }
- mix(rig,'x',mode==='dash'?-.42:mode==='grapple'?-.22:mode==='jetpack'?-.13:mode==='fly'?-.18:mode==='sprint'?-.20:mode==='run'?-.10:mode==='slide'?-.48:mode==='ride-bike'?-.30:mode==='ride-rover'?-.12:mode==='ride-hover'?-.10:mode==='land'?.18:mode==='fall'?.08:mode==='crouch'?.20:0);
+ mix(rig,'x',mode==='dash'?-.42:mode==='grapple'?-.22:mode==='jetpack'?-.13:mode==='fly'?-.18:mode==='sprint'?-.20:mode==='run'?-.10:mode==='slide'?-.48:mode==='roll'?-.95:mode==='mount'?-.28:mode==='dismount'?-.18:mode==='ride-bike'?-.30:mode==='ride-rover'?-.12:mode==='ride-hover'?-.10:mode==='land'?.18:mode==='fall'?.08:mode==='crouch'?.20:0);
  mix(rig,'z',mode==='wall'?.23:mode==='turn'||mode.startsWith('ride-')?Math.max(-.22,Math.min(.22,turn*.15)):0);mix(cape,'x',mode==='fly'?.8:mode==='dash'?.95:idle+pace*.20);
  mix(head,'y',mode==='idle'?Math.sin(time*.85)*.13:0);
- const offset=mode==='slide'?-.48:mode==='ride-bike'||mode==='ride-rover'?-.43:mode==='land'?-.17*Math.min(1,landing/.22):mode==='climb'||mode==='fly'||mode==='jump'||mode==='fall'?0:Math.abs(Math.sin(phase))*.055*pace+idle*.16;
+ const offset=mode==='roll'?-.40*Math.sin(Math.PI*roll/.35):mode==='slide'?-.48:mode==='ride-bike'||mode==='ride-rover'?-.43:mode==='land'?-.17*Math.min(1,landing/.22):mode==='climb'||mode==='fly'||mode==='jump'||mode==='fall'?0:Math.abs(Math.sin(phase))*.055*pace+idle*.16;
  rig.position.y+=(offset-rig.position.y)*Math.min(1,delta*20);
 }
