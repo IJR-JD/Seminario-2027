@@ -44,7 +44,8 @@ export const landmarkSolids=landmarks.flatMap(l=>{
  if(l.kind==='eiffel')return [-1,1].flatMap(dx=>[-1,1].map(dz=>({x:l.x+dx*4.7,z:l.z+dz*4.7,hx:.85,hz:.85,y:l.y+4.8,id:'eiffel-foot-'+dx+'-'+dz})));
  return [-1,1].flatMap(dx=>[-1,1].map(dz=>({x:l.x+dx*3.65,z:dz*3.95,hx:1.05,hz:1.35,y:12.5,id:'bridge-tower-'+dx+'-'+dz})));
 });
-export const landmarkSurfaces=landmarkSolids.filter(p=>p.id.startsWith('giza-step-'));
+const eiffel=landmarks.find(l=>l.kind==='eiffel');
+export const landmarkSurfaces=[...landmarkSolids.filter(p=>p.id.startsWith('giza-step-')),...[[4.8,6.7],[9.2,3.95],[15,1.95]].map(([h,w],i)=>({id:'eiffel-level-'+i,x:eiffel.x,z:eiffel.z,hx:w/2,hz:w/2,y:eiffel.y+h+.145}))];
 export function landmarkClear(x,z,y=-Infinity,margin=.20){
  return !landmarkSolids.some(p=>Math.abs(x-p.x)<p.hx+margin&&Math.abs(z-p.z)<p.hz+margin&&y<p.y-.07);
 }
