@@ -8,6 +8,8 @@ import {createInterior} from './interior-scene.mjs';
 import {gear,anchors,jetCapacity,grappleRange,anchorLinks,selectAnchor,swingStart,swingStep,jetStep} from './island-airgear.mjs';
 import {createIslandDetail} from './island-detail.mjs';
 import {batchStaticMeshes} from './island-rendering.mjs';
+import {createRenderQuality,contextAction,labelBudget} from './playability.mjs';
+import {platformSideBlocked} from './island-vertical.mjs';
 import {landmarks,landmarkStorage,restoreLandmarks,landmarkSurfaces,landmarkClear,landmarkSegment,landmarkGround,landmarkRoute} from './island-landmarks.mjs';
 import {createMonuments} from './island-monuments.mjs';
 import {createIslandWater} from './island-water.mjs';
@@ -39,7 +41,7 @@ const towerFloor=tower=>terrain(tower.x,tower.z)+tower.h;
 const colors=['#528665','#b08656','#528baa','#618850','#71628f','#9b5d47'];
 const controls={ArrowUp:[0,-1],w:[0,-1],ArrowDown:[0,1],s:[0,1],ArrowLeft:[-1,0],a:[-1,0],ArrowRight:[1,0],d:[1,0]};
 
-export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscovery,onTraversal,onPrompt,onDialogue,onWaystation,onTrailChange,onWayfinder,onAdventure,onAdventureToast,onInterior,onInteriorDoor,onParkour,onMobility,onLandmarks}){
+export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscovery,onTraversal,onPrompt,onDialogue,onWaystation,onTrailChange,onWayfinder,onAdventure,onAdventureToast,onInterior,onInteriorDoor,onParkour,onMobility,onLandmarks,onContext}){
   let interior=null,nearBuilding=null,returnInterior=null,roomAvailable=()=>true,roomMarks=new Map();
   let interiorProgress=loadInteriorProgress(null);
   try{interiorProgress=loadInteriorProgress(JSON.parse(localStorage.getItem(interiorStorage)||'null'));}catch{}
@@ -110,7 +112,8 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   const look=new THREE.Vector3();
   let yaw=0,pitch=.62,zoom=1,drag,discardClick=false;
   const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
-  renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
+  const quality=createRenderQuality(renderer,canvas),worldLabels=[];
+  const labelPosition=new THREE.Vector3();
   renderer.outputColorSpace=THREE.SRGBColorSpace;
   scene.add(new THREE.HemisphereLight('#fff4dc','#7489a4',2.35));
   const light=new THREE.DirectionalLight('#fff8de',2.15);
@@ -406,6 +409,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   }
   // Terraced parkour: platforms have physical tops and visible numbered edges.
   const courseMarkers=[];
+  const nextDeckRing=new THREE.Mesh(new THREE.RingGeometry(.58,.66,48),new THREE.MeshBasicMaterial({color:'#f8e7a4',transparent:true,opacity:.85,depthWrite:false,side:THREE.DoubleSide}));nextDeckRing.rotation.x=-Math.PI/2;nextDeckRing.visible=false;scene.add(nextDeckRing);
   for(const c of courses){
     const entryY=elevation(c.entry.x,c.entry.z),trim=material(c.color),dark=material('#435661');
     box(2.6,.09,2.6,trim,c.entry.x,entryY+.045,c.entry.z);
@@ -670,17 +674,19 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   }
   function label(text,zone=false){
     const image=document.createElement('canvas');
-    image.width=zone?512:128;image.height=64;
+    image.width=zone?1024:256;image.height=128;
     const ctx=image.getContext('2d');
     ctx.fillStyle='#132633';
-    ctx.roundRect(7,3,image.width-14,58,15);
+    ctx.roundRect(14,6,image.width-28,116,24);
     ctx.fill();
     ctx.fillStyle='#ffffff';
-    ctx.font='bold 40px system-ui';
+    ctx.font='600 78px system-ui';
     ctx.textAlign='center';
     ctx.textBaseline='middle';
-    ctx.fillText(text,image.width/2,33);
-    const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(image),depthTest:zone?false:true}));
+    ctx.fillText(text,image.width/2,66,image.width-45);
+    const texture=new THREE.CanvasTexture(image);texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
+    const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:texture,depthTest:true,depthWrite:false,transparent:true}));
+    sprite.visible=false;worldLabels.push({sprite,major:zone,text});
     sprite.scale.set(zone?6.4:1.28,.70,1);
     return sprite;
   }
@@ -803,7 +809,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
       }
       const x0=design.anchor.x,z0=design.anchor.z;
       const entrance=z0+(z0<0?23:-23),gateY=elevation(x0,entrance);
-      const banner=label(zone.name,true);
+      const banner=label(zone.name,true);banner.userData.mapLabel=true;
       banner.position.set(x0,gateY+4.0,entrance);
       scene.add(banner);
       const stone=material(colors[zoneIndex]),gold=material('#f4d594');
@@ -919,7 +925,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
       waypoints=landmarkRoute({x:position.x,z:position.z},{x,z}).map(point=>new THREE.Vector3(point.x,0,point.z));
       target=waypoints.shift()??null;
     }catch{
-      target=null;
+      target=null;notify('No clear walking route · move into an open area and try again.');
     }
   }
   function travel(index){
@@ -981,12 +987,12 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     if(!hero||!width||!height)return;
     const aspect=width/height;
     if(width!==frame.width||height!==frame.height){
-      renderer.setSize(width,height,false);
+      quality.resize(width,height);
       frame.width=width;
       frame.height=height;
     }
     const delta=last?Math.max(0,Math.min(.05,(now-last)/1000)):0;
-    last=now;
+    last=now;quality.tick(now,width,height);
     if(interior){interior.frame({renderer,width,height,delta,now,keys,controls});return;}
     slideTime=Math.max(0,slideTime-delta);mountPose=Math.max(0,mountPose-delta);exitPose=Math.max(0,exitPose-delta);rollTime=Math.max(0,rollTime-delta);turnAmount*=Math.exp(-delta*10);
     dashWait=Math.max(0,dashWait-delta);gateLock=Math.max(0,gateLock-delta);damageLock=Math.max(0,damageLock-delta);
@@ -1011,7 +1017,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     if(climb)trail.set(0,0,0);
     if(jetting&&!airClear(position.x,position.z,elevation(position.x,position.z)+air,elevation)){jetHeight=Math.min(13,Math.max(jetHeight,air+1));air=jetHeight;jetInput=0;}
     const normalMotion=!ride&&!lift&&!climb&&deck===null&&!flying&&!jetting&&!airborneGear&&!wallRunning;
-    const previousFeet=elevation(position.x,position.z)+air;
+    const previousFeet=elevation(position.x,position.z)+air,fromX=position.x,fromZ=position.z;
     if(normalMotion){if(!vertical)vertical=makeVertical(previousFeet,velocity,!air&&!velocity);}
     else{vertical=null;moveVelocity={x:0,z:0};assist=null;jumpRequest=jumpRelease=false;}
     const distance=trail.length();
@@ -1075,8 +1081,9 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
       const highSupport=vertical?.support?.startsWith('frontier-')||normalMotion&&air>15;
       const valid=highSupport?shore(nextX,nextZ)<.91:jetting?airClear(nextX,nextZ,elevation(nextX,nextZ)+air,elevation):flying?airSafe(nextX,nextZ):wallRunning?onWallLane(nextX,nextZ)&&groundSafe(nextX,nextZ):segmentSafe(position,{x:nextX,z:nextZ});
       const feet=deck!==null?towerFloor(towers[deck]):vertical?.y??previousFeet;
-      const monumentSafe=landmarkSegment(position,{x:nextX,z:nextZ},feet,0.12);
-      if(valid&&monumentSafe&&onDeck&&(flying||jetting||crouched||!lowCeiling(nextX,nextZ))){
+      const monumentSafe=landmarkSegment(position,{x:nextX,z:nextZ},feet,.20);
+      const slabBlocked=normalMotion&&platformSideBlocked(platformList,position,{x:nextX,z:nextZ},feet,crouched?.9:1.65);
+      if(valid&&monumentSafe&&!slabBlocked&&onDeck&&(flying||jetting||crouched||!lowCeiling(nextX,nextZ))){
         position.set(nextX,0,nextZ);
         if(landmarkGround(nextX,nextZ)&&!flying&&!jetting&&!wallRunning&&!air&&!trapModels.some(t=>Math.hypot(t.x-nextX,t.z-nextZ)<t.r+1.2))safeSpot.copy(position);
       }
@@ -1085,11 +1092,12 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
         const exit=passage.z+(target.z<passage.z?-3:3);
         waypoints.unshift(new THREE.Vector3(side,0,exit),target);
         target=new THREE.Vector3(side,0,position.z);
-      }else {target=null;waypoints=[];moveVelocity={x:0,z:0};assist=null;}
+      }else if(slabBlocked&&assist){/* keep the jump target until the feet clear the deck */}
+      else {if(target)notify('Route interrupted · select a nearby destination or continue on foot.');target=null;waypoints=[];moveVelocity={x:0,z:0};assist=null;}
     }else if(target)target=waypoints.shift()??null;
     if(normalMotion){
       const before=vertical.support,impact=vertical.vy;
-      vertical=verticalStep(vertical,{x:position.x,z:position.z,ground:elevation(position.x,position.z),surfaces:surfaceList(),dt:delta,jump:jumpRequest,release:jumpRelease&&!assist,jumpScale:!assist&&skills.has('spring')?1.20:1});
+      vertical=verticalStep(vertical,{x:position.x,z:position.z,ground:elevation(position.x,position.z),surfaces:surfaceList(),dt:delta,fromX,fromZ,jump:jumpRequest,release:jumpRelease&&!assist,jumpScale:!assist&&skills.has('spring')?1.20:1});
       jumpRequest=jumpRelease=false;
       air=Math.max(0,vertical.y-elevation(position.x,position.z));velocity=vertical.vy;
       if(vertical.landed){
@@ -1317,8 +1325,15 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
       onPrompt(point&&Math.abs(point.x)<.94&&Math.abs(point.y)<.92&&Math.abs(point.z)<1?
         {room:near,guide:nearbyGuide?.name,x:(point.x+1)*50,y:(1-point.y)*50}:null);
     }
+    const park=parkourState(),next=park.canAssist?courses.find(c=>c.id===park.course)?.pads[park.step]:null;
+    nextDeckRing.visible=!!next&&!mapMode;
+    if(next){nextDeckRing.position.set(next.x,next.y+.035,next.z);nextDeckRing.scale.setScalar(1+.10*Math.sin(time*4));}
+    const mob=mobilityState();
+    const cue=contextAction({riding:!!ride,parking,lifting:!!lift,portal:near,available:near!==undefined&&roomAvailable(near),title:near===undefined?'':'room '+String(near+1).padStart(2,'0'),building:!!nearBuilding,gate:!!activeGate,ladder:ladder()>=0,parkour:park.canAssist,vehicle:!!mob.nearest,guide:nearbyGuide?.name,route:!!target});
+    const cueSignature=JSON.stringify(cue);if(cueSignature!==frame.cueSignature){frame.cueSignature=cueSignature;onContext?.(cue);}
+    if(now-(frame.labelAt??-1000)>180){frame.labelAt=now;const entries=worldLabels.map((l,id)=>{l.sprite.getWorldPosition(labelPosition);return {id,distance:labelPosition.distanceTo(hero.position),major:l.sprite.userData.mapLabel===true,visible:l.sprite.parent?.visible!==false};});const visible=new Set(labelBudget(entries,{map:mapMode,limit:6}));for(const [id,l] of worldLabels.entries())l.sprite.visible=visible.has(id);canvas.dataset.visibleLabels=String(visible.size);}
     renderer.render(scene,camera);
-    if(now-(frame.metricsAt??-1000)>500){frame.metricsAt=now;canvas.dataset.drawCalls=String(renderer.info.render.calls);canvas.dataset.triangles=String(renderer.info.render.triangles);}
+    if(now-(frame.metricsAt??-1000)>500){frame.metricsAt=now;canvas.dataset.drawCalls=String(renderer.info.render.calls);canvas.dataset.triangles=String(renderer.info.render.triangles);canvas.dataset.playerX=position.x.toFixed(2);canvas.dataset.playerZ=position.z.toFixed(2);canvas.dataset.playerY=hero.position.y.toFixed(2);canvas.dataset.routeActive=String(!!target);canvas.dataset.support=vertical?.support??'';}
   }
   function setMapMode(enabled){
     if(interior)return;
@@ -1335,7 +1350,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     else if(activeGate)action('gate');
     else if(nearbyGuide)onDialogue?.(nearbyGuide);
   }
-  return {addZones,visit,travel,frame,setMapMode,adjustCamera,action,setMovementKey,interact,trailState,setWaypoint,adventureState,locateAdventure,locateBuilding,enterBuilding,interiorWalk:id=>interior?.walkTo(id),interiorInteract:id=>interior?.interact(id),interiorState:()=>interior?.state()??null,interiorProgress:()=>({...interiorProgress}),parkourState,locateCourse,assistJump,mobilityState,locateDepot,mountVehicle,activateFrontier,setSectorProgress,landmarkState,locateLandmark,
+  return {addZones,visit,travel,frame,setMapMode,adjustCamera,action,setMovementKey,interact,trailState,setWaypoint,adventureState,locateAdventure,locateBuilding,enterBuilding,interiorWalk:id=>interior?.walkTo(id),interiorInteract:id=>interior?.interact(id),interiorState:()=>interior?.state()??null,interiorProgress:()=>({...interiorProgress}),parkourState,locateCourse,assistJump,mobilityState,locateDepot,mountVehicle,activateFrontier,setSectorProgress,landmarkState,locateLandmark,setQuality:quality.setMode,
     districtMap:()=>[...portals.values()].map(({index,x,z,upper,deck,topic,storeys})=>({index,x,z,upper,deck,topic,storeys})),
     discoveries:()=>[discovered.size,secrets.length]};
 }
