@@ -688,3 +688,10 @@ body:has(.roomStudio)>.topbar nav a:hover,body:has(.roomStudio)>.topbar nav butt
   .roomStudio .editorTools{max-height:65px}
   .roomStudio .editorPanel{min-height:410px}
 }
+
+/* Compact laptop dock: keep the code workspace readable in advanced rooms. */
+@media(min-width:901px) and (max-width:1200px){
+  .roomStudio .missionBrief{max-height:105px}
+  .roomStudio .outputDock{max-height:80px}
+  .roomStudio .codeArea{min-height:126px}
+}
