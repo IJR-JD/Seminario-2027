@@ -695,3 +695,24 @@ body:has(.roomStudio)>.topbar nav a:hover,body:has(.roomStudio)>.topbar nav butt
   .roomStudio .outputDock{max-height:80px}
   .roomStudio .codeArea{min-height:126px}
 }
+
+/* Adventure interface: compact hotbar and journal, original room UI untouched. */
+.adventureHotbar{position:absolute;z-index:3;bottom:12px;left:50%;transform:translateX(-50%);display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:5px;background:#142634ed;border:1px solid #b49a6b;border-radius:10px;padding:7px;max-width:calc(100% - 26px);color:#f3e7d2;font:600 11px system-ui;box-shadow:0 4px 14px #13263480}
+.adventureHotbar button{border:1px solid #657b8d;border-radius:6px;padding:8px 9px;background:#22394b;color:#bdccd5;min-height:36px;font-size:12px;font-weight:750}
+.adventureHotbar button[data-unlocked="true"]{background:#2e6b65;color:#effff4;border-color:#8be2c0}
+.adventureHotbar button[aria-pressed="true"]{background:#e9cf8c;color:#193345}
+#adventureFuel:empty{display:none}
+.adventureHotbar #adventureProgress{color:#ffe2a4;padding-inline:3px}
+.adventurePanel{z-index:5}
+#missionPicker .overworld:has(.adventurePanel:not([hidden])) .islandHelp{display:none}
+#missionPicker .overworld:has(.adventurePanel:not([hidden])) .adventureHotbar{display:none}
+#missionPicker .islandTraversal{bottom:75px}
+@media(max-width:700px){
+ .adventureHotbar{bottom:7px;width:calc(100% - 20px);gap:3px;padding:5px}
+ .adventureHotbar button{min-height:34px;padding:5px 7px;font-size:10px}
+ #adventureProgress,#adventureFuel{font-size:10px}
+ #missionPicker .islandTraversal{bottom:92px}
+ #missionPicker .islandDpad{bottom:185px}
+ #missionPicker .islandHelp{top:122px}
+ .adventurePanel{top:136px;bottom:100px}
+}
