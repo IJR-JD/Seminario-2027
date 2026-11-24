@@ -27,7 +27,7 @@ async function open(unlocked){
  assert(metrics.savings>100&&metrics.originals>metrics.batches);console.log('PASS live renderer metrics '+JSON.stringify(metrics));
 }
 async function go(selector){
- await page.locator('#mobilityToggle').click();
+ if(!(await page.locator('#exploreMenu').evaluate(el=>el.open)))await page.locator('#exploreMenu summary').click();await page.locator('#mobilityToggle').click();
  await page.locator(selector).click();
 }
 const wait=(fn,arg,timeout=60000)=>page.waitForFunction(fn,arg,{timeout});
