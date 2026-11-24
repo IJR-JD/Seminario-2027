@@ -4,11 +4,13 @@ export function createIslandAvatar(settings={}){
  const root=new THREE.Group(),rig=new THREE.Group();root.add(rig);
  const color=(value,fallback)=>new THREE.MeshStandardMaterial({color:value||fallback,roughness:.72});
  const skin=color(settings.skin,'#d7a880'),armor=color(settings.armor,'#48796b'),hair=color(settings.hair,'#292b31'),capeMat=color(settings.cape,'#b4a27f'),dark=color('#263746'),trim=color('#d7be82'),eye=color('#273342');
- const box=(parent,w,h,d,mat,x,y,z)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);m.position.set(x,y,z);parent.add(m);return m;};
+ const geometries=new Map();
+ const box=(parent,w,h,d,mat,x,y,z)=>{const key=[w,h,d].join(',');if(!geometries.has(key))geometries.set(key,new THREE.BoxGeometry(w,h,d));const m=new THREE.Mesh(geometries.get(key),mat);m.position.set(x,y,z);parent.add(m);return m;};
  const pivot=(x,y,z)=>{const p=new THREE.Group();p.position.set(x,y,z);rig.add(p);return p;};
  box(rig,.76,.72,.43,armor,0,1.15,0);
  box(rig,.78,.13,.46,dark,0,.83,0);
  box(rig,.28,.22,.045,trim,0,1.26,.24);
+ box(rig,.50,.16,.055,dark,0,1.43,.244);box(rig,.46,.035,.06,trim,0,1.50,.248);
  const head=pivot(0,1.65,0);
  box(head,.58,.53,.53,skin,0,.18,0);
  box(head,.60,.15,.55,hair,0,.43,0);
@@ -31,8 +33,8 @@ export function createIslandAvatar(settings={}){
  const metal=color('#839eaa'),cyan=color('#79d9e3'),orange=color('#f0a868');
  for(const side of [-1,1]){
   box(rig,.10,.60,.048,trim,side*.24,1.15,.24);
-  box(knees[side===1?1:0],.29,.13,.37,metal,0,-.12,.015);
-  box(elbows[side===1?1:0],.28,.12,.34,trim,0,-.05,0);
+  box(knees[side===1?1:0],.29,.13,.37,metal,0,-.12,.015);box(legs[side===1?1:0],.27,.08,.36,trim,0,-.32,.012);
+  box(elbows[side===1?1:0],.28,.12,.34,trim,0,-.05,0);box(arms[side===1?1:0],.30,.11,.36,metal,0,-.04,.012);
   box(head,.09,.022,.026,hair,side*.13,.28,.278);
  }
  box(rig,.21,.13,.07,metal,0,.83,.26);
@@ -57,9 +59,9 @@ export function createIslandAvatar(settings={}){
  root.userData={rig,arms,legs,knees,elbows,cape,head,wings,harness,pack};return root;
 }
 export function animateIslandAvatar(hero,{time=0,delta=.016,pace=0,mode='idle',phase=0,gear=[],landing=0,turn=0,roll=0}={}){
- const {rig,arms,legs,cape,head,wings,harness,pack}=hero.userData;
+ const {rig,arms,legs,knees,elbows,cape,head,wings,harness,pack}=hero.userData;
  harness.visible=gear.includes('grapple');pack.visible=gear.includes('jetpack');cape.visible=!pack.visible;
- const smooth=Math.min(1,delta*17),mix=(obj,axis,value)=>obj.rotation[axis]+=(value-obj.rotation[axis])*smooth;
+ const smooth=1-Math.exp(-Math.max(0,delta)*17),mix=(obj,axis,value)=>obj.rotation[axis]+=(value-obj.rotation[axis])*smooth;
  const swing=Math.sin(phase)*(mode==='sprint'?1.12:mode==='run'?.88:.57)*pace;
  const idle=Math.sin(time*2.2)*.025;
  for(let i=0;i<2;i++){
@@ -89,5 +91,5 @@ export function animateIslandAvatar(hero,{time=0,delta=.016,pace=0,mode='idle',p
  mix(rig,'z',mode==='wall'?.23:mode==='turn'||mode.startsWith('ride-')?Math.max(-.22,Math.min(.22,turn*.15)):0);mix(cape,'x',mode==='fly'?.8:mode==='dash'?.95:idle+pace*.20);
  mix(head,'y',mode==='idle'?Math.sin(time*.85)*.13:0);
  const offset=mode==='roll'?-.40*Math.sin(Math.PI*roll/.35):mode==='slide'?-.48:mode==='ride-bike'||mode==='ride-rover'?-.43:mode==='land'?-.17*Math.min(1,landing/.22):mode==='climb'||mode==='fly'||mode==='jump'||mode==='fall'?0:Math.abs(Math.sin(phase))*.055*pace+idle*.16;
- rig.position.y+=(offset-rig.position.y)*Math.min(1,delta*20);
+ rig.position.y+=(offset-rig.position.y)*(1-Math.exp(-Math.max(0,delta)*20));
 }
