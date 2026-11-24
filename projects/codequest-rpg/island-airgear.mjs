@@ -59,7 +59,7 @@ export function selectAnchor(position,points,heading={x:0,z:1},exclude=null){
 }
 export function swingStart(position,anchor,heading,momentum=null){
  const dx=position.x-anchor.x,dy=position.y-anchor.y,dz=position.z-anchor.z;
- return {x:position.x,y:position.y,z:position.z,vx:momentum?.vx??heading.x*9,vy:momentum?.vy??4,vz:momentum?.vz??heading.z*9,length:Math.max(5,Math.hypot(dx,dy,dz)),time:0};
+ return {x:position.x,y:position.y,z:position.z,vx:momentum?.vx??heading.x*9,vy:momentum?.vy??10,vz:momentum?.vz??heading.z*9,length:Math.max(5,Math.hypot(dx,dy,dz)),time:0};
 }
 export function swingStep(state,anchor,input,dt){
  // Semi-implicit integration plus a unilateral rope constraint. Gravity and
@@ -78,7 +78,7 @@ export function swingStep(state,anchor,input,dt){
    if(radial>0){s.vx-=radial*dx;s.vy-=radial*dy;s.vz-=radial*dz;}
   }
   // Slowly reel in the tether, then let gravity carry momentum.
-  s.length=Math.max(5,s.length-h*.75);
+  s.length=Math.max(5,s.length-h*2.1);
   s.time+=h;
  }
  return s;
