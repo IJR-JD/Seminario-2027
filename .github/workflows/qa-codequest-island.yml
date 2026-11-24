@@ -36,6 +36,7 @@ jobs:
           node --check projects/codequest-rpg/island-mobility.mjs
           node --check projects/codequest-rpg/island-vehicles.mjs
           node --check projects/codequest-rpg/island-rendering.mjs
+          node --check projects/codequest-rpg/island-columns.mjs
       - name: Test all CodeQuest room and island mechanics
         run: |
           node scripts/qa-codequest.mjs
@@ -46,6 +47,7 @@ jobs:
           node scripts/qa-codequest-airgear.mjs
           node scripts/qa-codequest-interiors.mjs
           node scripts/qa-codequest-vertical.mjs
+          node scripts/qa-codequest-columns.mjs
           node scripts/qa-codequest-mobility.mjs
           node scripts/qa-codequest-models.mjs
   browser:
