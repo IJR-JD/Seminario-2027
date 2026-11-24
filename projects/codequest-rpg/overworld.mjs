@@ -3,7 +3,7 @@ import {islandBounds as bounds,islandCrossings as crossings,shore,isIslandWalkab
 import {islandDistricts,villageHouses,secondFloorHeight,roomLocation} from './island-villages.mjs';
 import {adventureKey,shrines,travelGates,circuits,traps,wallLane,flightLimit,dashDuration,dashCooldown,blocked,groundSafe,airSafe,airClear,onWallLane,trapActive,restoreProgress,padResult,routeAdventure,segmentSafe} from './island-adventure.mjs';
 import {animateIslandAvatar} from './island-avatar.mjs';
-import {gear,anchors,jetCapacity,selectAnchor,swingStart,swingStep,jetStep} from './island-airgear.mjs';
+import {gear,anchors,jetCapacity,grappleRange,anchorLinks,selectAnchor,swingStart,swingStep,jetStep} from './island-airgear.mjs';
 import {createIslandDetail} from './island-detail.mjs';
 
 const river=z=>Math.abs(z)<3.3;
@@ -42,6 +42,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   const trialState=new Map(circuits.map(c=>[c.id,{next:0,used:!c.requires}]));
   let dashLeft=0,dashWait=0,flightLeft=flightLimit,flying=false,wallRunning=false,gateLock=0,damageLock=0;
   let jetting=false,jetFuel=jetCapacity,jetHeight=2,swing=null,releaseMotion=null,jetInput=0;
+  let nextAnchor=null,lastAnchor=null,transfers=0;
   const dashVector=new THREE.Vector3(),safeSpot=new THREE.Vector3();
   let lastAdventure='',activeGate=null,activePad=null;
   function saveAdventure(){
@@ -51,7 +52,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   function notify(message){onAdventureToast?.(message);}
   function adventureState(){
     return {powers:[...unlocked],circuits:[...solved],setbacks:adventure.setbacks,
-      flying,wallRunning,jetting,jetFuel:Math.ceil(jetFuel*10)/10,grappling:!!swing,anchor:swing?.anchor.id??null,flight:Math.ceil(flightLeft*10)/10,dashReady:dashWait<=0,gate:activeGate?.name??null,
+      flying,wallRunning,jetting,jetFuel:Math.ceil(jetFuel*10)/10,grappling:!!swing,anchor:swing?.anchor.id??null,nextAnchor:nextAnchor?.id??null,anchorCount:anchors.length,transfers,flight:Math.ceil(flightLeft*10)/10,dashReady:dashWait<=0,gate:activeGate?.name??null,
       progress:Object.fromEntries([...trialState].map(([id,p])=>[id,p.next]))};
   }
   function publishAdventure(){
@@ -88,7 +89,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     scene.add(mesh);
     return mesh;
   }
-  const details=createIslandDetail(scene,{elevation,groundSafe,blocked,landmarks:[...shrines,...gear,...travelGates,...circuits,...pythonWaystations]});
+  const details=createIslandDetail(scene,{elevation,groundSafe,blocked,landmarks:[...shrines,...gear,...travelGates,...circuits,...pythonWaystations,...anchors]});
   const water=new THREE.Mesh(new THREE.PlaneGeometry(420,420),new THREE.MeshStandardMaterial({color:'#258dac',roughness:.48,map:details.water}));
   water.rotation.x=-Math.PI/2;
   water.position.y=-1;
@@ -310,22 +311,72 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     box(.15,.14,1.75,material('#c3aaff'),wallLane.x-.43,y+1.6,z);
   }
   // Elevated attachment towers: original tether anchors with glowing target rings.
+  // Four original structural families. Shared instanced geometry keeps the
+  // much denser network affordable on integrated GPUs.
+  const structureParts=new Map(),temp=new THREE.Object3D();
+  function structuralPart(color,x,y,z,w,h,d,rx=0,ry=0,rz=0){
+    if(!structureParts.has(color))structureParts.set(color,[]);
+    structureParts.get(color).push({x,y,z,w,h,d,rx,ry,rz});
+  }
+  const sp=structuralPart;
+  const anchorRingGeometry=new THREE.TorusGeometry(.58,.13,10,24);
   const anchorModels=anchors.map(p=>{
-    const y=elevation(p.x,p.z),top=y+p.h;
-    const steel=material('#586e78'),brace=material('#8b9e9d'),copper=material('#bb9b65');
-    box(2.5,.35,2.5,steel,p.x,y+.15,p.z);
-    for(const side of [-1,1]){
-      box(.28,p.h,.28,steel,p.x+side*.62,y+p.h/2,p.z);
-      for(let h=1;h<p.h;h+=2.2){
-        const beam=box(.12,2.45,.12,brace,p.x,y+h,p.z);
-        beam.rotation.z=side*.48;
+    const y=elevation(p.x,p.z),top=y+p.h,x=p.x,z=p.z,h=p.h;
+    const steel='#586e78',brace='#8b9e9d',copper='#bb9b65',stone='#87939a',dark='#3b4e5a';
+    sp(stone,x,y+.14,z,3.5,.28,3.1);
+    if(p.kind==='arch'){
+      for(const side of [-1,1]){
+        sp(stone,x+side*1.55,y+(h-1)/2,z,.72,h-1,.85);
+        sp(copper,x+side*1.55,y+h-1.1,z,1.02,.24,1.12);
+        sp(brace,x+side*.95,top-1.45,z,.34,2.1,.55,0,0,-side*.64);
+        sp(dark,x+side*1.55,y+.4,z,1.12,.48,1.16);
       }
+      sp(stone,x,top-.55,z,4.4,.72,.85);
+    }else if(p.kind==='crane'){
+      const mx=x-1.55;
+      for(const side of [-1,1]){
+        sp(steel,mx+side*.44,y+h/2,z,.18,h,.23);
+        for(let j=1;j<h-1;j+=2.3)sp(brace,mx,y+j,z,.12,2.45,.14,0,0,side*.40);
+      }
+      sp(copper,mx+.85,top-.38,z,5.5,.3,.68);
+      sp(dark,mx-1.5,top-.8,z,1.2,.82,.9);
+      sp(brace,mx+.65,top+.38,z,3.4,.10,.14,0,0,-.32);
+      sp(steel,x,top-.05,z,.20,.65,.20);
+    }else if(p.kind==='obelisk'){
+      sp(stone,x,y+.45,z,2.5,.6,2.5);
+      sp(stone,x,y+h/2,z,1.25,h-1,1.25);
+      for(let j=2;j<h-1;j+=2.5)sp(brace,x,y+j,z,1.42,.15,1.42);
+      sp(copper,x,top-.8,z,2,.28,2);
+      sp(dark,x,top-.45,z,.9,.6,.9);
+    }else{
+      for(const side of [-1,1]){
+        sp(steel,x+side*.83,y+h/2,z,.28,h,.36);
+        for(let j=1;j<h-1;j+=2.2)sp(brace,x,y+j,z,.12,2.5,.14,0,0,side*.62);
+      }
+      sp(copper,x,top-.4,z,2.45,.25,1.6);
+      sp(dark,x,top-.8,z,1.15,.42,1.08);
     }
-    box(2.2,.22,1.4,copper,p.x,top-.35,p.z);
-    const ring=new THREE.Mesh(new THREE.TorusGeometry(.58,.13,10,24),new THREE.MeshStandardMaterial({color:'#8cece7',emissive:'#55c8d6',emissiveIntensity:.65}));
-    ring.position.set(p.x,top,p.z);scene.add(ring);
+    const ring=new THREE.Mesh(anchorRingGeometry,new THREE.MeshStandardMaterial({color:'#8cece7',emissive:'#55c8d6',emissiveIntensity:.65}));
+    ring.position.set(x,top,z);scene.add(ring);
     return {...p,y:top,ring};
   });
+  for(const [color,parts] of structureParts){
+    const mesh=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),material(color),parts.length);
+    parts.forEach((p,i)=>{temp.position.set(p.x,p.y,p.z);temp.rotation.set(p.rx,p.ry,p.rz);temp.scale.set(p.w,p.h,p.d);temp.updateMatrix();mesh.setMatrixAt(i,temp.matrix);});
+    mesh.instanceMatrix.needsUpdate=true;mesh.computeBoundingSphere();scene.add(mesh);
+  }
+  const networkPoints=new Map(anchorModels.map(p=>[p.id,p]));
+  const linkVertices=[];
+  for(const [a,b] of anchorLinks(anchorModels)){
+    const p=networkPoints.get(a),q=networkPoints.get(b);
+    linkVertices.push(p.x,p.y+.1,p.z,q.x,q.y+.1,q.z);
+  }
+  const networkGeometry=new THREE.BufferGeometry();
+  networkGeometry.setAttribute('position',new THREE.Float32BufferAttribute(linkVertices,3));
+  const networkLines=new THREE.LineSegments(networkGeometry,new THREE.LineBasicMaterial({color:'#8df8f0',transparent:true,opacity:.52,depthTest:false}));
+  networkLines.visible=false;networkLines.renderOrder=6;scene.add(networkLines);
+  const targetRing=new THREE.Mesh(new THREE.TorusGeometry(.85,.075,8,28),new THREE.MeshBasicMaterial({color:'#ffe4a6',depthTest:false,transparent:true,opacity:.8}));
+  targetRing.visible=false;targetRing.renderOrder=7;scene.add(targetRing);
   const ropeGeometry=new THREE.BufferGeometry();
   ropeGeometry.setAttribute('position',new THREE.BufferAttribute(new Float32Array(6),3));
   const rope=new THREE.Line(ropeGeometry,new THREE.LineBasicMaterial({color:'#c7fcff'}));rope.frustumCulled=false;rope.visible=false;scene.add(rope);
@@ -350,15 +401,22 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   }
   function action(key){
     if(!hero)return;
-    if(key==='grapple'){
+    if(key==='grapple'||key==='transfer'){
       if(!unlocked.has('grapple')){notify('Find the Tether Workshop to unlock the harness.');return;}
-      if(swing){releaseMotion={vx:swing.state.vx,vy:swing.state.vy,vz:swing.state.vz};swing=null;rope.visible=false;return;}
+      const transfer=key==='transfer';
+      if(swing&&!transfer){releaseMotion={vx:swing.state.vx,vy:swing.state.vy,vz:swing.state.vz};lastAnchor=swing.anchor.id;swing=null;rope.visible=false;return;}
+      if(transfer&&!swing){notify('Attach a tether first, then Y to switch anchors.');return;}
       if(climb||deck!==null||crouched||jetting||flying||wallRunning)return;
+      const momentum=swing?.state??releaseMotion;
       const heading={x:Math.sin(hero.rotation.y),z:Math.cos(hero.rotation.y)};
-      const origin={x:position.x,y:elevation(position.x,position.z)+Math.max(air,2.5),z:position.z};
-      const anchor=selectAnchor(origin,anchorModels,heading);
-      if(!anchor){notify('No anchor in range · approach a cyan tower.');return;}
-      swing={anchor,state:swingStart(origin,anchor,heading)};releaseMotion=null;target=null;waypoints=[];dashLeft=0;velocity=0;notify('Tether attached · steer with WASD, T to release.');return;
+      const origin={x:position.x,y:elevation(position.x,position.z)+(momentum?air:Math.max(air,2.5)),z:position.z};
+      const exclude=swing?.anchor.id??(releaseMotion?lastAnchor:null);
+      const anchor=selectAnchor(origin,anchorModels,heading,exclude)??(!transfer?selectAnchor(origin,anchorModels,heading):null);
+      if(!anchor){notify('No other anchor in range · steer toward a cyan structure.');return;}
+      if(swing||releaseMotion)transfers++;
+      lastAnchor=swing?.anchor.id??lastAnchor;
+      swing={anchor,state:swingStart(origin,anchor,heading,momentum)};releaseMotion=null;target=null;waypoints=[];dashLeft=0;velocity=0;
+      notify(transfer?'Anchor transferred · momentum retained.':'Tether attached · steer with WASD, Y transfer, T release.');return;
     }
     if(key==='jetpack'){
       if(!unlocked.has('jetpack')){notify('Find the Jetpack Forge to unlock the thrusters.');return;}
@@ -610,13 +668,13 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   });
   canvas.addEventListener('keydown',event=>{
     const key=event.key.length===1?event.key.toLowerCase():event.key;
-    if([' ','c','f','q','e','r','x','v','b','g','t','j','+','=','-'].includes(key)){
+    if([' ','c','f','q','e','r','x','v','b','g','t','y','j','+','=','-'].includes(key)){
       event.preventDefault();
       if(event.repeat)return;
       if(key==='q'||key==='e')adjustCamera(key==='q'?.3:-.3);
       else if(['+','=','-'].includes(key))adjustCamera(0,key==='-'?1.18:1/1.18);
       else if(key==='r'){if(nearbyGuide)onDialogue?.(nearbyGuide);}
-      else action({' ':'jump',c:'crouch',f:'climb',x:'dash',v:'fly',b:'wall',g:'gate',t:'grapple',j:'jetpack'}[key]);
+      else action({' ':'jump',c:'crouch',f:'climb',x:'dash',v:'fly',b:'wall',g:'gate',t:'grapple',y:'transfer',j:'jetpack'}[key]);
       return;
     }
     if(key==='Shift'){keys.add(key);return;}
@@ -671,7 +729,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     waypoints=[];
     gait=0;pace=0;air=0;velocity=0;deck=null;climb=null;crouched=false;
     dashLeft=0;dashWait=0;flightLeft=flightLimit;flying=false;wallRunning=false;gateLock=0;damageLock=0;activePad=null;activeGate=null;safeSpot.copy(position);
-    jetting=false;jetFuel=jetCapacity;jetHeight=2;jetInput=0;swing=null;releaseMotion=null;rope.visible=false;
+    jetting=false;jetFuel=jetCapacity;jetHeight=2;jetInput=0;swing=null;releaseMotion=null;rope.visible=false;nextAnchor=null;lastAnchor=null;transfers=0;
     baseHeight=hero.scale.y;
     keys.clear();
     near=undefined;
@@ -734,7 +792,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
         swing=null;releaseMotion=null;air=0;velocity=0;
       }else{
         position.set(current.x,0,current.z);air=current.y-groundY;
-        if(swing){swing.state=current;if(current.time>9){releaseMotion={vx:current.vx,vy:current.vy,vz:current.vz};swing=null;}}
+        if(swing){swing.state=current;if(current.time>9){releaseMotion={vx:current.vx,vy:current.vy,vz:current.vz};lastAnchor=swing.anchor.id;swing=null;}}
         const v=swing?.state??releaseMotion;
         if(v)hero.rotation.y=Math.atan2(v.vx,v.vz);
       }
@@ -842,10 +900,15 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     rope.visible=!!swing;
     if(swing){const p=ropeGeometry.attributes.position;p.setXYZ(0,hero.position.x,hero.position.y+1.45,hero.position.z);p.setXYZ(1,swing.anchor.x,swing.anchor.y,swing.anchor.z);p.needsUpdate=true;}
     for(const [i,fx] of jetFx.entries()){fx.visible=jetting;fx.position.set(hero.position.x+(i?1:-1)*.27*Math.cos(hero.rotation.y)-.30*Math.sin(hero.rotation.y),hero.position.y+.43,hero.position.z-(i?1:-1)*.27*Math.sin(hero.rotation.y)-.30*Math.cos(hero.rotation.y));fx.scale.y=.65+.4*Math.sin(time*24+i);}
-    for(const a of anchorModels){a.ring.rotation.y=time*.7;a.ring.material.emissiveIntensity=swing?.anchor===a?1.5:.55+.16*Math.sin(time*3);}
+    const origin={x:position.x,y:elevation(position.x,position.z)+(swing||releaseMotion?air:Math.max(air,2.5)),z:position.z};
+    nextAnchor=unlocked.has('grapple')?selectAnchor(origin,anchorModels,{x:Math.sin(hero.rotation.y),z:Math.cos(hero.rotation.y)},swing?.anchor.id??(releaseMotion?lastAnchor:null)):null;
+    for(const a of anchorModels){a.ring.rotation.y=time*.7;a.ring.material.emissiveIntensity=swing?.anchor===a?1.5:nextAnchor===a?1.8:.45+.12*Math.sin(time*3);}
+    targetRing.visible=!!nextAnchor&&!mapMode;
+    if(nextAnchor){targetRing.position.copy(nextAnchor.ring.position);targetRing.quaternion.copy(follow.quaternion);targetRing.scale.setScalar(1+.12*Math.sin(time*5));}
+    networkLines.visible=mapMode&&unlocked.has('grapple');
     details.update(time,delta,mapMode);
     light.intensity=2.05+.20*Math.sin(time*.035);
-    onTraversal?.(swing?'Tether swing · T release':releaseMotion?'Aerial release':jetting?'Jetpack · '+jetFuel.toFixed(1)+'s · '+air.toFixed(1)+'m':climb?'Climbing':flying?'Flying · '+flightLeft.toFixed(1)+'s':wallRunning?'Wall running':dashing?'Dash':activeGate?'Travel gate · G':ladder()>=0?'Ladder nearby · F':lowCeiling(position.x,position.z)?'Low passage · C':crouched?'Crouching':air>0?'Jumping':'');
+    onTraversal?.(swing?'Tether swing · Y transfer · T release':releaseMotion?'Aerial release':jetting?'Jetpack · '+jetFuel.toFixed(1)+'s · '+air.toFixed(1)+'m':climb?'Climbing':flying?'Flying · '+flightLeft.toFixed(1)+'s':wallRunning?'Wall running':dashing?'Dash':activeGate?'Travel gate · G':ladder()>=0?'Ladder nearby · F':lowCeiling(position.x,position.z)?'Low passage · C':crouched?'Crouching':air>0?'Jumping':'');
     publishAdventure();
     if(mapMode){
       const extent=Math.max(132,163/aspect)*zoom;
