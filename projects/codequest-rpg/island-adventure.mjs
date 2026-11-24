@@ -76,7 +76,7 @@ export function routeAdventure(start,end){
 
 // Aerial gear can clear the roof; ordinary walking and low flight stay solid.
 export function airClear(x,z,y,elevation){
- if(!Number.isFinite(y)||shore(x,z)>=.89)return false;
+ if(!Number.isFinite(x)||!Number.isFinite(z)||!Number.isFinite(y)||shore(x,z)>=.91)return false;
  for(const b of buildingFootprints)if(Math.abs(x-b.x)<b.hx&&Math.abs(z-b.z)<b.hz&&y<elevation(b.x,b.z)+b.height+.35)return false;
  if(Math.abs(x-wallLane.x)<.7&&z>wallLane.minZ-1&&z<wallLane.maxZ+1&&y<elevation(x,z)+3.65)return false;
  return true;
