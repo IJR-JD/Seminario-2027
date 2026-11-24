@@ -33,6 +33,7 @@ try{
  await open(4);
  await page.screenshot({path:'qa-codequest/dynamic-village.png'});
  await unlock('grapple');
+ await page.locator('.adventureHotbar').evaluate(el=>el.open=true);
  await page.locator('[data-power="grapple"]').click();
  await page.waitForFunction(()=>document.querySelector('#islandTraversalStatus')?.textContent.includes('Tether swing'),null,{timeout:15000});
  await page.waitForFunction(()=>document.querySelector('#tetherNetwork')?.dataset.next&&document.querySelector('#tetherNetwork')?.dataset.anchor,null,{timeout:12000});
