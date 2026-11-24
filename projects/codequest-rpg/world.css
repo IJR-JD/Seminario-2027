@@ -757,3 +757,9 @@ body:has(.roomStudio)>.topbar nav a:hover,body:has(.roomStudio)>.topbar nav butt
 .mobilityHUD{position:absolute;z-index:4;left:14px;bottom:220px;display:flex;flex-wrap:wrap;align-items:center;gap:7px;padding:9px 12px;background:#193843ee;border:1px solid #c8b17b;color:#f1e8cf;border-radius:10px;max-width:min(360px,calc(100% - 28px))}
 .mobilityHUD div{flex-basis:100%}.mobilityHUD strong,.mobilityHUD small{display:block}.mobilityHUD small{font-size:11px;color:#b4d5d4}.mobilityHUD button{padding:7px 10px;background:#d6bd86;color:#243943;border:0;border-radius:6px;font-weight:700}.mobilityHUD button:disabled{opacity:.45}.mobilityHUD[hidden],.mobilityHUD button[hidden],#mobilityPanel[hidden],#missionPicker.insideBuilding .mobilityHUD{display:none!important}
 @media(max-width:700px){.mobilityHUD{left:10px;bottom:400px;padding:7px;max-width:calc(100% - 20px);font-size:12px}.mobilityHUD button{font-size:10px;padding:7px}.islandTools{flex-wrap:wrap}}
+
+/* Consolidated interaction affordances: focus and compact dashboard layout. */
+#missionPicker button:focus-visible{outline:2px solid #f9d68b;outline-offset:3px}
+#vehicleBrake[aria-pressed="true"]{background:#edc17c;color:#253943}
+#missionPicker .mobilityHUD small{line-height:1.4;font-variant-numeric:tabular-nums}
+@media(max-width:700px){.mobilityHUD{bottom:auto;top:clamp(138px,23%,195px);max-width:min(290px,calc(100% - 20px));}.mobilityHUD button{min-height:36px}.islandTools button{min-height:32px}}
