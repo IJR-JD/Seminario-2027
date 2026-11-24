@@ -35,7 +35,7 @@ export const newProgress=()=>({powers:[],circuits:[],setbacks:0});
 export function restoreProgress(value){
  const base=newProgress();
  if(!value||typeof value!=='object')return base;
- if(Array.isArray(value.powers))base.powers=[...new Set(value.powers.filter(id=>shrines.some(s=>s.id===id)))];
+ if(Array.isArray(value.powers))base.powers=[...new Set(value.powers.filter(id=>shrines.some(s=>s.id===id)||['grapple','jetpack'].includes(id)))];
  if(Array.isArray(value.circuits))base.circuits=[...new Set(value.circuits.filter(id=>circuits.some(s=>s.id===id)))];
  if(Number.isSafeInteger(value.setbacks)&&value.setbacks>=0)base.setbacks=value.setbacks;
  return base;
