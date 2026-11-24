@@ -19,7 +19,7 @@ try{
  for(const id of ['giza','tower-bridge','eiffel','liberty']){
   await page.locator('#landmarksToggle').click();assert.equal(await page.locator('#landmarkList article').count(),4);
   await page.locator('[data-landmark-route="'+id+'"]').click();
-  await page.waitForFunction(id=>document.querySelector('#landmarksPanel').dataset.visited.split(',').includes(id),id,{timeout:120000});
+  try{await page.waitForFunction(id=>document.querySelector('#landmarksPanel').dataset.visited.split(',').includes(id),id,{timeout:120000});}catch(error){console.log('ROUTE DIAGNOSTICS '+JSON.stringify(await canvas.evaluate(c=>({...c.dataset,toast:document.querySelector('#islandDiscoveryToast').textContent}))));await page.screenshot({path:'qa-codequest/failed-route-'+id+'.png'});throw error; }
   await page.screenshot({path:'qa-codequest/landmark-'+id+'.png'});
   console.log('PASS actual walk to '+id);
  }
