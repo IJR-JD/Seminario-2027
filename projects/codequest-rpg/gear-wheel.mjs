@@ -80,7 +80,7 @@ export function createGearWheel({picker,canvas,button,panel,getWorld,onMessage})
   if(state==='cooldown'||state==='unavailable'){onMessage?.('Equipment unavailable in the current movement state.');return;}
   if(state==='locked'){if(item.type==='power'){if(!w.locateAdventure(item.id))onMessage?.('Return to ground to locate the unlock site.');else onMessage?.('Following route to unlock '+item.label+'.');}else onMessage?.('Complete the required sector to unlock the hoverboard.');return;}
   if(item.type==='vehicle'){if(!w.selectVehicleType(item.id))onMessage?.('Return to ground or park your current vehicle first.');}
-  else w.action(item.id);
+  else w.selectGearPower(item.id);
  }
  button.onclick=()=>opened?close(false):open(false);
  panel.querySelector('#gearCancel').onclick=()=>close(false);
