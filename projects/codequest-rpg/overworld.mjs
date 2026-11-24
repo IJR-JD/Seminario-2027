@@ -42,7 +42,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   const trialState=new Map(circuits.map(c=>[c.id,{next:0,used:!c.requires}]));
   let dashLeft=0,dashWait=0,flightLeft=flightLimit,flying=false,wallRunning=false,gateLock=0,damageLock=0;
   let jetting=false,jetFuel=jetCapacity,jetHeight=2,swing=null,releaseMotion=null,jetInput=0;
-  let nextAnchor=null,lastAnchor=null,transfers=0;
+  let nextAnchor=null,lastAnchor=null,transfers=0,lastTransfer=null;
   const dashVector=new THREE.Vector3(),safeSpot=new THREE.Vector3();
   let lastAdventure='',activeGate=null,activePad=null;
   function saveAdventure(){
@@ -52,7 +52,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   function notify(message){onAdventureToast?.(message);}
   function adventureState(){
     return {powers:[...unlocked],circuits:[...solved],setbacks:adventure.setbacks,
-      flying,wallRunning,jetting,jetFuel:Math.ceil(jetFuel*10)/10,grappling:!!swing,anchor:swing?.anchor.id??null,nextAnchor:nextAnchor?.id??null,anchorCount:anchors.length,transfers,flight:Math.ceil(flightLeft*10)/10,dashReady:dashWait<=0,gate:activeGate?.name??null,
+      flying,wallRunning,jetting,jetFuel:Math.ceil(jetFuel*10)/10,grappling:!!swing,anchor:swing?.anchor.id??null,nextAnchor:nextAnchor?.id??null,anchorCount:anchors.length,transfers,lastTransfer,flight:Math.ceil(flightLeft*10)/10,dashReady:dashWait<=0,gate:activeGate?.name??null,
       progress:Object.fromEntries([...trialState].map(([id,p])=>[id,p.next]))};
   }
   function publishAdventure(){
@@ -413,7 +413,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
       const exclude=swing?.anchor.id??(releaseMotion?lastAnchor:null);
       const anchor=selectAnchor(origin,anchorModels,heading,exclude)??(!transfer?selectAnchor(origin,anchorModels,heading):null);
       if(!anchor){notify('No other anchor in range · steer toward a cyan structure.');return;}
-      if(swing||releaseMotion)transfers++;
+      if(swing||releaseMotion){transfers++;lastTransfer={from:exclude,to:anchor.id};}
       lastAnchor=swing?.anchor.id??lastAnchor;
       swing={anchor,state:swingStart(origin,anchor,heading,momentum)};releaseMotion=null;target=null;waypoints=[];dashLeft=0;velocity=0;
       notify(transfer?'Anchor transferred · momentum retained.':'Tether attached · steer with WASD, Y transfer, T release.');return;
@@ -729,7 +729,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     waypoints=[];
     gait=0;pace=0;air=0;velocity=0;deck=null;climb=null;crouched=false;
     dashLeft=0;dashWait=0;flightLeft=flightLimit;flying=false;wallRunning=false;gateLock=0;damageLock=0;activePad=null;activeGate=null;safeSpot.copy(position);
-    jetting=false;jetFuel=jetCapacity;jetHeight=2;jetInput=0;swing=null;releaseMotion=null;rope.visible=false;nextAnchor=null;lastAnchor=null;transfers=0;
+    jetting=false;jetFuel=jetCapacity;jetHeight=2;jetInput=0;swing=null;releaseMotion=null;rope.visible=false;nextAnchor=null;lastAnchor=null;transfers=0;lastTransfer=null;
     baseHeight=hero.scale.y;
     keys.clear();
     near=undefined;
@@ -788,8 +788,23 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
       const current=swing?swingStep(swing.state,swing.anchor,input,delta):{x:position.x+releaseMotion.vx*delta,y:elevation(position.x,position.z)+air+(releaseMotion.vy-=14*delta)*delta,z:position.z+releaseMotion.vz*delta};
       const groundY=elevation(current.x,current.z);
       if(!airClear(current.x,current.z,current.y,elevation)||current.y<groundY+.28||current.y>groundY+30){
-        if(!groundSafe(position.x,position.z))position.copy(safeSpot);
-        swing=null;releaseMotion=null;air=0;velocity=0;
+        if(swing){
+          // Keep the rope attached on contact. Resolve the obstructed motion
+          // along the vertical axis rather than teleporting through a facade.
+          const previous=swing.state,base=elevation(position.x,position.z);
+          const lift=Math.min(swing.anchor.y-2,base+28,Math.max(previous.y,base+.35)+delta*7);
+          if(airClear(position.x,position.z,lift,elevation)&&lift>=base+.28){
+            swing.state={...current,x:position.x,y:lift,z:position.z,vx:current.vx*.35,vy:Math.max(6,current.vy),vz:current.vz*.35,
+              length:Math.max(current.length,Math.hypot(position.x-swing.anchor.x,lift-swing.anchor.y,position.z-swing.anchor.z))};
+            air=lift-base;
+          }else{
+            if(!groundSafe(position.x,position.z))position.copy(safeSpot);
+            swing=null;releaseMotion=null;air=0;velocity=0;
+          }
+        }else{
+          if(!groundSafe(position.x,position.z))position.copy(safeSpot);
+          swing=null;releaseMotion=null;air=0;velocity=0;
+        }
       }else{
         position.set(current.x,0,current.z);air=current.y-groundY;
         if(swing){swing.state=current;if(current.time>9){releaseMotion={vx:current.vx,vy:current.vy,vz:current.vz};lastAnchor=swing.anchor.id;swing=null;}}
