@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import {vehicleTypes} from './island-mobility.mjs';
 // Shared geometry/materials: parked models are static, only the mounted model
 // needs wheel/suspension animation. Original block-style vehicles.
 export function createVehicleFleet(scene,definitions,elevation){
@@ -7,7 +6,7 @@ export function createVehicleFleet(scene,definitions,elevation){
  const geom=(key,fn)=>{if(!cache.has(key))cache.set(key,fn());return cache.get(key);};
  const mat=color=>{if(!materials.has(color))materials.set(color,new THREE.MeshStandardMaterial({color,roughness:.74}));return materials.get(color);};
  const box=(g,w,h,d,color,x,y,z)=>{const m=new THREE.Mesh(geom('b:'+w+','+h+','+d,()=>new THREE.BoxGeometry(w,h,d)),mat(color));m.position.set(x,y,z);g.add(m);return m;};
- const wheel=(g,x,z,r,width)=>{const pivot=new THREE.Group();pivot.position.set(x,r,z);g.add(pivot);const tire=new THREE.Mesh(geom('t:'+r+','+width,()=>new THREE.CylinderGeometry(r,r,width,12)),mat('#29343a'));tire.rotation.z=Math.PI/2;pivot.add(tire);const hub=new THREE.Mesh(geom('h:'+r+','+width,()=>new THREE.CylinderGeometry(r*.55,r*.55,width+.035,10)),mat('#b5c2c1'));hub.rotation.z=Math.PI/2;pivot.add(hub);return pivot;};
+ const wheel=(g,x,z,r,width)=>{const pivot=new THREE.Group();pivot.position.set(x,r,z);pivot.userData.radius=r;g.add(pivot);const tire=new THREE.Mesh(geom('t:'+r+','+width,()=>new THREE.CylinderGeometry(r,r,width,12)),mat('#29343a'));tire.rotation.z=Math.PI/2;pivot.add(tire);const hub=new THREE.Mesh(geom('h:'+r+','+width,()=>new THREE.CylinderGeometry(r*.55,r*.55,width+.035,10)),mat('#b5c2c1'));hub.rotation.z=Math.PI/2;pivot.add(hub);return pivot;};
  const colors=['#5e9c7e','#c5a16d','#679bb7','#80a36f','#9782b0','#bb795b'];
  const fleet=definitions.map(v=>{
   const root=new THREE.Group(),body=new THREE.Group();root.add(body);scene.add(root);
@@ -34,6 +33,6 @@ export function createVehicleFleet(scene,definitions,elevation){
  });
  function update(v,dt,turn=0){v.root.position.set(v.x,elevation(v.x,v.z),v.z);v.root.rotation.y=v.yaw;v.body.rotation.z+=(Math.max(-.22,Math.min(.22,-turn*.16))-v.body.rotation.z)*(1-Math.exp(-dt*8));
  const slope=(elevation(v.x+Math.sin(v.yaw)*.6,v.z+Math.cos(v.yaw)*.6)-elevation(v.x-Math.sin(v.yaw)*.6,v.z-Math.cos(v.yaw)*.6))/1.2;
- v.body.rotation.x+=(-Math.atan(slope)-v.body.rotation.x)*(1-Math.exp(-dt*6));for(const w of v.wheels)w.rotation.x+=v.speed*dt/.32;}
+ v.body.rotation.x+=(-Math.atan(slope)-v.body.rotation.x)*(1-Math.exp(-dt*6));for(const w of v.wheels)w.rotation.x=(w.rotation.x+v.speed*dt/w.userData.radius)%(Math.PI*2);}
  return {fleet,update};
 }
