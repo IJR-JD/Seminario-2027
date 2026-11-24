@@ -763,3 +763,6 @@ body:has(.roomStudio)>.topbar nav a:hover,body:has(.roomStudio)>.topbar nav butt
 #vehicleBrake[aria-pressed="true"]{background:#edc17c;color:#253943}
 #missionPicker .mobilityHUD small{line-height:1.4;font-variant-numeric:tabular-nums}
 @media(max-width:700px){.mobilityHUD{bottom:auto;top:clamp(138px,23%,195px);max-width:min(290px,calc(100% - 20px));}.mobilityHUD button{min-height:36px}.islandTools button{min-height:32px}}
+
+/* World landmark directory shares the established island panel layout. */
+#landmarksPanel[hidden]{display:none!important}#landmarkList article[data-found="true"] h4::after{content:" · Discovered";color:#8fd5ba;font-size:.8em}#landmarkSummary{font-variant-numeric:tabular-nums;color:#b7dfcd}#landmarkList article p{font-size:12px;line-height:1.45}
