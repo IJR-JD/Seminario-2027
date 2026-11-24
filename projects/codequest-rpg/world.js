@@ -1,8 +1,9 @@
-import {createOverworld} from './overworld.mjs?v=interiors6';
+import {createOverworld} from './overworld.mjs?v=vertical7';
 import {createIslandAvatar} from './island-avatar.mjs';
 import {shrines,travelGates,circuits} from './island-adventure.mjs';
 import {gear} from './island-airgear.mjs';
 import {buildings} from './island-interiors.mjs';
+import {courses} from './island-vertical.mjs';
 import {pythonWaystations} from './island-exploration.mjs';
 import {allRoomLocations} from './island-villages.mjs';
 import {starTargets,starsFor,starsText} from './room-stars.mjs';
@@ -511,6 +512,35 @@ function openMissions(){
   const trailList=$('islandTrailList');
   const adventurePanel=$('islandAdventurePanel'),adventureToggle=$('islandAdventureToggle');
   const buildingDirectory=$('buildingDirectory'),buildingToggle=$('buildingDirectoryToggle'),interiorHUD=$('interiorHUD'),buildingEntrance=$('buildingEntrance');
+  const parkourPanel=$('parkourPanel'),parkourToggle=$('parkourToggle'),parkourHUD=$('parkourHUD');
+  let latestParkour=null;
+  function renderParkour(state){
+    latestParkour=state;
+    parkourHUD.dataset.support=state.support??'';parkourHUD.dataset.height=String(state.height);parkourHUD.dataset.grounded=String(state.grounded);parkourHUD.dataset.airborne=String(state.airborne);
+    parkourHUD.dataset.completed=String(state.completed.length);parkourHUD.dataset.course=state.course??'';
+    parkourHUD.hidden=!state.course&&!state.assist;
+    const course=courses.find(c=>c.id===state.course);
+    $('parkourName').textContent=course?.name??'Aerial movement';
+    $('parkourStatus').textContent=(course?state.progress[course.zone]+'/6 pads · ':'')+state.height.toFixed(1)+' altitude · '+(state.grounded?'Grounded':'Airborne');
+    $('parkourAssist').disabled=!state.canAssist;
+    $('parkourSummary').textContent=state.completed.length+'/6 courses completed';
+    if(!parkourPanel.hidden)document.querySelectorAll('[data-course-entry]').forEach(node=>{node.dataset.found=String(state.completed.includes(node.dataset.courseEntry));});
+  }
+  function setParkourPanel(open){
+    parkourPanel.hidden=!open;parkourToggle.setAttribute('aria-expanded',String(open));
+    if(open){
+      setBuildingDirectory(false);setDirectory(false);setTrailPanel(false);setAdventurePanel(false);
+      const list=$('parkourList');list.replaceChildren();
+      for(const c of courses){
+        const article=document.createElement('article');article.className='islandTrailEntry';article.dataset.courseEntry=c.id;article.dataset.found=String(latestParkour?.completed.includes(c.id)??false);
+        const title=document.createElement('h4');title.textContent=c.name;
+        const body=document.createElement('small');body.textContent='6 ascending platforms · '+c.pads.at(-1).y.toFixed(1)+' summit altitude';
+        const route=document.createElement('button');route.type='button';route.dataset.courseRoute=c.id;route.textContent='Walk to trail';
+        route.onclick=()=>{if(overworld?.locateCourse(c.id)){setParkourPanel(false);$('overworldCanvas').focus();}};
+        article.append(title,body,route);list.append(article);
+      }
+    }
+  }
   const totalFloors=buildings.reduce((sum,b)=>sum+b.storeys,0);
   let interiorIdentity='',interiorAction=null;
   function renderBuildings(){
@@ -529,7 +559,7 @@ function openMissions(){
   }
   function setBuildingDirectory(open){
     buildingDirectory.hidden=!open;buildingToggle.setAttribute('aria-expanded',String(open));
-    if(open){setDirectory(false);setTrailPanel(false);setAdventurePanel(false);renderBuildings();}
+    if(open){setParkourPanel(false);setDirectory(false);setTrailPanel(false);setAdventurePanel(false);renderBuildings();}
   }
   function renderBuildingEntrance(building){
     buildingEntrance.hidden=!building;
@@ -540,7 +570,7 @@ function openMissions(){
     interiorHUD.hidden=!state;
     $('missionPicker').classList.toggle('insideBuilding',!!state);
     if(!state){interiorIdentity='';interiorAction=null;return;}
-    setBuildingDirectory(false);setDirectory(false);setTrailPanel(false);setAdventurePanel(false);
+    setParkourPanel(false);setBuildingDirectory(false);setDirectory(false);setTrailPanel(false);setAdventurePanel(false);
     buildingEntrance.hidden=true;enter.hidden=true;
     const identity=state.id+':'+state.floor;
     interiorHUD.dataset.building=state.id;interiorHUD.dataset.floor=String(state.floor);
@@ -590,7 +620,7 @@ function openMissions(){
   }
   function setAdventurePanel(open){
     adventurePanel.hidden=!open;adventureToggle.setAttribute('aria-expanded',String(open));
-    if(open){setBuildingDirectory(false);setDirectory(false);setTrailPanel(false);if(overworld)renderAdventure(overworld.adventureState());}
+    if(open){setParkourPanel(false);setBuildingDirectory(false);setDirectory(false);setTrailPanel(false);if(overworld)renderAdventure(overworld.adventureState());}
   }
   function renderPythonTrail(){
     if(!overworld)return;
@@ -634,17 +664,19 @@ function openMissions(){
   function setDirectory(open){
     directory.hidden=!open;
     directoryToggle.setAttribute('aria-expanded',String(open));
-    if(open){setBuildingDirectory(false);trailPanel.hidden=true;trailToggle.setAttribute('aria-expanded','false');setAdventurePanel(false);}
+    if(open){setParkourPanel(false);setBuildingDirectory(false);trailPanel.hidden=true;trailToggle.setAttribute('aria-expanded','false');setAdventurePanel(false);}
   }
   function setTrailPanel(open){
     trailPanel.hidden=!open;
     trailToggle.setAttribute('aria-expanded',String(open));
-    if(open){setBuildingDirectory(false);setDirectory(false);setAdventurePanel(false);renderPythonTrail();}
+    if(open){setParkourPanel(false);setBuildingDirectory(false);setDirectory(false);setAdventurePanel(false);renderPythonTrail();}
   }
   setDirectory(false);
   setTrailPanel(false);
   setAdventurePanel(false);
-  setBuildingDirectory(false);
+  setBuildingDirectory(false);setParkourPanel(false);
+  parkourToggle.onclick=()=>setParkourPanel(parkourPanel.hidden);
+  $('parkourAssist').onclick=()=>{overworld?.assistJump();$('overworldCanvas').focus();};
   buildingToggle.onclick=()=>setBuildingDirectory(buildingDirectory.hidden);
   buildingEntrance.onclick=()=>{overworld?.enterBuilding();$('overworldCanvas').focus();};
   document.querySelectorAll('[data-interior-walk]').forEach(button=>{button.onclick=()=>{overworld?.interiorWalk(button.dataset.interiorWalk);$('overworldCanvas').focus();};});
@@ -684,10 +716,10 @@ function openMissions(){
     if(action==='jump'||action==='crouch'){
       let held=false;
       button.addEventListener('pointerdown',e=>{
-        if(!overworld?.adventureState().jetting)return;
+        if(action!=='jump'&&!overworld?.adventureState().jetting)return;
         e.preventDefault();held=true;button.setPointerCapture(e.pointerId);overworld.action(action);
       });
-      const release=()=>{if(held){overworld?.action('jetStop');setTimeout(()=>{held=false;},0);}};
+      const release=()=>{if(held){overworld?.action('jetStop');if(action==='jump')overworld?.action('jumpRelease');setTimeout(()=>{held=false;},0);}};
       for(const event of ['pointerup','pointercancel','lostpointercapture'])button.addEventListener(event,release);
       button.onclick=()=>{if(!held){overworld?.action(action);if(overworld?.adventureState().jetting)overworld.action('jetStop');$('overworldCanvas').focus();}};
     }else button.onclick=()=>{overworld?.action(action);$('overworldCanvas').focus();};
@@ -709,7 +741,7 @@ function openMissions(){
         },
         onPrompt:prompt=>portalPrompt(prompt),
         onDialogue:guide=>showIslandToast(guide.name+' · '+guide.line),
-        onAdventure:renderAdventure,onAdventureToast:showIslandToast,onInterior:renderInterior,onInteriorDoor:renderBuildingEntrance,
+        onAdventure:renderAdventure,onAdventureToast:showIslandToast,onInterior:renderInterior,onInteriorDoor:renderBuildingEntrance,onParkour:renderParkour,
         onTrailChange:()=>renderPythonTrail(),
         onWayfinder:hint=>{$('islandTrailDistance').textContent=hint;},
         onWaystation:(station,found,total)=>{
@@ -738,7 +770,7 @@ function openMissions(){
     renderPythonTrail();
     $('overworldCanvas').focus();
   }else{
-    cameraToggle.hidden=true;buildingToggle.hidden=true;
+    cameraToggle.hidden=true;buildingToggle.hidden=true;parkourToggle.hidden=true;
     trailToggle.hidden=true;adventureToggle.hidden=true;
     setDirectory(true);
     $('portalStatus').classList.add('visible');
