@@ -91,7 +91,7 @@ jobs:
         run: |
           set -eu
           root="https://ijr-jd.github.io/Seminario-2027/projects/codequest-rpg"
-          for file in index.html world.css world.js overworld.mjs island-adventure.mjs island-avatar.mjs island-airgear.mjs island-detail.mjs island-interiors.mjs interior-scene.mjs island-vertical.mjs island-mobility.mjs island-vehicles.mjs island-rendering.mjs island-landmarks.mjs island-monuments.mjs island-water.mjs; do
+          for file in index.html world.css world.js overworld.mjs island-adventure.mjs island-avatar.mjs island-airgear.mjs island-detail.mjs island-interiors.mjs interior-scene.mjs island-vertical.mjs island-mobility.mjs island-vehicles.mjs island-rendering.mjs island-landmarks.mjs island-monuments.mjs island-water.mjs playability.mjs; do
             verified=false
             for attempt in {1..12}; do
               if curl -fsSL --max-time 20 "$root/$file?release=$GITHUB_SHA-$attempt" -o "/tmp/codequest-live-$file" && cmp -s "projects/codequest-rpg/$file" "/tmp/codequest-live-$file"; then
