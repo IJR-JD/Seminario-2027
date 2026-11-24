@@ -729,3 +729,21 @@ body:has(.roomStudio)>.topbar nav a:hover,body:has(.roomStudio)>.topbar nav butt
 #tetherNetwork{color:#a6e9e7;flex-basis:100%;text-align:center;font-variant-numeric:tabular-nums}
 #tetherTransfer:disabled{opacity:.48;cursor:not-allowed}
 @media(max-width:700px){#missionPicker .islandTraversal{bottom:140px}#missionPicker .islandDpad{bottom:225px}#tetherNetwork{font-size:10px}}
+
+/* Living interiors: keep the shared canvas and controls, with a compact contextual HUD. */
+.buildingEntrance{position:absolute;z-index:4;left:16px;bottom:154px;display:grid;gap:4px;text-align:left;background:#203e46ee;color:#f5e5bc;border:1px solid #d7bb82;border-radius:10px;padding:10px 15px;box-shadow:0 4px 16px #15242b66;max-width:250px}
+.buildingEntrance small{color:#cae3df;font-size:11px}.buildingEntrance[hidden],.interiorHUD[hidden],.buildingDirectory[hidden]{display:none!important}
+.buildingDirectory{z-index:5}
+#missionPicker.insideBuilding .islandTools,#missionPicker.insideBuilding .islandHelp,#missionPicker.insideBuilding .adventureHotbar,#missionPicker.insideBuilding .islandTraversal,#missionPicker.insideBuilding .islandStatus,#missionPicker.insideBuilding .islandTrailDistance{display:none}
+.interiorHUD{position:absolute;z-index:4;top:12px;left:12px;width:min(310px,calc(100% - 24px));background:#142b35eb;color:#e7f0ed;border:1px solid #bfa875;border-radius:12px;padding:12px;box-shadow:0 5px 15px #12252f88;display:grid;gap:8px}
+.interiorHeading{display:flex;align-items:flex-start;gap:8px;justify-content:space-between}
+.interiorHeading strong{display:block;color:#f2dba9;font-size:15px}
+.interiorHeading small,.interiorHUD>small{display:block;color:#bacdce;font-size:10px;line-height:1.4}
+#interiorProgress{font:600 10px system-ui;color:#9cded1;max-width:77px;text-align:right}
+#interiorDialogue{margin:0;padding:8px 0;border-block:1px solid #617677;font-size:12px;line-height:1.45;color:#d4e9e5}
+.interiorDestinations{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+.interiorDestinations button,#interiorInteract{min-height:34px;border:1px solid #7f9699;background:#294a54;color:#e7f4f0;border-radius:6px;padding:6px;font:600 11px system-ui}
+#interiorInteract{background:#cdb078;color:#21383c;font-size:12px}#interiorInteract:disabled{background:#273e48;color:#b1c1c4;opacity:.8}
+.interiorDestinations button[hidden]{display:none}
+@media(min-width:901px){#missionPicker.insideBuilding #overworldStage{left:235px}}
+@media(max-width:700px){.buildingEntrance{left:12px;bottom:310px;max-width:190px;padding:8px}.interiorHUD{top:auto;bottom:7px;width:calc(100% - 24px);padding:8px;gap:5px}.interiorHUD>small{display:none}.interiorDestinations{grid-template-columns:repeat(4,minmax(0,1fr))}#interiorDialogue{font-size:11px;padding:4px 0}#missionPicker.insideBuilding #islandDpad{bottom:220px}.buildingDirectory{top:140px;bottom:105px}}

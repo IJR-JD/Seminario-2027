@@ -3,6 +3,8 @@ import {islandBounds as bounds,islandCrossings as crossings,shore,isIslandWalkab
 import {islandDistricts,villageHouses,secondFloorHeight,roomLocation} from './island-villages.mjs';
 import {adventureKey,shrines,travelGates,circuits,traps,wallLane,flightLimit,dashDuration,dashCooldown,blocked,groundSafe,airSafe,airClear,onWallLane,trapActive,restoreProgress,padResult,routeAdventure,segmentSafe} from './island-adventure.mjs';
 import {animateIslandAvatar} from './island-avatar.mjs';
+import {buildings,interiorStorage,loadInteriorProgress} from './island-interiors.mjs';
+import {createInterior} from './interior-scene.mjs';
 import {gear,anchors,jetCapacity,grappleRange,anchorLinks,selectAnchor,swingStart,swingStep,jetStep} from './island-airgear.mjs';
 import {createIslandDetail} from './island-detail.mjs';
 
@@ -34,7 +36,42 @@ const elevation=(x,z)=>river(z)&&bridge(x)?1.15:terrain(x,z);
 const colors=['#528665','#b08656','#528baa','#618850','#71628f','#9b5d47'];
 const controls={ArrowUp:[0,-1],w:[0,-1],ArrowDown:[0,1],s:[0,1],ArrowLeft:[-1,0],a:[-1,0],ArrowRight:[1,0],d:[1,0]};
 
-export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscovery,onTraversal,onPrompt,onDialogue,onWaystation,onTrailChange,onWayfinder,onAdventure,onAdventureToast}){
+export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscovery,onTraversal,onPrompt,onDialogue,onWaystation,onTrailChange,onWayfinder,onAdventure,onAdventureToast,onInterior,onInteriorDoor}){
+  let interior=null,nearBuilding=null,returnInterior=null,roomAvailable=()=>true,roomMarks=new Map();
+  let interiorProgress=loadInteriorProgress(null);
+  try{interiorProgress=loadInteriorProgress(JSON.parse(localStorage.getItem(interiorStorage)||'null'));}catch{}
+  function saveInterior(){try{localStorage.setItem(interiorStorage,JSON.stringify(interiorProgress));}catch{}}
+  function recordInterior(key,kind){
+    if(!interiorProgress[kind].includes(key)){interiorProgress[kind].push(key);saveInterior();}
+  }
+  function interiorStatus(state=null){onInterior?.(state?{...state,visited:interiorProgress.visited.length,talked:interiorProgress.talked.length}:null);}
+  function leaveInterior(){
+    if(!interior)return;
+    interior.dispose();interior=null;keys.clear();target=null;waypoints=[];last=0;
+    look.copy(position).setY(elevation(position.x,position.z));interiorStatus();onInteriorDoor?.(nearBuilding);onPrompt?.(null);
+  }
+  function openInterior(building,initialFloor=1){
+    if(!building||interior)return false;
+    keys.clear();target=null;waypoints=[];near=undefined;nearbyGuide=undefined;onNear(undefined);onPrompt?.(null);onInteriorDoor?.(null);
+    mapMode=false;camera=follow;scene.fog=landscapeFog;
+    interior=createInterior({building,makeHero,available:roomAvailable,marks:roomMarks,textures:details,initialFloor,
+      onState:interiorStatus,
+      onVisit:key=>recordInterior(key,'visited'),
+      onTalk:guide=>{recordInterior(guide.id,'talked');onDialogue?.(guide);interiorStatus({...interior.state(),dialogue:guide.line});},
+      onRoom:i=>{returnInterior={id:building.id,room:i,floor:interior.state().floor};onEnter(i);},
+      onExit:leaveInterior});
+    last=0;return true;
+  }
+  function enterBuilding(){
+    if(interior)return interior.interact('exit');
+    if(!nearBuilding||deck!==null||climb||flying||jetting||swing||releaseMotion||wallRunning||air>.7){notify('Approach a building entrance on the ground.');return false;}
+    return openInterior(nearBuilding);
+  }
+  function locateBuilding(id){
+    if(interior){notify('Exit the building before selecting another destination.');return false;}
+    if(deck!==null||climb||flying||jetting||swing||releaseMotion||wallRunning||air>.7)return false;
+    const b=buildings.find(p=>p.id===id);if(!b)return false;routeTo(b.x,b.z+1.7);return !!target;
+  }
   const towers=originalTowers.map(t=>({...t}));
   let adventure=restoreProgress(null);
   try{adventure=restoreProgress(JSON.parse(localStorage.getItem(adventureKey)||'null'));}catch{}
@@ -401,6 +438,13 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   }
   function action(key){
     if(!hero)return;
+    if(interior){
+      if(key==='building')interior.interact('exit');
+      else if(key==='climb')interior.interact('stairs');
+      else if(key==='talk')interior.interact('talk');
+      return;
+    }
+    if(key==='building'){enterBuilding();return;}
     if(key==='grapple'||key==='transfer'){
       if(!unlocked.has('grapple')){notify('Find the Tether Workshop to unlock the harness.');return;}
       const transfer=key==='transfer';
@@ -654,6 +698,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     if(discardClick){discardClick=false;return;}
     canvas.focus();
     const rect=canvas.getBoundingClientRect();
+    if(interior){interior.click((event.clientX-rect.left)/rect.width*2-1,1-(event.clientY-rect.top)/rect.height*2);return;}
     ray.setFromCamera(new THREE.Vector2((event.clientX-rect.left)/rect.width*2-1,1-(event.clientY-rect.top)/rect.height*2),camera);
     const hit=ray.intersectObjects(pickables)[0];
     if(!hit){
@@ -668,13 +713,13 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   });
   canvas.addEventListener('keydown',event=>{
     const key=event.key.length===1?event.key.toLowerCase():event.key;
-    if([' ','c','f','q','e','r','x','v','b','g','t','y','j','+','=','-'].includes(key)){
+    if([' ','c','f','q','e','r','h','x','v','b','g','t','y','j','+','=','-'].includes(key)){
       event.preventDefault();
       if(event.repeat)return;
       if(key==='q'||key==='e')adjustCamera(key==='q'?.3:-.3);
       else if(['+','=','-'].includes(key))adjustCamera(0,key==='-'?1.18:1/1.18);
-      else if(key==='r'){if(nearbyGuide)onDialogue?.(nearbyGuide);}
-      else action({' ':'jump',c:'crouch',f:'climb',x:'dash',v:'fly',b:'wall',g:'gate',t:'grapple',y:'transfer',j:'jetpack'}[key]);
+      else if(key==='r'){if(interior)interior.interact('talk');else if(nearbyGuide)onDialogue?.(nearbyGuide);}
+      else action({' ':'jump',c:'crouch',f:'climb',x:'dash',v:'fly',b:'wall',g:'gate',t:'grapple',y:'transfer',j:'jetpack',h:'building'}[key]);
       return;
     }
     if(key==='Shift'){keys.add(key);return;}
@@ -683,7 +728,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
       target=null;
       waypoints=[];
       keys.add(key);
-    }else if(key==='Enter'&&(near!==undefined||nearbyGuide)){
+    }else if(key==='Enter'&&(interior||near!==undefined||nearbyGuide||activeGate)){
       event.preventDefault();
       interact();
     }
@@ -700,6 +745,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     }
   }
   function travel(index){
+    if(interior){notify('Exit the building to travel to another room.');return;}
     const portal=portals.get(index);
     if(portal&&deck===null)routeTo(portal.x,portal.z+(portal.upper?2.65:1.35));
   }
@@ -708,12 +754,16 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     if(!groundSafe(position.x,position.z)){position.copy(safeSpot);notify('Flight ended over water · returned to safe ground.');}
   }
   function locateAdventure(id){
+    if(interior){notify('Exit the building before exploring the island.');return false;}
     const p=[...shrines,...gear,...travelGates,...circuits].find(item=>item.id===id);
     if(!p)return false;
     if(deck!==null||climb||flying||jetting||swing||releaseMotion){notify('Return to ground before setting a route.');return false;}
     routeTo(p.x,p.z);return Boolean(target);
   }
   function visit(index,available,marks){
+    const resume=returnInterior?.room===index?returnInterior:null;returnInterior=null;
+    if(interior){interior.dispose();interior=null;interiorStatus();}
+    roomAvailable=available;roomMarks=marks;nearBuilding=null;onInteriorDoor?.(null);
     if(hero){
       scene.remove(hero);
       hero.traverse(mesh=>{
@@ -744,6 +794,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     }
     onTrailChange?.(trailState());
     look.copy(position).setY(elevation(position.x,position.z));
+    if(resume){const b=buildings.find(p=>p.id===resume.id);if(b){position.set(b.x,0,b.z+1.7);safeSpot.copy(position);openInterior(b,resume.floor);}}
     frame(performance.now());
   }
   function frame(now){
@@ -757,6 +808,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     }
     const delta=last?Math.min(.05,(now-last)/1000):0;
     last=now;
+    if(interior){interior.frame({renderer,width,height,delta,now,keys,controls});return;}
     dashWait=Math.max(0,dashWait-delta);gateLock=Math.max(0,gateLock-delta);damageLock=Math.max(0,damageLock-delta);
     if(flying){flightLeft=Math.max(0,flightLeft-delta);air=THREE.MathUtils.lerp(air,3.1,Math.min(1,delta*5));if(flightLeft<=0)landFlight();}
     else if(!air&&!velocity)flightLeft=Math.min(flightLimit,flightLeft+delta*.8);
@@ -998,6 +1050,8 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
       item.ring.rotation.z=now*.00065;
       item.ring.material.emissiveIntensity=deck===item.deck&&distance<2.15?.92:.45+.17*Math.sin(now*.003+item.index);
     }
+    const entrance=deck===null&&!climb&&!flying&&!jetting&&!swing&&!releaseMotion&&!wallRunning&&air<.7?buildings.map(b=>({b,d:Math.hypot(position.x-b.x,position.z-(b.z+1.7))})).filter(p=>p.d<2.7).sort((a,b)=>a.d-b.d)[0]?.b??null:null;
+    if(entrance!==nearBuilding){nearBuilding=entrance;onInteriorDoor?.(nearBuilding);}
     if(closest!==near){
       near=closest;
       onNear(near);
@@ -1020,6 +1074,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     renderer.render(scene,camera);
   }
   function setMapMode(enabled){
+    if(interior)return;
     mapMode=enabled;
     camera=enabled?survey:follow;
     // An overhead camera is far above the terrain: keeping distance fog here
@@ -1027,11 +1082,12 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     scene.fog=enabled?null:landscapeFog;
   }
   function interact(){
+    if(interior){interior.interact();return;}
     if(near!==undefined)onEnter(near);
     else if(activeGate)action('gate');
     else if(nearbyGuide)onDialogue?.(nearbyGuide);
   }
-  return {addZones,visit,travel,frame,setMapMode,adjustCamera,action,setMovementKey,interact,trailState,setWaypoint,adventureState,locateAdventure,
+  return {addZones,visit,travel,frame,setMapMode,adjustCamera,action,setMovementKey,interact,trailState,setWaypoint,adventureState,locateAdventure,locateBuilding,enterBuilding,interiorWalk:id=>interior?.walkTo(id),interiorInteract:id=>interior?.interact(id),interiorState:()=>interior?.state()??null,interiorProgress:()=>({...interiorProgress}),
     districtMap:()=>[...portals.values()].map(({index,x,z,upper,deck,topic,storeys})=>({index,x,z,upper,deck,topic,storeys})),
     discoveries:()=>[discovered.size,secrets.length]};
 }

@@ -1,7 +1,8 @@
-import {createOverworld} from './overworld.mjs?v=skyways5';
+import {createOverworld} from './overworld.mjs?v=interiors6';
 import {createIslandAvatar} from './island-avatar.mjs';
 import {shrines,travelGates,circuits} from './island-adventure.mjs';
 import {gear} from './island-airgear.mjs';
+import {buildings} from './island-interiors.mjs';
 import {pythonWaystations} from './island-exploration.mjs';
 import {allRoomLocations} from './island-villages.mjs';
 import {starTargets,starsFor,starsText} from './room-stars.mjs';
@@ -509,6 +510,56 @@ function openMissions(){
   const trailPanel=$('islandTrailPanel'),trailToggle=$('islandTrailToggle');
   const trailList=$('islandTrailList');
   const adventurePanel=$('islandAdventurePanel'),adventureToggle=$('islandAdventureToggle');
+  const buildingDirectory=$('buildingDirectory'),buildingToggle=$('buildingDirectoryToggle'),interiorHUD=$('interiorHUD'),buildingEntrance=$('buildingEntrance');
+  const totalFloors=buildings.reduce((sum,b)=>sum+b.storeys,0);
+  let interiorIdentity='',interiorAction=null;
+  function renderBuildings(){
+    const progress=overworld?.interiorProgress()??{visited:[],talked:[]};
+    $('buildingProgress').textContent=progress.visited.length+'/'+totalFloors+' floors explored · '+progress.talked.length+' residents met';
+    const list=$('buildingList');list.replaceChildren();
+    for(const b of buildings){
+      const found=progress.visited.filter(key=>key.startsWith(b.id+':')).length;
+      const article=document.createElement('article');article.className='islandTrailEntry';article.dataset.found=String(found===b.storeys);
+      const title=document.createElement('h4');title.textContent=b.name;
+      const detail=document.createElement('small');detail.textContent=found+'/'+b.storeys+' floors · '+(b.room===undefined?'Community hall':'Room '+String(b.room+1).padStart(2,'0')+' · '+(b.upper?'2F':'1F'));
+      const button=document.createElement('button');button.type='button';button.dataset.buildingRoute=b.id;button.textContent='Walk to entrance';
+      button.onclick=()=>{if(overworld?.locateBuilding(b.id)){setBuildingDirectory(false);$('overworldCanvas').focus();}};
+      article.append(title,detail,button);list.append(article);
+    }
+  }
+  function setBuildingDirectory(open){
+    buildingDirectory.hidden=!open;buildingToggle.setAttribute('aria-expanded',String(open));
+    if(open){setDirectory(false);setTrailPanel(false);setAdventurePanel(false);renderBuildings();}
+  }
+  function renderBuildingEntrance(building){
+    buildingEntrance.hidden=!building;
+    if(building){buildingEntrance.dataset.building=building.id;$('buildingEntranceName').textContent=building.name;}
+    else delete buildingEntrance.dataset.building;
+  }
+  function renderInterior(state){
+    interiorHUD.hidden=!state;
+    $('missionPicker').classList.toggle('insideBuilding',!!state);
+    if(!state){interiorIdentity='';interiorAction=null;return;}
+    setBuildingDirectory(false);setDirectory(false);setTrailPanel(false);setAdventurePanel(false);
+    buildingEntrance.hidden=true;enter.hidden=true;
+    const identity=state.id+':'+state.floor;
+    interiorHUD.dataset.building=state.id;interiorHUD.dataset.floor=String(state.floor);
+    interiorHUD.dataset.x=String(state.x);interiorHUD.dataset.z=String(state.z);
+    interiorHUD.dataset.action=state.action??'';
+    $('interiorName').textContent=state.name;
+    $('interiorFloor').textContent='Floor '+state.floor+' / '+state.totalFloors+' · '+state.npc+(state.room!==null?' · Room '+String(state.room+1).padStart(2,'0'):'');
+    $('interiorProgress').textContent=state.visited+'/'+totalFloors+' floors · '+state.talked+' NPCs';
+    if(identity!==interiorIdentity){interiorIdentity=identity;$('interiorDialogue').textContent='Explore the floor and meet '+state.npc+'.';}
+    if(state.dialogue)$('interiorDialogue').textContent=state.dialogue;
+    document.querySelectorAll('[data-interior-walk]').forEach(button=>{
+      const id=button.dataset.interiorWalk;
+      button.hidden=id==='stairs'?state.totalFloors<2:id==='room'?state.room===null:id==='exit'?state.floor!==1:false;
+    });
+    interiorAction=state.action;
+    const action=$('interiorInteract');
+    action.disabled=!state.action||state.action==='room'&&!state.available;
+    action.textContent=state.action==='talk'?'R · Talk to '+state.npc:state.action==='stairs'?'F · '+(state.floor===1?'Go upstairs':'Go downstairs'):state.action==='exit'?'H · Return to island':state.action==='room'?(state.available?'Enter · Open coding room':'Room locked'):'Approach a point of interest';
+  }
   let journalSignature='';
   function renderAdventure(state){
     $('adventureProgress').textContent=state.powers.length+'/5 powers · '+state.circuits.length+'/4 trials';
@@ -539,7 +590,7 @@ function openMissions(){
   }
   function setAdventurePanel(open){
     adventurePanel.hidden=!open;adventureToggle.setAttribute('aria-expanded',String(open));
-    if(open){setDirectory(false);setTrailPanel(false);if(overworld)renderAdventure(overworld.adventureState());}
+    if(open){setBuildingDirectory(false);setDirectory(false);setTrailPanel(false);if(overworld)renderAdventure(overworld.adventureState());}
   }
   function renderPythonTrail(){
     if(!overworld)return;
@@ -583,16 +634,21 @@ function openMissions(){
   function setDirectory(open){
     directory.hidden=!open;
     directoryToggle.setAttribute('aria-expanded',String(open));
-    if(open){trailPanel.hidden=true;trailToggle.setAttribute('aria-expanded','false');setAdventurePanel(false);}
+    if(open){setBuildingDirectory(false);trailPanel.hidden=true;trailToggle.setAttribute('aria-expanded','false');setAdventurePanel(false);}
   }
   function setTrailPanel(open){
     trailPanel.hidden=!open;
     trailToggle.setAttribute('aria-expanded',String(open));
-    if(open){setDirectory(false);setAdventurePanel(false);renderPythonTrail();}
+    if(open){setBuildingDirectory(false);setDirectory(false);setAdventurePanel(false);renderPythonTrail();}
   }
   setDirectory(false);
   setTrailPanel(false);
   setAdventurePanel(false);
+  setBuildingDirectory(false);
+  buildingToggle.onclick=()=>setBuildingDirectory(buildingDirectory.hidden);
+  buildingEntrance.onclick=()=>{overworld?.enterBuilding();$('overworldCanvas').focus();};
+  document.querySelectorAll('[data-interior-walk]').forEach(button=>{button.onclick=()=>{overworld?.interiorWalk(button.dataset.interiorWalk);$('overworldCanvas').focus();};});
+  $('interiorInteract').onclick=()=>{overworld?.interiorInteract(interiorHUD.dataset.action);if(picker.open)$('overworldCanvas').focus();};
   adventureToggle.onclick=()=>setAdventurePanel(adventurePanel.hidden);
   directoryToggle.onclick=()=>setDirectory(directory.hidden);
   trailToggle.onclick=()=>setTrailPanel(trailPanel.hidden);
@@ -653,7 +709,7 @@ function openMissions(){
         },
         onPrompt:prompt=>portalPrompt(prompt),
         onDialogue:guide=>showIslandToast(guide.name+' · '+guide.line),
-        onAdventure:renderAdventure,onAdventureToast:showIslandToast,
+        onAdventure:renderAdventure,onAdventureToast:showIslandToast,onInterior:renderInterior,onInteriorDoor:renderBuildingEntrance,
         onTrailChange:()=>renderPythonTrail(),
         onWayfinder:hint=>{$('islandTrailDistance').textContent=hint;},
         onWaystation:(station,found,total)=>{
@@ -682,7 +738,7 @@ function openMissions(){
     renderPythonTrail();
     $('overworldCanvas').focus();
   }else{
-    cameraToggle.hidden=true;
+    cameraToggle.hidden=true;buildingToggle.hidden=true;
     trailToggle.hidden=true;adventureToggle.hidden=true;
     setDirectory(true);
     $('portalStatus').classList.add('visible');
