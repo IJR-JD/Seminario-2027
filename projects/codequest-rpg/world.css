@@ -770,3 +770,32 @@ body:has(.roomStudio)>.topbar nav a:hover,body:has(.roomStudio)>.topbar nav butt
 #missionPicker .islandHelp:not(:hover){max-height:32px;overflow:hidden}
 #missionPicker .adventureHotbar{box-shadow:none}
 #missionPicker .islandTools button{font-size:11px;padding:6px 8px}
+
+/* V8.4 equipment wheel — DOM only; no new WebGL meshes or simulation objects. */
+#gearWheelToggle{position:absolute;z-index:5;bottom:12px;left:50%;transform:translateX(-50%);padding:9px 15px;border:1px solid #8ba9a5;border-radius:8px;background:#152e38f5;color:#ecf1e7;font:650 13px system-ui;cursor:pointer}
+#gearWheelToggle kbd{padding:2px 5px;border:1px solid #a0b9b4;border-radius:4px;font:600 11px system-ui;margin-right:5px}
+#missionPicker .adventureHotbar{left:auto;right:12px;transform:none;bottom:12px;width:max-content;max-width:min(680px,calc(100% - 24px));padding:0;background:transparent;border:0}
+#missionPicker .adventureHotbar summary{cursor:pointer;margin-left:auto;width:max-content;background:#152e38f5;border:1px solid #839b96;color:#ecf1e7;padding:9px 12px;border-radius:8px;font:600 12px system-ui}
+#missionPicker .shortcutItems{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;background:#142634f5;border:1px solid #b49a6b;border-radius:8px;padding:7px;margin-top:5px}
+#missionPicker .adventureHotbar:not([open]) .shortcutItems{display:none}
+#missionPicker .adventureHotbar[open]{bottom:54px}
+#missionPicker.insideBuilding #gearWheelToggle,#gearWheel[hidden],#gearWheelToggle[hidden]{display:none!important}
+#gearWheel{position:absolute;inset:0;z-index:30;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:#081a24bd;color:#edf3ed;outline:none;overflow:auto;padding:8px;box-sizing:border-box;touch-action:none}
+.gearHeading{display:flex;align-items:center;justify-content:space-between;width:min(520px,96%);font:650 11px system-ui;letter-spacing:.13em;color:#c1d8d7}
+.gearHeading button{background:#1d3944;border:1px solid #7a9696;color:white;border-radius:6px;min-width:34px;min-height:34px}
+.gearRing{position:relative;width:min(490px,90vw,59vh);aspect-ratio:1;flex-shrink:0;--radius:36%;border-radius:50%;background:radial-gradient(circle,transparent 0 27%,#142e39d9 27.4% 72%,transparent 72.4%);border:1px solid #6c8e91;box-sizing:border-box}
+.gearSlot{position:absolute;left:calc(50% + var(--sx)*var(--radius));top:calc(50% + var(--sy)*var(--radius));transform:translate(-50%,-50%);width:25%;height:21%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:2px;background:#1e3946;border:1px solid #789398;color:#e5eeea;border-radius:10px;cursor:pointer;font:600 clamp(9px,1.4vw,13px) system-ui;line-height:1.15}
+.gearIcon{font-size:clamp(18px,3vw,30px);line-height:1.1}
+.gearStatus{font-size:clamp(8px,1vw,10px);font-weight:500;color:#a7d5c6}
+.gearSlot[data-state=locked],.gearSlot[data-state=unavailable],.gearSlot[data-state=cooldown]{background:#233139;color:#9caaab;border-color:#50666d}
+.gearSlot[data-state=locked] .gearStatus,.gearSlot[data-state=unavailable] .gearStatus,.gearSlot[data-state=cooldown] .gearStatus{color:#c1ac96}
+.gearSlot[data-state=active]{border-color:#f2d38d}
+.gearSlot[aria-pressed=true]{outline:2px solid #f4d49b;background:#466965;color:white;box-shadow:0 0 12px #e9cb8244}
+.gearCenter{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:39%;text-align:center;pointer-events:none}
+.gearCenter strong{font:700 clamp(15px,2.5vw,23px) system-ui;color:#ffe0a1}
+.gearCenter p{font:400 clamp(9px,1.2vw,12px)/1.4 system-ui;margin:5px 0;color:#d4e2df}
+.gearSecondary{display:flex;flex-wrap:wrap;justify-content:center;gap:5px;max-width:540px}
+.gearSecondary button{background:#1e3946;color:#e7f0e9;border:1px solid #7d9698;border-radius:6px;padding:7px;font:600 11px system-ui;min-height:34px}
+.gearSecondary button:disabled{opacity:.4;cursor:not-allowed}
+.gearFooter{font:400 11px system-ui;color:#b9ccce;text-align:center;margin:0}
+@media(max-width:700px){#missionPicker .adventureHotbar{right:8px;bottom:8px}#gearWheelToggle{bottom:8px}.gearRing{width:min(94vw,52vh)}.gearFooter{font-size:10px}#missionPicker .islandTraversal{bottom:72px}#missionPicker .islandDpad{bottom:155px}}
