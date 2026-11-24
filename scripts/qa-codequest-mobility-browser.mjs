@@ -22,6 +22,9 @@ async function open(unlocked){
  await page.locator('#continueAdventure').click();
  await page.locator('#missionPicker[open]').waitFor();
  assert(await page.locator('#overworldStage').isVisible());
+ await page.waitForFunction(()=>Number(document.querySelector('#overworldCanvas')?.dataset.drawCalls)>0);
+ const metrics=await page.locator('#overworldCanvas').evaluate(c=>({originals:Number(c.dataset.staticMeshes),batches:Number(c.dataset.staticBatches),savings:Number(c.dataset.staticDrawSavings),calls:Number(c.dataset.drawCalls),triangles:Number(c.dataset.triangles)}));
+ assert(metrics.savings>100&&metrics.originals>metrics.batches);console.log('PASS live renderer metrics '+JSON.stringify(metrics));
 }
 async function go(selector){
  await page.locator('#mobilityToggle').click();
