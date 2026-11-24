@@ -1,7 +1,7 @@
 // Original, scaled landmark interpretations. Keep existing room, anchor and depot IDs.
 import {groundSafe,segmentSafe,routeAdventure,shrines,travelGates,circuits,traps,wallLane} from './island-adventure.mjs';
 import {allRoomLocations,villageHouses} from './island-villages.mjs';
-import {courses,platformList,elevation} from './island-vertical.mjs';
+import {courses,platformList,elevation,platformSideBlocked} from './island-vertical.mjs';
 import {anchors,gear} from './island-airgear.mjs';
 import {depots,vehicles} from './island-mobility.mjs';
 import {pythonWaystations,shore} from './island-exploration.mjs';
@@ -55,4 +55,14 @@ export function landmarkSegment(a,b,y=-Infinity,margin=.20){
  return true;
 }
 export const landmarkGround=(x,z)=>groundSafe(x,z)&&landmarkClear(x,z);
-export function landmarkRoute(start,end){return routeAdventure(start,end,{walkable:landmarkGround,segment:(a,b)=>segmentSafe(a,b)&&landmarkSegment(a,b)});}
+export function landmarkRoute(start,end,{avoidTraps=false}={}){
+ const segment=(a,b)=>{
+  if(!segmentSafe(a,b)||!landmarkSegment(a,b))return false;
+  const n=Math.max(1,Math.ceil(Math.hypot(b.x-a.x,b.z-a.z)/.25));let prev=a;
+  for(let i=1;i<=n;i++){const t=i/n,p={x:a.x+(b.x-a.x)*t,z:a.z+(b.z-a.z)*t};
+   if(platformSideBlocked(platformList,prev,p,elevation(prev.x,prev.z)))return false;
+   if(avoidTraps&&traps.some(q=>Math.hypot(p.x-q.x,p.z-q.z)<q.r+1))return false;
+   prev=p;
+  }return true;
+ };return routeAdventure(start,end,{walkable:landmarkGround,segment});
+}
