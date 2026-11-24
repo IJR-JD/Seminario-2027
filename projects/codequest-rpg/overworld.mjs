@@ -513,13 +513,13 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
       frontier:inside?.id??null,nearFrontier:f?.id??null,canLift:!!f&&!ride&&!lift&&((grounded&&skills.has(f.skill))||inside?.id===f.id),lifting:!!lift,
       locomotion:ride?'ride-'+ride.type:slideTime>0?'slide':vertical&&!vertical.grounded?'airborne':Math.hypot(moveVelocity.x,moveVelocity.z)>.2?'running':'grounded'};
   }
-  function publishMobility(){const m=mobilityState(),sig=JSON.stringify(m);if(sig!==lastMobility){lastMobility=sig;onMobility?.(m);}}
+  function publishMobility(){const m=mobilityState(),sig=JSON.stringify(m);frame.latestMobility=m;if(sig!==lastMobility){lastMobility=sig;onMobility?.(m);}}
   let landmarkVisits=new Set(),lastLandmarkSignature='';
   try{landmarkVisits=new Set(restoreLandmarks(JSON.parse(localStorage.getItem(landmarkStorage)||'[]')));}catch{}
   function landmarkState(){return {visited:[...landmarkVisits],total:landmarks.length};}
   function locateLandmark(id){
     if(interior||ride||lift||deck!==null||air>.7||climb||flying||jetting||swing||releaseMotion||wallRunning)return false;
-    const p=landmarks.find(l=>l.id===id);if(!p)return false;routeTo(p.approach.x,p.approach.z);return !!target;
+    const p=landmarks.find(l=>l.id===id);if(!p)return false;routeTo(p.approach.x,p.approach.z,true);return !!target;
   }
   function locateDepot(id){
     if(interior||ride||lift||deck!==null||air>.7||climb||flying||jetting||swing||releaseMotion||wallRunning)return false;
@@ -918,11 +918,11 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   const clearInput=()=>{keys.clear();jetInput=0;jumpRelease=true;};
   canvas.addEventListener('blur',clearInput);
   window.addEventListener('blur',()=>{clearInput();if(ride)parking=true;});
-  function routeTo(x,z){
+  function routeTo(x,z,avoidTraps=false){
     if(ride||lift)return;
-    waypoints=[];assist=null;moveVelocity={x:0,z:0};
+    keys.clear();waypoints=[];assist=null;moveVelocity={x:0,z:0};
     try{
-      waypoints=landmarkRoute({x:position.x,z:position.z},{x,z}).map(point=>new THREE.Vector3(point.x,0,point.z));
+      waypoints=landmarkRoute({x:position.x,z:position.z},{x,z},{avoidTraps}).map(point=>new THREE.Vector3(point.x,0,point.z));
       target=waypoints.shift()??null;
     }catch{
       target=null;notify('No clear walking route · move into an open area and try again.');
@@ -1328,12 +1328,12 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     const park=parkourState(),next=park.canAssist?courses.find(c=>c.id===park.course)?.pads[park.step]:null;
     nextDeckRing.visible=!!next&&!mapMode;
     if(next){nextDeckRing.position.set(next.x,next.y+.035,next.z);nextDeckRing.scale.setScalar(1+.10*Math.sin(time*4));}
-    const mob=mobilityState();
+    const mob=frame.latestMobility??mobilityState();
     const cue=contextAction({riding:!!ride,parking,lifting:!!lift,portal:near,available:near!==undefined&&roomAvailable(near),title:near===undefined?'':'room '+String(near+1).padStart(2,'0'),building:!!nearBuilding,gate:!!activeGate,ladder:ladder()>=0,parkour:park.canAssist,vehicle:!!mob.nearest,guide:nearbyGuide?.name,route:!!target});
     const cueSignature=JSON.stringify(cue);if(cueSignature!==frame.cueSignature){frame.cueSignature=cueSignature;onContext?.(cue);}
     if(now-(frame.labelAt??-1000)>180){frame.labelAt=now;const entries=worldLabels.map((l,id)=>{l.sprite.getWorldPosition(labelPosition);return {id,distance:labelPosition.distanceTo(hero.position),major:l.sprite.userData.mapLabel===true,visible:l.sprite.parent?.visible!==false};});const visible=new Set(labelBudget(entries,{map:mapMode,limit:6}));for(const [id,l] of worldLabels.entries())l.sprite.visible=visible.has(id);canvas.dataset.visibleLabels=String(visible.size);}
     renderer.render(scene,camera);
-    if(now-(frame.metricsAt??-1000)>500){frame.metricsAt=now;canvas.dataset.drawCalls=String(renderer.info.render.calls);canvas.dataset.triangles=String(renderer.info.render.triangles);canvas.dataset.playerX=position.x.toFixed(2);canvas.dataset.playerZ=position.z.toFixed(2);canvas.dataset.playerY=hero.position.y.toFixed(2);canvas.dataset.routeActive=String(!!target);canvas.dataset.support=vertical?.support??'';}
+    if(now-(frame.metricsAt??-1000)>500){frame.metricsAt=now;canvas.dataset.drawCalls=String(renderer.info.render.calls);canvas.dataset.triangles=String(renderer.info.render.triangles);canvas.dataset.playerX=position.x.toFixed(2);canvas.dataset.playerZ=position.z.toFixed(2);canvas.dataset.playerY=hero.position.y.toFixed(2);canvas.dataset.routeActive=String(!!target);canvas.dataset.routeTarget=target?target.x.toFixed(1)+','+target.z.toFixed(1):'';canvas.dataset.support=vertical?.support??'';}
   }
   function setMapMode(enabled){
     if(interior)return;
