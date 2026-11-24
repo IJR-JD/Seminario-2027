@@ -36,6 +36,12 @@ try{
   await prepare(desktop);
   console.log('QA desktop: island ready');
   await openIsland(desktop);
+  await desktop.waitForFunction(()=>Number(document.querySelector('#overworldCanvas').dataset.renderRatio)>0&&document.querySelector('#overworldCanvas').dataset.visibleLabels!==undefined);
+  assert(Number(await desktop.locator('#overworldCanvas').getAttribute('data-visible-labels'))<=6);
+  assert(await desktop.locator('#islandControlsHelp').isHidden());
+  await desktop.locator('#islandControlsToggle').click();assert(await desktop.locator('#islandControlsHelp').isVisible());
+  await desktop.locator('#islandControlsToggle').click();assert(await desktop.locator('#islandControlsHelp').isHidden());
+  console.log('PASS actual render resolution, proximity label budget and optional controls');
   await desktop.locator('#islandDirectoryToggle').click();
   assert.equal(await desktop.locator('#levelList .missionCard').count(),22);
   assert.equal(await desktop.locator('#levelList .missionCard[data-floor="2"]').count(),11,
