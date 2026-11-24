@@ -38,7 +38,7 @@ export function createDepots(){
    const theta=i*Math.PI/12,x=Math.round(c.entry.x+Math.cos(theta)*r),z=Math.round(c.entry.z+Math.sin(theta)*r);
    const points=[{x,z},{x:x-2.8,z:z+2},{x:x+2.8,z:z+2},{x,z:z-3.3}];
    if(points.every(p=>shore(p.x,p.z)<.88&&Math.abs(p.z)>6&&groundSafe(p.x,p.z)&&reserved.every(q=>Math.hypot(p.x-q.x,p.z-q.z)>4.2)&&anchors.every(q=>Math.hypot(p.x-q.x,p.z-q.z)>2.5)&&sites.every(q=>Math.hypot(p.x-q.x,p.z-q.z)>10))&&
-    points.every(p=>segmentSafe({x,z},p)))found={id:'depot-'+c.zone,zone:c.zone,x,z,vehicles:[{id:'bike-'+c.zone,type:'bike',...points[1]},{id:'rover-'+c.zone,type:'rover',...points[2]},{id:'hover-'+c.zone,type:'hover',...points[3]}]};
+    points.every(p=>segmentSafe({x,z},p))&&points.slice(1).every((p,j)=>vehiclePathSafe(['bike','rover','hover'][j],p,p)))found={id:'depot-'+c.zone,zone:c.zone,x,z,vehicles:[{id:'bike-'+c.zone,type:'bike',...points[1]},{id:'rover-'+c.zone,type:'rover',...points[2]},{id:'hover-'+c.zone,type:'hover',...points[3]}]};
   }
   if(!found)throw Error('No safe mobility depot '+c.id);sites.push(found);
  }
