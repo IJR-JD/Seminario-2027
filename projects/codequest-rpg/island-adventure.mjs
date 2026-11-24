@@ -60,13 +60,18 @@ export function routeAdventure(start,end,{walkable=groundSafe,segment=segmentSaf
  const initial=grid(start),goal=grid(end);
  const neighbors=p=>[[2,0],[-2,0],[0,2],[0,-2],[2,2],[2,-2],[-2,2],[-2,-2]].map(([x,z])=>({x:p.x+x,z:p.z+z}));
  const candidates=[initial,...neighbors(initial)].filter(p=>segment(start,p));
- const queue=[],parents=new Map(),seen=new Set();
- for(const p of candidates){const k=key(p);if(!seen.has(k)){seen.add(k);queue.push(p);parents.set(k,null);}}
+ // A* uses the same clearance predicate as live movement. Euclidean
+ // heuristic reduces broadphase queries and keeps route selection responsive.
+ const heap=[],parents=new Map(),costs=new Map();
+ const priority=(p,g)=>g+Math.hypot(p.x-goal.x,p.z-goal.z);
+ function push(node){let i=heap.length;heap.push(node);while(i>0){const p=(i-1)>>1;if(heap[p].f<=node.f)break;heap[i]=heap[p];i=p;}heap[i]=node;}
+ function pop(){const head=heap[0],tail=heap.pop();if(heap.length){let i=0;while(i*2+1<heap.length){let j=i*2+1;if(j+1<heap.length&&heap[j+1].f<heap[j].f)j++;if(heap[j].f>=tail.f)break;heap[i]=heap[j];i=j;}heap[i]=tail;}return head;}
+ for(const p of candidates){const k=key(p),g=Math.hypot(p.x-start.x,p.z-start.z);if(!costs.has(k)){costs.set(k,g);parents.set(k,null);push({p,g,f:priority(p,g)});}}
  let finish;
- for(let i=0;i<queue.length&&i<24000;i++){
-  const p=queue[i];
+ for(let i=0;heap.length&&i<24000;i++){
+  const {p,g}=pop();if(g>costs.get(key(p))+1e-8)continue;
   if(Math.hypot(p.x-goal.x,p.z-goal.z)<=4&&segment(p,end)){finish=p;break;}
-  for(const n of neighbors(p)){const k=key(n);if(!seen.has(k)&&segment(p,n)){seen.add(k);parents.set(k,p);queue.push(n);}}
+  for(const n of neighbors(p)){const k=key(n),ng=g+Math.hypot(n.x-p.x,n.z-p.z);if(ng+1e-8<(costs.get(k)??Infinity)&&segment(p,n)){costs.set(k,ng);parents.set(k,p);push({p:n,g:ng,f:priority(n,ng)});}}
  }
  if(!finish)throw Error('No safe path found');
  const path=[end];for(let p=finish;p;p=parents.get(key(p)))path.push(p);path.reverse();
