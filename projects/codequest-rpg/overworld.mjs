@@ -7,6 +7,7 @@ import {buildings,interiorStorage,loadInteriorProgress} from './island-interiors
 import {createInterior} from './interior-scene.mjs';
 import {gear,anchors,jetCapacity,grappleRange,anchorLinks,selectAnchor,swingStart,swingStep,jetStep} from './island-airgear.mjs';
 import {createIslandDetail} from './island-detail.mjs';
+import {batchStaticMeshes} from './island-rendering.mjs';
 import {sectors,sectorProgress,earnedSkills,depots,vehicles,vehicleTypes,canDrive,frontiers,frontierSurfaces,frontierStorage,restoreFrontiers,vehicleStep,vehiclePathSafe,movementMode} from './island-mobility.mjs';
 import {createVehicleFleet} from './island-vehicles.mjs';
 import {terrain,elevation,summits,courses,platformList,parkourStorage,restoreParkour,recordPad,makeVertical,verticalStep,horizontalStep,landingSurface,onPlatform} from './island-vertical.mjs';
@@ -112,7 +113,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   const light=new THREE.DirectionalLight('#fff8de',2.15);
   light.position.set(-7,16,10);
   scene.add(light);
-  const materialCache=new Map(),boxGeometryCache=new Map();
+  const materialCache=new Map(),boxGeometryCache=new Map(),staticBoxes=[];
   const material=color=>{
     if(!materialCache.has(color))materialCache.set(color,new THREE.MeshStandardMaterial({color}));
     return materialCache.get(color);
@@ -122,7 +123,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     if(!boxGeometryCache.has(key))boxGeometryCache.set(key,new THREE.BoxGeometry(width,height,depth));
     const mesh=new THREE.Mesh(boxGeometryCache.get(key),mat);
     mesh.position.set(x,y,z);
-    scene.add(mesh);
+    scene.add(mesh);staticBoxes.push(mesh);
     return mesh;
   }
   const details=createIslandDetail(scene,{elevation,groundSafe,blocked,landmarks:[...shrines,...gear,...travelGates,...circuits,...pythonWaystations,...anchors,...platformList,...depots]});
@@ -227,7 +228,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   const trunk=material('#645044');
   const crownGeometryCache=new Map();
   function tree(x,z,scale,tint){
-    if(platformList.some(p=>Math.hypot(x-p.x,z-p.z)<3.5))return;
+    if(platformList.some(p=>Math.hypot(x-p.x,z-p.z)<3.5)||depots.some(d=>Math.hypot(x-d.x,z-d.z)<6.5))return;
     const y=elevation(x,z);
     box(.31*scale,1.65*scale,.31*scale,trunk,x,y+.8*scale,z);
     if(!crownGeometryCache.has(scale))crownGeometryCache.set(scale,new THREE.ConeGeometry(1.1*scale,2.6*scale,6));
@@ -750,7 +751,9 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
       pickables.push(mesh);
     }
   }
+  let architectureBatched=false;
   function addZones(zones){
+    if(architectureBatched)return;
     for(const [zoneIndex,zone] of zones.entries()){
       const design=islandDistricts[zoneIndex];
       if(!design||design.lots.length!==zone.rooms.length){
@@ -797,6 +800,10 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
         addVillageHouse({...extra,zoneIndex,storeys:2,upper:false});
       }
     }
+    const excluded=new Set([...pickables,...ripples,...padModels.map(p=>p.top),...frontierModels.map(p=>p.liftDeck)]);
+    const stats=batchStaticMeshes(scene,staticBoxes,{exclude:excluded});
+    canvas.dataset.staticMeshes=String(stats.originals);canvas.dataset.staticBatches=String(stats.batches);canvas.dataset.staticDrawSavings=String(stats.saved);
+    staticBoxes.length=0;architectureBatched=true;
   }
   const ray=new THREE.Raycaster();
   canvas.addEventListener('pointerdown',event=>{
@@ -860,7 +867,9 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     }
   });
   canvas.addEventListener('keyup',event=>{const k=event.key.length===1?event.key.toLowerCase():event.key;keys.delete(k);if(k===' '||k==='c')jetInput=0;if(k===' '&&!jetting)jumpRelease=true;});
-  canvas.addEventListener('blur',()=>{keys.clear();jetInput=0;jumpRelease=true;if(ride)parking=true;});
+  const clearInput=()=>{keys.clear();jetInput=0;jumpRelease=true;};
+  canvas.addEventListener('blur',clearInput);
+  window.addEventListener('blur',()=>{clearInput();if(ride)parking=true;});
   function routeTo(x,z){
     if(ride||lift)return;
     waypoints=[];assist=null;moveVelocity={x:0,z:0};
@@ -934,7 +943,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
       frame.width=width;
       frame.height=height;
     }
-    const delta=last?Math.min(.05,(now-last)/1000):0;
+    const delta=last?Math.max(0,Math.min(.05,(now-last)/1000)):0;
     last=now;
     if(interior){interior.frame({renderer,width,height,delta,now,keys,controls});return;}
     slideTime=Math.max(0,slideTime-delta);mountPose=Math.max(0,mountPose-delta);exitPose=Math.max(0,exitPose-delta);rollTime=Math.max(0,rollTime-delta);turnAmount*=Math.exp(-delta*10);
@@ -1177,9 +1186,10 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     }
     camera.updateProjectionMatrix();
     camera.updateMatrixWorld();
-    const moving=distance>.025||Math.hypot(moveVelocity.x,moveVelocity.z)>.3;
-    pace+=(Number(moving)-pace)*Math.min(1,delta*12);
-    gait+=delta*pace*(keys.has('Shift')&&!crouched?21:14);
+    const actualSpeed=ride?.speed??(target||assist||dashing||flying||jetting||wallRunning?Math.min(15,distance*12):Math.hypot(moveVelocity.x,moveVelocity.z));
+    const moving=actualSpeed>.3;
+    pace+=(Math.min(1,actualSpeed/5)-pace)*(1-Math.exp(-delta*12));
+    gait+=delta*Math.min(24,actualSpeed*1.45);
     const mode=swing?'grapple':jetting?'jetpack':releaseMotion?'jump':climb?'climb':flying?'fly':wallRunning?'wall':dashing?'dash':crouched?'crouch':lift?'idle':mountPose>0?'mount':exitPose>0?'dismount':rollTime>0?'roll':movementMode({speed:ride?.speed??(target&&moving?8:Math.hypot(moveVelocity.x,moveVelocity.z)),sprint:keys.has('Shift'),grounded:vertical?.grounded??!air,vy:velocity,landing:landingTime,slide:slideTime,vehicle:ride?.type,turn:turnAmount});
     animateIslandAvatar(hero,{time:now/1000,delta,pace,mode,phase:climb?climb.time*45:gait,gear:[...unlocked],landing:landingTime,turn:turnAmount,roll:rollTime});
     for(const [i,ripple] of ripples.entries())ripple.scale.x=.75+.35*Math.sin(now*.0018+i);
@@ -1257,6 +1267,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
         {room:near,guide:nearbyGuide?.name,x:(point.x+1)*50,y:(1-point.y)*50}:null);
     }
     renderer.render(scene,camera);
+    if(now-(frame.metricsAt??-1000)>500){frame.metricsAt=now;canvas.dataset.drawCalls=String(renderer.info.render.calls);canvas.dataset.triangles=String(renderer.info.render.triangles);}
   }
   function setMapMode(enabled){
     if(interior)return;
