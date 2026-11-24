@@ -225,6 +225,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   const trunk=material('#645044');
   const crownGeometryCache=new Map();
   function tree(x,z,scale,tint){
+    if(platformList.some(p=>Math.hypot(x-p.x,z-p.z)<3.5))return;
     const y=elevation(x,z);
     box(.31*scale,1.65*scale,.31*scale,trunk,x,y+.8*scale,z);
     if(!crownGeometryCache.has(scale))crownGeometryCache.set(scale,new THREE.ConeGeometry(1.1*scale,2.6*scale,6));
@@ -236,7 +237,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   for(let i=0;i<105;i++){
     const angle=i*2.39996,r=.35+.51*((i*17)%107)/107;
     const x=Math.cos(angle)*bounds.x*r,z=Math.sin(angle)*bounds.z*r;
-    if(Math.abs(z)<7||crossings.some(center=>Math.abs(x-center)<18&&Math.abs(Math.abs(z)-27)<18)||blocked(x,z)||[...shrines,...travelGates,...circuits,...pythonWaystations].some(p=>Math.hypot(x-p.x,z-p.z)<9))continue;
+    if(Math.abs(z)<7||crossings.some(center=>Math.abs(x-center)<18&&Math.abs(Math.abs(z)-27)<18)||blocked(x,z)||platformList.some(p=>Math.hypot(x-p.x,z-p.z)<3.8)||[...shrines,...travelGates,...circuits,...pythonWaystations].some(p=>Math.hypot(x-p.x,z-p.z)<9))continue;
     tree(x,z,.62+(i%5)*.12,i%2?'#38694a':'#497953');
   }
   const actors=guides.map(guide=>{
@@ -889,7 +890,12 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
       const input=trail.clone();if(input.length()>1)input.normalize();
       const current=swing?swingStep(swing.state,swing.anchor,input,delta):{x:position.x+releaseMotion.vx*delta,y:elevation(position.x,position.z)+air+(releaseMotion.vy-=14*delta)*delta,z:position.z+releaseMotion.vz*delta};
       const groundY=elevation(current.x,current.z);
-      if(!airClear(current.x,current.z,current.y,elevation)||current.y<groundY+.28||current.y>groundY+30){
+      const landing=releaseMotion?landingSurface(surfaceList(),current.x,current.z,previousFeet,current.y):null;
+      if(landing&&airClear(current.x,current.z,landing.y,elevation)){
+        position.set(current.x,0,current.z);releaseMotion=null;swing=null;velocity=0;landingTime=.22;
+        if(landing.deck!==undefined){deck=landing.deck;air=0;vertical=null;}
+        else{air=landing.y-groundY;vertical=makeVertical(landing.y,0,true,landing.id);const pad=platformList.find(p=>p.id===landing.id);if(pad)parkourProgress[pad.course]=recordPad(parkourProgress[pad.course],pad);}
+      }else if(!airClear(current.x,current.z,current.y,elevation)||current.y<groundY+.28||current.y>groundY+30){
         if(swing){
           // Keep the rope attached on contact. Resolve the obstructed motion
           // along the vertical axis rather than teleporting through a facade.
