@@ -520,7 +520,7 @@ function openMissions(){
     });
     $('adventureGate').dataset.unlocked=String(!!state.gate);
     const transfer=$('tetherTransfer');transfer.disabled=!state.grappling||!state.nextAnchor;transfer.dataset.unlocked=String(!transfer.disabled);
-    const network=$('tetherNetwork');network.dataset.anchor=state.anchor??'';network.dataset.next=state.nextAnchor??'';network.dataset.transfers=String(state.transfers);network.textContent=state.powers.includes('grapple')?state.anchorCount+' anchors · '+(state.grappling?(state.nextAnchor?'Y: next anchor ready':'Steer to next anchor'):(state.nextAnchor?'T: anchor ready':'Find a cyan tower'))+' · '+state.transfers+' transfers':'';
+    const network=$('tetherNetwork');network.dataset.anchor=state.anchor??'';network.dataset.next=state.nextAnchor??'';network.dataset.transfers=String(state.transfers);network.dataset.lastTransfer=state.lastTransfer?.to??'';network.textContent=state.powers.includes('grapple')?state.anchorCount+' anchors · '+(state.grappling?(state.nextAnchor?'Y: next anchor ready':'Steer to next anchor'):(state.nextAnchor?'T: anchor ready':'Find a cyan tower'))+' · '+state.transfers+' transfers':'';
     const signature=JSON.stringify([state.powers,state.circuits,state.progress,state.setbacks]);
     if(signature===journalSignature)return;
     journalSignature=signature;
