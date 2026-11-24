@@ -56,7 +56,7 @@ export function createIslandAvatar(settings={}){
  root.scale.set((Number(settings.build)||100)/100,(Number(settings.height)||100)/100,(Number(settings.build)||100)/100);
  root.userData={rig,arms,legs,cape,head,wings,harness,pack};return root;
 }
-export function animateIslandAvatar(hero,{time=0,delta=.016,pace=0,mode='idle',phase=0,gear=[]}={}){
+export function animateIslandAvatar(hero,{time=0,delta=.016,pace=0,mode='idle',phase=0,gear=[],landing=0}={}){
  const {rig,arms,legs,cape,head,wings,harness,pack}=hero.userData;
  harness.visible=gear.includes('grapple');pack.visible=gear.includes('jetpack');cape.visible=!pack.visible;
  const smooth=Math.min(1,delta*17),mix=(obj,axis,value)=>obj.rotation[axis]+=(value-obj.rotation[axis])*smooth;
@@ -66,6 +66,8 @@ export function animateIslandAvatar(hero,{time=0,delta=.016,pace=0,mode='idle',p
   const sign=i?1:-1;let leg=sign*swing,arm=-sign*swing*.82,spread=0;
   if(mode==='climb'){leg=sign*Math.sin(phase)*.62;arm=-2.1-sign*Math.sin(phase)*.45;}
   if(mode==='jump'){leg=i?-.85:.45;arm=-1.0;}
+  if(mode==='fall'){leg=i?-.22:.18;arm=-.35;spread=sign*.75;}
+  if(mode==='land'){leg=.32;arm=-.30;spread=sign*.14;}
   if(mode==='dash'){leg=sign*.36;arm=.9;}
   if(mode==='fly'){leg=.25;arm=-.20;spread=sign*.60;}
   if(mode==='grapple'){leg=i?-.58:.32;arm=-2.55;spread=sign*.10;}
@@ -75,8 +77,9 @@ export function animateIslandAvatar(hero,{time=0,delta=.016,pace=0,mode='idle',p
   mix(legs[i],'x',leg);mix(arms[i],'x',arm+idle);mix(arms[i],'z',spread);
   wings[i].visible=mode==='fly';mix(wings[i],'z',Math.sin(time*8)*.25*sign);
  }
- mix(rig,'x',mode==='dash'?-.42:mode==='grapple'?-.22:mode==='jetpack'?-.13:mode==='fly'?-.18:mode==='sprint'?-.12:mode==='crouch'?.20:0);
+ mix(rig,'x',mode==='dash'?-.42:mode==='grapple'?-.22:mode==='jetpack'?-.13:mode==='fly'?-.18:mode==='sprint'?-.12:mode==='land'?.18:mode==='fall'?.08:mode==='crouch'?.20:0);
  mix(rig,'z',mode==='wall'?.23:0);mix(cape,'x',mode==='fly'?.8:mode==='dash'?.95:idle+pace*.20);
  mix(head,'y',mode==='idle'?Math.sin(time*.85)*.13:0);
- rig.position.y=mode==='climb'||mode==='fly'?0:Math.abs(Math.sin(phase))*.055*pace+idle*.16;
+ const offset=mode==='land'?-.17*Math.min(1,landing/.22):mode==='climb'||mode==='fly'||mode==='jump'||mode==='fall'?0:Math.abs(Math.sin(phase))*.055*pace+idle*.16;
+ rig.position.y+=(offset-rig.position.y)*Math.min(1,delta*20);
 }
