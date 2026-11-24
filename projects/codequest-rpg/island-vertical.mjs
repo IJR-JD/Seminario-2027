@@ -75,7 +75,7 @@ export function verticalStep(prev,{x,z,ground,surfaces=[],dt,jump=false,release=
  if(s.buffer>0&&(s.grounded||s.coyote>0)){
   s.vy=motion.jump;s.grounded=false;s.support=null;s.coyote=0;s.buffer=0;
  }
- if(release&&s.vy>3.7)s.vy=3.7;
+ if(release&&s.vy>6.8)s.vy=6.8;
  if(s.grounded){s.vy=0;return s;}
  const from=s.y;
  s.vy=Math.max(-motion.fallCap,s.vy-motion.gravity*dt);
