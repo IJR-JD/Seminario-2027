@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {islandBounds as bounds,islandCrossings as crossings,shore,isIslandWalkable as walkable,pythonWaystations,planIslandRoute,trailDirection} from './island-exploration.mjs';
 import {islandDistricts,villageHouses,secondFloorHeight,roomLocation} from './island-villages.mjs';
-import {adventureKey,shrines,travelGates,circuits,traps,wallLane,flightLimit,dashDuration,dashCooldown,blocked,groundSafe,airSafe,onWallLane,trapActive,restoreProgress,padResult,routeAdventure,segmentSafe} from './island-adventure.mjs';
+import {adventureKey,shrines,travelGates,circuits,traps,wallLane,flightLimit,dashDuration,dashCooldown,blocked,groundSafe,airSafe,airClear,onWallLane,trapActive,restoreProgress,padResult,routeAdventure,segmentSafe} from './island-adventure.mjs';
 import {animateIslandAvatar} from './island-avatar.mjs';
 import {gear,anchors,jetCapacity,selectAnchor,swingStart,swingStep,jetStep} from './island-airgear.mjs';
 import {createIslandDetail} from './island-detail.mjs';
@@ -89,7 +89,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     return mesh;
   }
   const details=createIslandDetail(scene,{elevation,groundSafe,blocked,landmarks:[...shrines,...gear,...travelGates,...circuits,...pythonWaystations]});
-  const water=new THREE.Mesh(new THREE.PlaneGeometry(420,420),new THREE.MeshStandardMaterial({color:'#258dac',roughness:.48}));
+  const water=new THREE.Mesh(new THREE.PlaneGeometry(420,420),new THREE.MeshStandardMaterial({color:'#258dac',roughness:.48,map:details.water}));
   water.rotation.x=-Math.PI/2;
   water.position.y=-1;
   scene.add(water);
@@ -362,7 +362,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     }
     if(key==='jetpack'){
       if(!unlocked.has('jetpack')){notify('Find the Jetpack Forge to unlock the thrusters.');return;}
-      if(jetting){jetting=false;jetInput=0;if(!groundSafe(position.x,position.z)){position.copy(safeSpot);air=0;}else velocity=0;return;}
+      if(jetting){jetting=false;jetInput=0;if(!groundSafe(position.x,position.z)){position.copy(safeSpot);air=0;notify('Safe landing · returned to last grounded position.');}else velocity=0;return;}
       if(climb||deck!==null||crouched||swing||releaseMotion||flying||wallRunning||jetFuel<.5)return;
       jetting=true;jetHeight=Math.max(2,air);velocity=0;dashLeft=0;target=null;waypoints=[];notify('Jetpack active · Space ascend / C descend / J land.');return;
     }
@@ -718,6 +718,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     if(dashing){trail.copy(dashVector);dashLeft=Math.max(0,dashLeft-delta);}
     if(wallRunning){trail.x=0;trail.z=Math.sign(trail.z);}
     if(climb)trail.set(0,0,0);
+    if(jetting&&!airClear(position.x,position.z,elevation(position.x,position.z)+air,elevation)){jetHeight=Math.min(13,Math.max(jetHeight,air+1));air=jetHeight;jetInput=0;}
     if(!flying&&!jetting&&!airborneGear&&(air>0||velocity!==0)){
       velocity-=delta*18;
       air+=velocity*delta;
@@ -728,7 +729,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
       const input=trail.clone();if(input.length()>1)input.normalize();
       const current=swing?swingStep(swing.state,swing.anchor,input,delta):{x:position.x+releaseMotion.vx*delta,y:elevation(position.x,position.z)+air+(releaseMotion.vy-=14*delta)*delta,z:position.z+releaseMotion.vz*delta};
       const groundY=elevation(current.x,current.z);
-      if(!airSafe(current.x,current.z)||current.y<groundY+.28||current.y>groundY+30){
+      if(!airClear(current.x,current.z,current.y,elevation)||current.y<groundY+.28||current.y>groundY+30){
         if(!groundSafe(position.x,position.z))position.copy(safeSpot);
         swing=null;releaseMotion=null;air=0;velocity=0;
       }else{
@@ -745,7 +746,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
       trail.normalize();
       const nextX=position.x+trail.x*stride,nextZ=position.z+trail.z*stride;
       const onDeck=deck===null||(Math.abs(nextX-towers[deck].x)<1.72&&Math.abs(nextZ-towers[deck].z)<1.72);
-      const valid=flying||jetting?airSafe(nextX,nextZ):wallRunning?onWallLane(nextX,nextZ)&&groundSafe(nextX,nextZ):segmentSafe(position,{x:nextX,z:nextZ});
+      const valid=jetting?airClear(nextX,nextZ,elevation(nextX,nextZ)+air,elevation):flying?airSafe(nextX,nextZ):wallRunning?onWallLane(nextX,nextZ)&&groundSafe(nextX,nextZ):segmentSafe(position,{x:nextX,z:nextZ});
       if(valid&&onDeck&&(flying||jetting||crouched||!lowCeiling(nextX,nextZ))){
         position.set(nextX,0,nextZ);
         if(groundSafe(nextX,nextZ)&&!flying&&!jetting&&!wallRunning&&!air&&!trapModels.some(t=>Math.hypot(t.x-nextX,t.z-nextZ)<t.r+1.2))safeSpot.copy(position);
@@ -843,7 +844,8 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     for(const [i,fx] of jetFx.entries()){fx.visible=jetting;fx.position.set(hero.position.x+(i?1:-1)*.27*Math.cos(hero.rotation.y)-.30*Math.sin(hero.rotation.y),hero.position.y+.43,hero.position.z-(i?1:-1)*.27*Math.sin(hero.rotation.y)-.30*Math.cos(hero.rotation.y));fx.scale.y=.65+.4*Math.sin(time*24+i);}
     for(const a of anchorModels){a.ring.rotation.y=time*.7;a.ring.material.emissiveIntensity=swing?.anchor===a?1.5:.55+.16*Math.sin(time*3);}
     details.update(time,delta,mapMode);
-    onTraversal?.(swing?'Tether swing · T release':releaseMotion?'Aerial release':jetting?'Jetpack · '+jetFuel.toFixed(1)+'s':climb?'Climbing':flying?'Flying · '+flightLeft.toFixed(1)+'s':wallRunning?'Wall running':dashing?'Dash':activeGate?'Travel gate · G':ladder()>=0?'Ladder nearby · F':lowCeiling(position.x,position.z)?'Low passage · C':crouched?'Crouching':air>0?'Jumping':'');
+    light.intensity=2.05+.20*Math.sin(time*.035);
+    onTraversal?.(swing?'Tether swing · T release':releaseMotion?'Aerial release':jetting?'Jetpack · '+jetFuel.toFixed(1)+'s · '+air.toFixed(1)+'m':climb?'Climbing':flying?'Flying · '+flightLeft.toFixed(1)+'s':wallRunning?'Wall running':dashing?'Dash':activeGate?'Travel gate · G':ladder()>=0?'Ladder nearby · F':lowCeiling(position.x,position.z)?'Low passage · C':crouched?'Crouching':air>0?'Jumping':'');
     publishAdventure();
     if(mapMode){
       const extent=Math.max(132,163/aspect)*zoom;
