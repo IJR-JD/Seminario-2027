@@ -17,7 +17,7 @@ try{
  await page.waitForFunction(t=>Number(document.querySelector('#overworldCanvas').dataset.waterTime)>t+.5,t);
  assert.equal(await canvas.getAttribute('data-landmarks'),'4');
  for(const id of ['giza','tower-bridge','eiffel','liberty']){
-  await page.locator('#landmarksToggle').click();assert.equal(await page.locator('#landmarkList article').count(),4);
+  if(!(await page.locator('#exploreMenu').evaluate(el=>el.open)))await page.locator('#exploreMenu summary').click();await page.locator('#landmarksToggle').click();assert.equal(await page.locator('#landmarkList article').count(),4);
   await page.locator('[data-landmark-route="'+id+'"]').click();
   try{await page.waitForFunction(id=>document.querySelector('#landmarksPanel').dataset.visited.split(',').includes(id),id,{timeout:120000});}catch(error){console.log('ROUTE DIAGNOSTICS '+JSON.stringify(await canvas.evaluate(c=>({...c.dataset,toast:document.querySelector('#islandDiscoveryToast').textContent}))));await page.screenshot({path:'qa-codequest/failed-route-'+id+'.png'});throw error; }
   await page.screenshot({path:'qa-codequest/landmark-'+id+'.png'});
