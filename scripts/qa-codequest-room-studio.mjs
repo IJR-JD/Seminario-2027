@@ -15,10 +15,12 @@ await page.route('https://cdn.jsdelivr.net/npm/three@0.170.0/**',route=>{
   if(!relative||relative.includes('..'))return route.abort();
   return route.fulfill({path:resolve('node_modules/three',relative),contentType:'application/javascript'});
 });
+await page.addInitScript(()=>{
+  const value=new URL(location.href).searchParams.get('qaRoom');
+  if(value!==null)localStorage.setItem('ijr-codequest-world-v2',JSON.stringify({level:Number(value),completed:[],bestSteps:{}}));
+});
 async function room(index){
-  await page.goto(base+'/projects/codequest-rpg/',{waitUntil:'domcontentloaded',timeout:45000});
-  await page.evaluate(index=>localStorage.setItem('ijr-codequest-world-v2',JSON.stringify({level:index,completed:[],bestSteps:{}})),index);
-  await page.reload({waitUntil:'domcontentloaded',timeout:45000});
+  await page.goto(base+'/projects/codequest-rpg/?qaRoom='+index,{waitUntil:'domcontentloaded',timeout:45000});
   await page.waitForFunction(index=>document.querySelector('#levelIndex')?.textContent.startsWith(String(index+1).padStart(2,'0')+' / ')&&document.querySelector('#commandPalette')?.children.length>0,index,{timeout:30000});
   // Bypass onboarding only to measure the current room; actual portal entry is
   // already covered by qa-codequest-browser.mjs.
@@ -43,6 +45,8 @@ async function desktopCheck(index){
   return m;
 }
 try{
+  const start=Number(process.env.QA_ROOM_START||0),end=Number(process.env.QA_ROOM_END||22);
+  if(start===0){
   await room(0);
   let m=await desktopCheck(0);
   console.log('Room 01 at 1366x768:',JSON.stringify(m));
@@ -51,7 +55,7 @@ try{
   await page.locator('#focusRoom').click();
   await page.waitForFunction(()=>document.querySelector('#roomStudio').classList.contains('roomFocus'));
   m=await measure();
-  assert(m.canvas.w>normal+200,'Focus mode should increase viewport width');
+  assert(m.canvas.w>normal+200,'Focus mode should increase viewport width: '+JSON.stringify(m));
   assert(await page.locator('#commandDock').isHidden());
   await page.keyboard.press('Escape');
   assert(await page.locator('#commandDock').isVisible());
@@ -64,13 +68,15 @@ try{
   assert(await page.locator('#nextLevel').isVisible(),'Original progression works');
   await page.locator('#resetWorld').click();
   assert.equal(await page.locator('#executionStatus').textContent(),'READY');
+  }
   // Every room is loaded into the shared layout and checked at laptop resolution.
-  for(let i=1;i<22;i++){
+  for(let i=Math.max(1,start);i<end;i++){
     await room(i);
     const dims=await desktopCheck(i);
     console.log('PASS room layout '+(i+1)+' '+Math.round(dims.canvas.w)+'x'+Math.round(dims.canvas.h));
     if(i===12||i===21)await page.screenshot({path:'qa-codequest/room-studio-'+(i+1)+'.png'});
   }
+  if(end===22){
   await page.setViewportSize({width:1920,height:1080});
   await desktopCheck(21);
   await page.screenshot({path:'qa-codequest/room-studio-full-hd.png'});
@@ -84,6 +90,7 @@ try{
   await page.locator('#runCode').scrollIntoViewIfNeeded();
   assert(await page.locator('#runCode').isVisible());
   await page.screenshot({path:'qa-codequest/room-studio-mobile.png',fullPage:true});
+  }
   assert.deepEqual(errors,[],'No unhandled browser errors');
-  console.log('PASS all 22 Room Studio layouts, camera focus, actual code execution, full-HD, laptop and mobile');
+  console.log('PASS Room Studio group '+(start+1)+'–'+end);
 }finally{await browser.close();}
