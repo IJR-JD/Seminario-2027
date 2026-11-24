@@ -1,5 +1,5 @@
-import {createGearWheel} from './gear-wheel.mjs?v=wheel84';
-import {createOverworld} from './overworld.mjs?v=wheel84';
+import {createGearWheel} from './gear-wheel.mjs?v=equipment85';
+import {createOverworld} from './overworld.mjs?v=equipment85';
 import {createIslandAvatar} from './island-avatar.mjs';
 import {shrines,travelGates,circuits} from './island-adventure.mjs';
 import {gear} from './island-airgear.mjs';
@@ -524,11 +524,11 @@ function openMissions(){
     const f=frontiers.find(f=>f.id===(state.frontier??state.nearFrontier));
     mobilityHUD.hidden=!state.vehicle&&!state.nearest&&!f&&!state.lifting;
     $('mobilityName').textContent=state.type?vehicleTypes[state.type].name:f?f.name:'Mobility nearby';
-    $('mobilityStatus').textContent=state.type?state.speed+' units/s'+(state.parking?' · Parking brake':' · WASD drive'):state.lifting?'Lift in motion':f?(state.skills.includes(f.skill)?(state.visited.includes(f.id)?'Explored · return to lift':'Skill unlocked · explore the terrace'):'Locked · complete sector'):'Walk or mount a vehicle';
+    $('mobilityStatus').textContent=state.type?state.speed+' units/s'+(state.parking?' · Parking brake':' · WASD drive'):state.lifting?'Lift in motion':f?(state.visited.includes(f.id)?'Explored · return to lift':'Lift available · explore the terrace'):'Walk or mount a vehicle';
     $('vehicleMount').hidden=!state.vehicle&&!state.nearest;$('vehicleMount').textContent=state.vehicle?'M · Park / exit':'M · Mount';
     $('vehicleBrake').hidden=!state.vehicle;$('vehicleBrake').textContent=state.parking?'P · Release brake':'P · Brake';$('vehicleBrake').setAttribute('aria-pressed',String(state.parking));
     $('frontierLift').hidden=!f||!!state.vehicle;$('frontierLift').disabled=!state.canLift;$('frontierLift').textContent=state.frontier?'U · Descend':'U · Ascend';
-    $('mobilitySummary').textContent=state.skills.length+'/6 mechanical skills · '+state.visited.length+'/6 expedition areas explored';
+    $('mobilitySummary').textContent=state.skills.length+'/6 academic bonuses earned · '+state.visited.length+'/6 expedition areas explored';
     const sig=JSON.stringify([state.skills,state.visited,state.sectors]);
     if(!mobilityPanel.hidden&&sig!==mobilitySignature){mobilitySignature=sig;renderMobilityList(state);}
   }
@@ -539,12 +539,12 @@ function openMissions(){
       const entry=document.createElement('article');entry.className='islandTrailEntry';entry.dataset.sector=s.id;entry.dataset.found=String(done);
       const h=document.createElement('h4');h.textContent=s.name+' · '+(p?.count??0)+'/'+s.rooms.length+' rooms';
       const note=document.createElement('p');note.textContent=(done?'Unlocked: ':'Reward: ')+s.skillName+' — '+s.description;
-      const sub=document.createElement('small');sub.textContent=f.name+' · '+(state.visited.includes(f.id)?'Explored':done?'Open':'Locked');
+      const sub=document.createElement('small');sub.textContent=f.name+' · '+(state.visited.includes(f.id)?'Explored':'Open');
       const route=document.createElement('button');route.type='button';route.dataset.depotRoute=d.id;route.textContent='Walk to mobility hub';
       route.onclick=()=>{if(overworld?.locateDepot(d.id)){setMobilityPanel(false);$('overworldCanvas').focus();}};
       entry.append(h,note,sub,route);
       for(const v of d.vehicles){
-        if(v.type==='hover'&&!state.skills.includes('hover'))continue;
+        
         const button=document.createElement('button');button.type='button';button.dataset.vehicleRoute=v.id;button.textContent='Find '+vehicleTypes[v.type].name;
         button.onclick=()=>{if(overworld?.locateDepot(v.id)){setMobilityPanel(false);$('overworldCanvas').focus();}};
         entry.append(button);
@@ -635,7 +635,7 @@ function openMissions(){
   }
   let journalSignature='';
   function renderAdventure(state){
-    $('adventureProgress').textContent=state.powers.length+'/5 powers · '+state.circuits.length+'/4 trials';
+    $('adventureProgress').textContent=state.powers.length+'/5 powers available · '+(state.discoveredPowers??[]).length+'/5 sites · '+state.circuits.length+'/4 trials';
     $('adventureFuel').textContent=[state.powers.includes('fly')?'Flight '+state.flight.toFixed(1)+'s':'',state.powers.includes('jetpack')?'Jet '+state.jetFuel.toFixed(1)+'s':''].filter(Boolean).join(' · ');
     document.querySelectorAll('[data-power]').forEach(button=>{
       const id=button.dataset.power;button.dataset.unlocked=String(state.powers.includes(id));
@@ -645,13 +645,13 @@ function openMissions(){
     $('adventureGate').dataset.unlocked=String(!!state.gate);
     const transfer=$('tetherTransfer');transfer.disabled=!state.grappling||!state.nextAnchor;transfer.dataset.unlocked=String(!transfer.disabled);
     const network=$('tetherNetwork');network.dataset.anchor=state.anchor??'';network.dataset.next=state.nextAnchor??'';network.dataset.transfers=String(state.transfers);network.dataset.lastTransfer=state.lastTransfer?.to??'';network.textContent=state.powers.includes('grapple')?state.anchorCount+' anchors · '+(state.grappling?(state.nextAnchor?'Y: next anchor ready':'Steer to next anchor'):(state.nextAnchor?'T: anchor ready':'Find a cyan tower'))+' · '+state.transfers+' transfers':'';
-    const signature=JSON.stringify([state.powers,state.circuits,state.progress,state.setbacks]);
+    const signature=JSON.stringify([state.discoveredPowers,state.circuits,state.progress,state.setbacks]);
     if(signature===journalSignature)return;
     journalSignature=signature;
     const list=$('adventureList');list.replaceChildren();
     for(const item of [...shrines,...gear,...circuits,...travelGates]){
       const shrine=(shrines.includes(item)||gear.includes(item)),circuit=circuits.includes(item);
-      const done=shrine?state.powers.includes(item.id):circuit?state.circuits.includes(item.id):false;
+      const done=shrine?state.discoveredPowers.includes(item.id):circuit?state.circuits.includes(item.id):false;
       const entry=document.createElement('article');entry.className='islandTrailEntry';entry.dataset.found=String(done);
       const title=document.createElement('h4');title.textContent=(done?'✓ ':shrine?'✦ ':circuit?'◇ ':'◎ ')+item.name;
       const body=document.createElement('p');body.textContent=item.description??'Paired gate · press G beside the arch to travel.';
