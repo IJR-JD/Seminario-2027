@@ -26,7 +26,7 @@ export const traps=[
 ];
 export const flightLimit=6,dashDuration=.32,dashCooldown=1.4;
 export const buildingFootprints=[...allRoomLocations(),...villageHouses].map(({x,z})=>({x,z:z-2.7,hx:2.23,hz:1.95}));
-export const blocked=(x,z)=>buildingFootprints.some(b=>Math.abs(x-b.x)<b.hx&&Math.abs(z-b.z)<b.hz);
+export const blocked=(x,z)=>buildingFootprints.some(b=>Math.abs(x-b.x)<b.hx&&Math.abs(z-b.z)<b.hz)||(Math.abs(x-wallLane.x)<.7&&z>wallLane.minZ-1&&z<wallLane.maxZ+1);
 export const groundSafe=(x,z)=>isIslandWalkable(x,z)&&!blocked(x,z);
 export const airSafe=(x,z)=>Number.isFinite(x)&&Number.isFinite(z)&&shore(x,z)<.89&&!blocked(x,z);
 export const onWallLane=(x,z)=>Math.abs(x-wallLane.sideX)<1.7&&z>=wallLane.minZ&&z<=wallLane.maxZ;
