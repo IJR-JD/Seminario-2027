@@ -671,3 +671,20 @@ body:has(.roomStudio)>.topbar nav a:hover,body:has(.roomStudio)>.topbar nav butt
   .roomStudio #programActions button{min-height:40px}
   .roomStudio .roomCompass{font-size:9px;gap:2px 6px;padding:5px}
 }
+
+/* Keep the command editor flexible rather than allocating unused vertical rows. */
+@media(min-width:901px){
+  .roomStudio .editorPanel{flex:1 1 0;min-height:0}
+  .roomStudio .missionBrief{flex:none;max-height:150px;overflow:auto}
+  .roomStudio .editorTools{flex:none;max-height:92px;overflow:auto}
+  .roomStudio .outputDock{max-height:118px;overflow:auto}
+  .roomStudio .codeArea{min-height:100px}
+}
+.roomStudio .conditionCue{top:auto;right:9px;bottom:9px;z-index:2;max-width:48%}
+.roomStudio .roomCompass{max-width:48%;z-index:2}
+@media(min-width:901px) and (max-height:660px){
+  .roomStudio .missionBrief{max-height:105px}
+  .roomStudio .outputDock{max-height:74px}
+  .roomStudio .editorTools{max-height:65px}
+  .roomStudio .editorPanel{min-height:410px}
+}
