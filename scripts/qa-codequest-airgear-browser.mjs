@@ -36,6 +36,12 @@ try{
  await page.locator('[data-power="grapple"]').click();
  await page.waitForFunction(()=>document.querySelector('#islandTraversalStatus')?.textContent.includes('Tether swing'),null,{timeout:15000});
  await page.screenshot({path:'qa-codequest/dynamic-tether.png'});
+ await page.waitForFunction(()=>document.querySelector('#tetherNetwork')?.dataset.next&&document.querySelector('#tetherNetwork')?.dataset.anchor,null,{timeout:12000});
+ const first=await page.locator('#tetherNetwork').getAttribute('data-anchor');
+ await page.locator('#tetherTransfer').click();
+ await page.waitForFunction(first=>{const el=document.querySelector('#tetherNetwork');return el.dataset.anchor&&el.dataset.anchor!==first&&Number(el.dataset.transfers)>=1;},first,{timeout:10000});
+ await page.screenshot({path:'qa-codequest/skyways-transfer.png'});
+ console.log('PASS live transfer '+first+' -> '+await page.locator('#tetherNetwork').getAttribute('data-anchor'));
  await page.locator('[data-power="grapple"]').click();
  await page.waitForFunction(()=>document.querySelector('[data-power="grapple"]')?.getAttribute('aria-pressed')==='false');
  console.log('PASS physically discovered tether and entered swing mode');
