@@ -747,3 +747,8 @@ body:has(.roomStudio)>.topbar nav a:hover,body:has(.roomStudio)>.topbar nav butt
 .interiorDestinations button[hidden]{display:none}
 @media(min-width:901px){#missionPicker.insideBuilding #overworldStage{left:235px}}
 @media(max-width:700px){.buildingEntrance{left:12px;bottom:310px;max-width:190px;padding:8px}.interiorHUD{top:auto;bottom:7px;width:calc(100% - 24px);padding:8px;gap:5px}.interiorHUD>small{display:none}.interiorDestinations{grid-template-columns:repeat(4,minmax(0,1fr))}#interiorDialogue{font-size:11px;padding:4px 0}#missionPicker.insideBuilding #islandDpad{bottom:220px}.buildingDirectory{top:140px;bottom:105px}}
+
+/* Vertical trail overlay remains separate from lesson and indoor UI. */
+.parkourHUD{position:absolute;right:14px;bottom:148px;z-index:4;display:flex;align-items:center;gap:12px;background:#183841ee;border:1px solid #d6be88;color:#f5e8c7;padding:9px 12px;border-radius:10px;max-width:calc(100% - 28px);box-shadow:0 4px 14px #12252b80}
+.parkourHUD strong,.parkourHUD small{display:block}.parkourHUD small{font-size:11px;color:#bfdcd4}.parkourHUD button{background:#d5ba83;color:#243b44;border:0;padding:9px;border-radius:6px;font-weight:700}.parkourHUD button:disabled{opacity:.45}.parkourHUD[hidden],#parkourPanel[hidden],#missionPicker.insideBuilding .parkourHUD{display:none!important}
+@media(max-width:700px){.parkourHUD{right:10px;bottom:325px;padding:7px;gap:6px;font-size:12px}.parkourHUD small{font-size:10px}.parkourHUD button{font-size:10px;padding:8px}}
