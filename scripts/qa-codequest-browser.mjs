@@ -36,6 +36,9 @@ try{
   await prepare(desktop);
   console.log('QA desktop: island ready');
   await openIsland(desktop);
+  await desktop.waitForFunction(()=>document.querySelector('#overworldCanvas')?.dataset.release==='8.2-live');
+  const metrics=await desktop.locator('#overworldCanvas').evaluate(c=>({...c.dataset}));
+  assert(Number(metrics.visibleLabels)<=6);assert(Number(metrics.triangles)>0);assert(Number(metrics.renderRatio)>0);console.log('PASS live renderer diagnostics '+JSON.stringify(metrics));
   await desktop.locator('#islandDirectoryToggle').click();
   assert.equal(await desktop.locator('#levelList .missionCard').count(),22);
   assert.equal(await desktop.locator('#levelList .missionCard[data-floor="2"]').count(),11,
