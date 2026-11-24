@@ -3,7 +3,7 @@ import {isIslandWalkable,shore,planIslandRoute} from './island-exploration.mjs';
 import {allRoomLocations,villageHouses} from './island-villages.mjs';
 export const adventureKey='cq-island-adventure-v3';
 export const shrines=[
- {id:'dash',name:'Wind Shrine',x:-119,z:-61,color:'#50d9ff',key:'X',description:'Dash: burst forward. Cross the wind challenge before the spikes rise.'},
+ {id:'dash',name:'Wind Shrine',x:-112,z:-55,color:'#50d9ff',key:'X',description:'Dash: burst forward. Cross the wind challenge before the spikes rise.'},
  {id:'fly',name:'Sky Shrine',x:48,z:-51,color:'#ffdb7a',key:'V',description:'Flight: toggle wings for up to six seconds. Cross water and land safely.'},
  {id:'wall',name:'Stone Shrine',x:-57,z:35,color:'#b8a2ff',key:'B',description:'Wall run: activate on a marked wall lane, then run along its face.'}
 ];
@@ -15,13 +15,13 @@ export const travelGates=[
 ];
 export const circuits=[
  {id:'sequence',name:'Signal Circuit',color:'#83e8a9',x:-110,z:42,steps:[{x:-114,z:39},{x:-106,z:39},{x:-110,z:48}],reward:{x:-110,z:54},description:'Activate the three numbered pads in order, then claim the crystal.'},
- {id:'wind',name:'Wind Trial',color:'#50d9ff',x:-118,z:-80,steps:[{x:-122,z:-78},{x:-113,z:-78},{x:-113,z:-87}],reward:{x:-105,z:-87},requires:'dash',description:'Unlock Dash, activate pads 1–3, avoid the pulsing spikes, and reach the reward.'},
+ {id:'wind',name:'Wind Trial',color:'#50d9ff',x:-85,z:-82,steps:[{x:-92,z:-81},{x:-84,z:-81},{x:-84,z:-88}],reward:{x:-77,z:-88},requires:'dash',description:'Unlock Dash, activate pads 1–3, avoid the pulsing spikes, and reach the reward.'},
  {id:'sky',name:'Sky Relay',color:'#ffdb7a',x:48,z:-32,steps:[{x:48,z:-32},{x:48,z:8},{x:55,z:14}],reward:{x:60,z:19},requires:'fly',description:'Unlock Flight. Activate the northern pad, cross the river, and finish the relay on the southern bank.'},
  {id:'wall',name:'Wall Circuit',color:'#b8a2ff',x:-57,z:48,steps:[{x:-59,z:45},{x:-59,z:51},{x:-59,z:57}],reward:{x:-59,z:62},requires:'wall',description:'Unlock Wall run. Activate the first pad, use the marked wall lane, then reach the final pad and crystal.'}
 ];
 export const wallLane={x:-56,z:51,minZ:43,maxZ:59,sideX:-58.5};
 export const traps=[
- {x:-117,z:-78,r:1.25,phase:0},{x:-113,z:-82,r:1.2,phase:1.2},
+ {x:-88,z:-81,r:1.25,phase:0},{x:-84,z:-85,r:1.2,phase:1.2},
  {x:54,z:17,r:1.3,phase:.7},{x:-63,z:59,r:1.2,phase:1.8}
 ];
 export const flightLimit=6,dashDuration=.32,dashCooldown=1.4;
