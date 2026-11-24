@@ -1,11 +1,13 @@
 import * as THREE from 'three';
 import {islandBounds as bounds,islandCrossings as crossings,shore,isIslandWalkable as walkable,pythonWaystations,planIslandRoute,trailDirection} from './island-exploration.mjs';
 import {islandDistricts,villageHouses,secondFloorHeight,roomLocation} from './island-villages.mjs';
+import {adventureKey,shrines,travelGates,circuits,traps,wallLane,flightLimit,dashDuration,dashCooldown,blocked,groundSafe,airSafe,onWallLane,trapActive,restoreProgress,padResult,routeAdventure,segmentSafe} from './island-adventure.mjs';
+import {animateIslandAvatar} from './island-avatar.mjs';
 
 const river=z=>Math.abs(z)<3.3;
 const bridge=x=>crossings.some(center=>Math.abs(x-center)<2.1);
 const summits=[{x:25,z:-53,h:13,r:16},{x:-33,z:52,h:10,r:15},{x:68,z:-22,h:7,r:13}];
-const towers=[{x:23,z:24,h:8},{x:25,z:-53,h:6}];
+const originalTowers=[{x:23,z:24,h:8},{x:25,z:-53,h:6}];
 const passage={x:14,z:46};
 const guides=[
   {name:'Ivo, the ferryman',x:-76,z:11,color:'#a16b35',line:'Three bridges cross the river. The western bridge leads to Meadow Trail.'},
@@ -30,7 +32,29 @@ const elevation=(x,z)=>river(z)&&bridge(x)?1.15:terrain(x,z);
 const colors=['#528665','#b08656','#528baa','#618850','#71628f','#9b5d47'];
 const controls={ArrowUp:[0,-1],w:[0,-1],ArrowDown:[0,1],s:[0,1],ArrowLeft:[-1,0],a:[-1,0],ArrowRight:[1,0],d:[1,0]};
 
-export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscovery,onTraversal,onPrompt,onDialogue,onWaystation,onTrailChange,onWayfinder}){
+export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscovery,onTraversal,onPrompt,onDialogue,onWaystation,onTrailChange,onWayfinder,onAdventure,onAdventureToast}){
+  const towers=originalTowers.map(t=>({...t}));
+  let adventure=restoreProgress(null);
+  try{adventure=restoreProgress(JSON.parse(localStorage.getItem(adventureKey)||'null'));}catch{}
+  const unlocked=new Set(adventure.powers),solved=new Set(adventure.circuits);
+  const trialState=new Map(circuits.map(c=>[c.id,{next:0,used:!c.requires}]));
+  let dashLeft=0,dashWait=0,flightLeft=flightLimit,flying=false,wallRunning=false,gateLock=0,damageLock=0;
+  const dashVector=new THREE.Vector3(),safeSpot=new THREE.Vector3();
+  let lastAdventure='',activeGate=null,activePad=null;
+  function saveAdventure(){
+    adventure.powers=[...unlocked];adventure.circuits=[...solved];
+    try{localStorage.setItem(adventureKey,JSON.stringify(adventure));}catch{}
+  }
+  function notify(message){onAdventureToast?.(message);}
+  function adventureState(){
+    return {powers:[...unlocked],circuits:[...solved],setbacks:adventure.setbacks,
+      flying,wallRunning,flight:Math.ceil(flightLeft*10)/10,dashReady:dashWait<=0,gate:activeGate?.name??null,
+      progress:Object.fromEntries([...trialState].map(([id,p])=>[id,p.next]))};
+  }
+  function publishAdventure(){
+    const state=adventureState(),signature=JSON.stringify(state);
+    if(signature!==lastAdventure){lastAdventure=signature;onAdventure?.(state);}
+  }
   const scene=new THREE.Scene();
   scene.background=new THREE.Color('#b6dfe8');
   const landscapeFog=new THREE.FogExp2('#b6dfe8',.006);
@@ -86,7 +110,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   scene.add(island);
   const wood=material('#a07750'), timber=material('#503c34'), ivory=material('#ddc398');
   const roofMats=['#885d49','#ab7346','#54678d','#526956','#534e6b','#763f3c'].map(material);
-  const roofGeometry=new THREE.ConeGeometry(2.65,1.55,4);
+  const roofGeometry=new THREE.ConeGeometry(3.32,1.82,4);
   const glow=new THREE.MeshBasicMaterial({color:'#ffd79a'});
   const lampGeo=new THREE.OctahedronGeometry(.25);
   const waterFoam=new THREE.MeshBasicMaterial({color:'#bce8e9',transparent:true,opacity:.44,depthWrite:false});
@@ -164,13 +188,14 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     box(.31*scale,1.65*scale,.31*scale,trunk,x,y+.8*scale,z);
     if(!crownGeometryCache.has(scale))crownGeometryCache.set(scale,new THREE.ConeGeometry(1.1*scale,2.6*scale,6));
     const crown=new THREE.Mesh(crownGeometryCache.get(scale),material(tint));
-    crown.position.set(x,y+2.15*scale,z);
-    scene.add(crown);
+    crown.position.set(x,y+2.05*scale,z);scene.add(crown);
+    const upper=new THREE.Mesh(crownGeometryCache.get(scale),material(tint));
+    upper.scale.set(.72,.72,.72);upper.position.set(x,y+3.0*scale,z);scene.add(upper);
   }
   for(let i=0;i<105;i++){
     const angle=i*2.39996,r=.35+.51*((i*17)%107)/107;
     const x=Math.cos(angle)*bounds.x*r,z=Math.sin(angle)*bounds.z*r;
-    if(Math.abs(z)<7||crossings.some(center=>Math.abs(x-center)<18&&Math.abs(Math.abs(z)-27)<18))continue;
+    if(Math.abs(z)<7||crossings.some(center=>Math.abs(x-center)<18&&Math.abs(Math.abs(z)-27)<18)||blocked(x,z)||[...shrines,...travelGates,...circuits,...pythonWaystations].some(p=>Math.hypot(x-p.x,z-p.z)<9))continue;
     tree(x,z,.62+(i%5)*.12,i%2?'#38694a':'#497953');
   }
   const actors=guides.map(guide=>{
@@ -226,6 +251,64 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     onTrailChange?.(trailState());
     return activeTrail?.id??null;
   }
+  // Adventure landmarks have distinct silhouettes, colors, and physical interaction zones.
+  const shrineModels=shrines.map(p=>{
+    const y=elevation(p.x,p.z),mat=material(p.color);
+    box(3,.25,3,stonework,p.x,y+.12,p.z);
+    for(const side of [-1,1])box(.38,2.55,.42,mat,p.x+side*1.10,y+1.35,p.z);
+    box(2.6,.26,.45,mat,p.x,y+2.65,p.z);
+    const gem=new THREE.Mesh(new THREE.OctahedronGeometry(.55),new THREE.MeshStandardMaterial({color:p.color,emissive:p.color,emissiveIntensity:.6}));
+    gem.position.set(p.x,y+1.65,p.z);scene.add(gem);
+    const sign=label(p.name,true);sign.position.set(p.x,y+3.75,p.z);sign.scale.set(3.8,.58,1);scene.add(sign);
+    return {...p,y,gem};
+  });
+  const gateModels=travelGates.map(p=>{
+    const y=elevation(p.x,p.z),mat=material('#53647a');
+    box(3.6,.25,2.6,stonework,p.x,y+.12,p.z);
+    for(const side of [-1,1])box(.48,3.5,.55,mat,p.x+side*1.58,y+1.75,p.z);
+    box(3.65,.4,.55,mat,p.x,y+3.5,p.z);
+    const ring=new THREE.Mesh(new THREE.TorusGeometry(1.35,.15,10,40),new THREE.MeshStandardMaterial({color:p.color,emissive:p.color,emissiveIntensity:.75}));
+    ring.position.set(p.x,y+1.73,p.z);scene.add(ring);
+    const core=new THREE.Mesh(new THREE.CircleGeometry(1.24,32),new THREE.MeshBasicMaterial({color:p.color,transparent:true,opacity:.20,side:THREE.DoubleSide,depthWrite:false}));
+    core.position.copy(ring.position);scene.add(core);
+    const sign=label(p.name,true);sign.position.set(p.x,y+4.55,p.z);sign.scale.set(4.4,.58,1);scene.add(sign);
+    return {...p,y,ring,core};
+  });
+  const padModels=circuits.flatMap(c=>c.steps.map((p,index)=>{
+    const y=elevation(p.x,p.z),base=box(2,.23,2,stonework,p.x,y+.10,p.z);
+    const top=box(1.55,.08,1.55,new THREE.MeshStandardMaterial({color:c.color,emissive:c.color,emissiveIntensity:.12}),p.x,y+.265,p.z);
+    const sign=label(String(index+1));sign.position.set(p.x,y+1.2,p.z);sign.scale.set(.82,.48,1);scene.add(sign);
+    return {...p,y,circuit:c,index,top,base};
+  }));
+  const rewards=circuits.map(c=>{
+    const p=c.reward,y=elevation(p.x,p.z);
+    box(1.45,.4,1.45,stonework,p.x,y+.2,p.z);
+    const gem=new THREE.Mesh(new THREE.IcosahedronGeometry(.48),new THREE.MeshStandardMaterial({color:c.color,emissive:c.color,emissiveIntensity:.6}));
+    gem.position.set(p.x,y+1.15,p.z);gem.visible=!solved.has(c.id);scene.add(gem);
+    const sign=label(c.name,true);sign.position.set(p.x,y+2.65,p.z);sign.scale.set(4.3,.6,1);scene.add(sign);
+    return {...p,y,circuit:c,gem};
+  });
+  const trapModels=traps.map(t=>{
+    const y=elevation(t.x,t.z);
+    box(2.5,.12,2.5,material('#623f46'),t.x,y+.06,t.z);
+    const spikes=[];
+    for(const dx of [-.7,0,.7])for(const dz of [-.7,0,.7]){
+      const spike=new THREE.Mesh(new THREE.ConeGeometry(.23,.95,4),material('#d9a29a'));
+      spike.position.set(t.x+dx,y-.35,t.z+dz);scene.add(spike);spikes.push(spike);
+    }
+    return {...t,y,spikes};
+  });
+  for(let z=wallLane.minZ;z<=wallLane.maxZ;z+=2){
+    const y=elevation(wallLane.x,z);
+    box(.75,3.3,2.05,material('#665b85'),wallLane.x,y+1.55,z);
+    box(.15,.14,1.75,material('#c3aaff'),wallLane.x-.43,y+1.6,z);
+  }
+  const shadow=new THREE.Mesh(new THREE.CircleGeometry(.55,24),new THREE.MeshBasicMaterial({color:'#213c42',transparent:true,opacity:.32,depthWrite:false}));
+  shadow.rotation.x=-Math.PI/2;scene.add(shadow);
+  const speedFx=Array.from({length:8},(_,i)=>{
+    const mesh=new THREE.Mesh(new THREE.BoxGeometry(.10,.10,.6),new THREE.MeshBasicMaterial({color:'#8ae7ff',transparent:true,opacity:.6,depthWrite:false}));
+    mesh.visible=false;scene.add(mesh);return mesh;
+  });
   const pickables=[],portals=new Map(),keys=new Set();
   pickables.push(...trailMarkers.flatMap(marker=>[marker.pedestal,marker.cap]));
   const projected=new THREE.Vector3();
@@ -240,12 +323,37 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   }
   function action(key){
     if(!hero)return;
-    if(key==='jump'&&!climb&&!crouched&&!air&&!velocity)velocity=7.6;
-    if(key==='crouch'&&!climb&&!air&&!velocity){
+    if(key==='gate'){
+      if(activeGate&&gateLock<=0&&!climb&&deck===null&&!flying){
+        const destination=gateModels.find(g=>g.id===activeGate.to);
+        if(destination){position.set(destination.x,0,destination.z+1.8);safeSpot.copy(position);target=null;waypoints=[];keys.clear();gateLock=2.2;activeGate=null;air=velocity=0;dashLeft=0;wallRunning=false;notify('Portal travel · '+destination.name);}
+      }else notify('Approach a travel gate, then press G.');
+      return;
+    }
+    if(key==='dash'){
+      if(!unlocked.has('dash')){notify('Find the Wind Shrine to unlock Dash.');return;}
+      if(dashWait>0||climb||deck!==null||flying||wallRunning||crouched)return;
+      dashVector.set(Math.sin(hero.rotation.y),0,Math.cos(hero.rotation.y));
+      dashLeft=dashDuration;dashWait=dashCooldown;target=null;waypoints=[];return;
+    }
+    if(key==='fly'){
+      if(!unlocked.has('fly')){notify('Find the Sky Shrine to unlock Flight.');return;}
+      if(flying){landFlight();return;}
+      if(climb||deck!==null||crouched||wallRunning||flightLeft<.5)return;
+      flying=true;dashLeft=0;velocity=0;target=null;waypoints=[];return;
+    }
+    if(key==='wall'){
+      if(!unlocked.has('wall')){notify('Find the Stone Shrine to unlock Wall run.');return;}
+      if(wallRunning){wallRunning=false;return;}
+      if(deck!==null||climb||flying||crouched||!onWallLane(position.x,position.z)){notify('Wall run starts beside the marked violet wall.');return;}
+      wallRunning=true;dashLeft=0;target=null;waypoints=[];return;
+    }
+    if(key==='jump'&&!climb&&!crouched&&!air&&!velocity&&!flying&&!wallRunning)velocity=7.6;
+    if(key==='crouch'&&!climb&&!air&&!velocity&&!flying&&!wallRunning){
       if(crouched&&lowCeiling(position.x,position.z))return;
       crouched=!crouched;
     }
-    if(key==='climb'&&!climb&&!air&&!velocity&&!crouched){
+    if(key==='climb'&&!climb&&!air&&!velocity&&!crouched&&!flying&&!wallRunning){
       const index=ladder();
       if(index===null||index<0||(deck!==null&&deck!==index))return;
       const tower=towers[index],descending=deck!==null;
@@ -290,7 +398,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     const hall=box(3.85,height,3.25,facade,x,hallY+height/2,hallZ);
     const roof=new THREE.Mesh(roofGeometry,accent);
     roof.rotation.y=Math.PI/4;
-    roof.position.set(x,hallY+height+.65,hallZ);
+    roof.position.set(x,hallY+height+.85,hallZ);
     scene.add(roof);
     // Consistent front porch, stone columns and warm windows on every house.
     for(const side of [-1,1]){
@@ -317,10 +425,11 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
         box(.91,.08,.14,ivory,x,y+step,z+2.08);
       }
       // The raised doorway is visually distinct from the ground-floor facade.
-      box(1.32,2.03,.13,material('#344a4d'),x,floorY+1.04,hallZ+1.69);
-      box(1.65,.19,.20,gold,x,floorY+2.08,hallZ+1.73);
+      box(1.56,2.35,.13,material('#344a4d'),x,floorY+1.17,hallZ+1.69);
+      box(1.82,.19,.20,gold,x,floorY+2.42,hallZ+1.73);
+      if(!upper)box(1.56,2.35,.13,material('#344a4d'),x,y+1.17,hallZ+1.69);
     }else{
-      box(1.35,2.0,.10,material('#344a4d'),x,y+1.01,hallZ+1.68);
+      box(1.56,2.35,.10,material('#344a4d'),x,y+1.17,hallZ+1.68);
     }
     if(zoneIndex===2||zoneIndex===4){
       const bx=x+2.5,bz=hallZ,by=elevation(bx,bz);
@@ -334,7 +443,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     }
     if(roomIndex===undefined)return;
     const portalY=y+(upper?secondFloorHeight:0);
-    const ring=new THREE.Mesh(new THREE.TorusGeometry(.85,.12,10,28),
+    const ring=new THREE.Mesh(new THREE.TorusGeometry(1.02,.105,12,40),
       new THREE.MeshStandardMaterial({emissiveIntensity:.5}));
     ring.position.set(x,portalY+1.12,z);
     scene.add(ring);
@@ -427,7 +536,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     const hit=ray.intersectObjects(pickables)[0];
     if(!hit){
       const groundHit=ray.intersectObject(island)[0];
-      if(groundHit&&walkable(groundHit.point.x,groundHit.point.z))routeTo(groundHit.point.x,groundHit.point.z);
+      if(groundHit&&groundSafe(groundHit.point.x,groundHit.point.z))routeTo(groundHit.point.x,groundHit.point.z);
       return;
     }
     if(hit.object.userData.waystation){setWaypoint(hit.object.userData.waystation);return;}
@@ -437,13 +546,13 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   });
   canvas.addEventListener('keydown',event=>{
     const key=event.key.length===1?event.key.toLowerCase():event.key;
-    if([' ','c','f','q','e','r','+','=','-'].includes(key)){
+    if([' ','c','f','q','e','r','x','v','b','g','+','=','-'].includes(key)){
       event.preventDefault();
       if(event.repeat)return;
       if(key==='q'||key==='e')adjustCamera(key==='q'?.3:-.3);
       else if(['+','=','-'].includes(key))adjustCamera(0,key==='-'?1.18:1/1.18);
       else if(key==='r'){if(nearbyGuide)onDialogue?.(nearbyGuide);}
-      else action({' ':'jump',c:'crouch',f:'climb'}[key]);
+      else action({' ':'jump',c:'crouch',f:'climb',x:'dash',v:'fly',b:'wall',g:'gate'}[key]);
       return;
     }
     if(key==='Shift'){keys.add(key);return;}
@@ -462,7 +571,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   function routeTo(x,z){
     waypoints=[];
     try{
-      waypoints=planIslandRoute({x:position.x,z:position.z},{x,z}).map(point=>new THREE.Vector3(point.x,0,point.z));
+      waypoints=routeAdventure({x:position.x,z:position.z},{x,z}).map(point=>new THREE.Vector3(point.x,0,point.z));
       target=waypoints.shift()??null;
     }catch{
       target=null;
@@ -471,6 +580,16 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   function travel(index){
     const portal=portals.get(index);
     if(portal&&deck===null)routeTo(portal.x,portal.z+(portal.upper?2.65:1.35));
+  }
+  function landFlight(){
+    flying=false;velocity=0;air=0;
+    if(!groundSafe(position.x,position.z)){position.copy(safeSpot);notify('Flight ended over water · returned to safe ground.');}
+  }
+  function locateAdventure(id){
+    const p=[...shrines,...travelGates,...circuits].find(item=>item.id===id);
+    if(!p)return false;
+    if(deck!==null||climb||flying){notify('Return to ground before setting a route.');return false;}
+    routeTo(p.x,p.z);return Boolean(target);
   }
   function visit(index,available,marks){
     if(hero){
@@ -487,6 +606,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     target=null;
     waypoints=[];
     gait=0;pace=0;air=0;velocity=0;deck=null;climb=null;crouched=false;
+    dashLeft=0;dashWait=0;flightLeft=flightLimit;flying=false;wallRunning=false;gateLock=0;damageLock=0;activePad=null;activeGate=null;safeSpot.copy(position);
     baseHeight=hero.scale.y;
     keys.clear();
     near=undefined;
@@ -514,6 +634,10 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     }
     const delta=last?Math.min(.05,(now-last)/1000):0;
     last=now;
+    dashWait=Math.max(0,dashWait-delta);gateLock=Math.max(0,gateLock-delta);damageLock=Math.max(0,damageLock-delta);
+    if(flying){flightLeft=Math.max(0,flightLeft-delta);air=THREE.MathUtils.lerp(air,3.1,Math.min(1,delta*5));if(flightLeft<=0)landFlight();}
+    else if(!air&&!velocity)flightLeft=Math.min(flightLimit,flightLeft+delta*.8);
+    if(wallRunning&&!onWallLane(position.x,position.z))wallRunning=false;
     trail.set(0,0,0);
     for(const key of keys){
       if(key==='Shift')continue;
@@ -522,8 +646,11 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
       trail.z+=z*Math.cos(yaw)-x*Math.sin(yaw);
     }
     if(target)trail.subVectors(target,position);
+    const dashing=dashLeft>0;
+    if(dashing){trail.copy(dashVector);dashLeft=Math.max(0,dashLeft-delta);}
+    if(wallRunning){trail.x=0;trail.z=Math.sign(trail.z);}
     if(climb)trail.set(0,0,0);
-    if(air>0||velocity!==0){
+    if(!flying&&(air>0||velocity!==0)){
       velocity-=delta*18;
       air+=velocity*delta;
       if(air<=0){air=0;velocity=0;}
@@ -532,12 +659,16 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     if(distance>.025){
       const heading=Math.atan2(trail.x,trail.z);
       hero.rotation.y+=Math.atan2(Math.sin(heading-hero.rotation.y),Math.cos(heading-hero.rotation.y))*Math.min(1,delta*14);
-      const speed=crouched?3.5:target?14:keys.has('Shift')?15:8;
+      const speed=dashing?27:flying?15:wallRunning?12:crouched?3.5:target?14:keys.has('Shift')?15:8;
       const stride=target?Math.min(distance,delta*speed):delta*speed;
       trail.normalize();
       const nextX=position.x+trail.x*stride,nextZ=position.z+trail.z*stride;
       const onDeck=deck===null||(Math.abs(nextX-towers[deck].x)<1.72&&Math.abs(nextZ-towers[deck].z)<1.72);
-      if(walkable(nextX,nextZ)&&onDeck&&(crouched||!lowCeiling(nextX,nextZ)))position.set(nextX,0,nextZ);
+      const valid=flying?airSafe(nextX,nextZ):wallRunning?onWallLane(nextX,nextZ)&&groundSafe(nextX,nextZ):segmentSafe(position,{x:nextX,z:nextZ});
+      if(valid&&onDeck&&(flying||crouched||!lowCeiling(nextX,nextZ))){
+        position.set(nextX,0,nextZ);
+        if(groundSafe(nextX,nextZ)&&!flying&&!wallRunning&&!air&&!trapModels.some(t=>Math.hypot(t.x-nextX,t.z-nextZ)<t.r+1.2))safeSpot.copy(position);
+      }
       else if(target&&!crouched&&lowCeiling(nextX,nextZ)&&!lowCeiling(target.x,target.z)){
         const side=passage.x+(position.x<passage.x?-2.8:2.8);
         const exit=passage.z+(target.z<passage.z?-3:3);
@@ -546,7 +677,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
       }else {target=null;waypoints=[];}
     }else if(target)target=waypoints.shift()??null;
     hero.position.copy(position);
-    hero.position.y=(deck===null?elevation(position.x,position.z):towerFloor(towers[deck]))+air;
+    hero.position.y=(deck===null?elevation(position.x,position.z):towerFloor(towers[deck]))+air+(wallRunning?1.35:0);
     hero.scale.y=THREE.MathUtils.lerp(hero.scale.y,baseHeight*(crouched?.56:1),Math.min(1,delta*15));
     if(climb){
       const tower=towers[climb.index];
@@ -564,7 +695,70 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
         climb=null;
       }
     }
-    onTraversal?.(climb?'Climbing':ladder()>=0?'Ladder nearby · F':lowCeiling(position.x,position.z)?'Low passage · C':crouched?'Crouching':air>0?'Jumping':'');
+    // Shrine proximity unlocks powers; gates require explicit activation.
+    activeGate=null;
+    const time=now/1000;
+    for(const p of shrineModels){
+      p.gem.rotation.y=time*1.6;p.gem.position.y=p.y+1.65+.15*Math.sin(time*3);
+      if(!unlocked.has(p.id)&&deck===null&&!flying&&!climb&&Math.hypot(position.x-p.x,position.z-p.z)<1.85){
+        unlocked.add(p.id);saveAdventure();notify(p.name+' · '+p.description);
+      }
+      p.gem.material.emissiveIntensity=unlocked.has(p.id)?.18:.75;
+    }
+    for(const g of gateModels){
+      g.ring.rotation.z=time*.6;g.core.material.opacity=.17+.07*Math.sin(time*3);
+      if(deck===null&&!climb&&!flying&&Math.hypot(position.x-g.x,position.z-g.z)<2.5)activeGate=g;
+    }
+    for(const c of circuits){
+      const state=trialState.get(c.id);
+      if(state.next>0&&!state.used&&Math.hypot(position.x-c.x,position.z-c.z)<70){
+        if(c.requires==='dash'&&dashing||c.requires==='fly'&&flying&&Math.abs(position.z)<3.3||c.requires==='wall'&&wallRunning)state.used=true;
+      }
+    }
+    let touched=null;
+    for(const p of padModels){
+      const c=p.circuit,state=trialState.get(c.id);
+      p.top.material.emissiveIntensity=solved.has(c.id)||p.index<state.next?.7:.12;
+      if(!solved.has(c.id)&&deck===null&&!climb&&!flying&&Math.hypot(position.x-p.x,position.z-p.z)<1.05&&(air<.65||wallRunning))touched=p;
+    }
+    if(touched!==activePad&&touched){
+      const c=touched.circuit,state=trialState.get(c.id);
+      if(c.requires&&!unlocked.has(c.requires))notify('Unlock '+c.requires+' before this trial.');
+      else{
+        const outcome=padResult(state.next,touched.index,c.steps.length);state.next=outcome.next;
+        if(outcome.wrong){state.used=!c.requires;notify(c.name+' · Wrong order. Begin again at pad 1.');}
+        else if(outcome.complete)notify(c.name+' · All pads active. Claim the crystal'+(state.used?'!':' after using the required power.'));
+        else notify(c.name+' · '+state.next+'/'+c.steps.length+' pads active.');
+      }
+    }
+    activePad=touched;
+    for(const p of rewards){
+      p.gem.rotation.y=time*1.5;p.gem.position.y=p.y+1.15+.14*Math.sin(time*3);
+      const state=trialState.get(p.circuit.id);
+      if(!solved.has(p.circuit.id)&&state.next===p.circuit.steps.length&&state.used&&!flying&&deck===null&&Math.hypot(position.x-p.x,position.z-p.z)<1.5){
+        solved.add(p.circuit.id);p.gem.visible=false;saveAdventure();notify(p.circuit.name+' complete · Adventure crystal earned!');
+      }
+      p.gem.material.emissiveIntensity=state.next===p.circuit.steps.length&&state.used?1:.13;
+    }
+    for(const t of trapModels){
+      const active=trapActive(t,time);
+      for(const spike of t.spikes)spike.position.y=THREE.MathUtils.lerp(spike.position.y,t.y+(active?.5:-.4),Math.min(1,delta*15));
+      if(active&&!damageLock&&!climb&&deck===null&&!flying&&!wallRunning&&air<.72&&Math.hypot(position.x-t.x,position.z-t.z)<t.r){
+        position.copy(safeSpot);target=null;waypoints=[];dashLeft=0;air=velocity=0;damageLock=1.5;
+        for(const [id,state] of trialState)if(!solved.has(id)){state.next=0;state.used=!circuits.find(c=>c.id===id).requires;}
+        adventure.setbacks++;saveAdventure();notify('Trap triggered · returned to safe ground. Circuit reset.');
+      }
+    }
+    shadow.position.set(position.x,elevation(position.x,position.z)+.035,position.z);
+    shadow.visible=deck===null&&!river(position.z);
+    shadow.scale.setScalar(flying?.65:1);shadow.material.opacity=flying?.18:.32;
+    for(const [i,fx] of speedFx.entries()){
+      fx.visible=dashing||flying||wallRunning;
+      fx.position.set(hero.position.x+Math.sin(i*2.4)*.65-Math.sin(hero.rotation.y)*(i*.25+.4),hero.position.y+.8+(i%3)*.24,hero.position.z+Math.cos(i*2.4)*.65-Math.cos(hero.rotation.y)*(i*.25+.4));
+      fx.rotation.y=hero.rotation.y;
+    }
+    onTraversal?.(climb?'Climbing':flying?'Flying · '+flightLeft.toFixed(1)+'s':wallRunning?'Wall running':dashing?'Dash':activeGate?'Travel gate · G':ladder()>=0?'Ladder nearby · F':lowCeiling(position.x,position.z)?'Low passage · C':crouched?'Crouching':air>0?'Jumping':'');
+    publishAdventure();
     if(mapMode){
       const extent=Math.max(132,163/aspect)*zoom;
       survey.left=-extent*aspect;survey.right=extent*aspect;
@@ -583,9 +777,8 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     camera.updateMatrixWorld();
     pace+=(Number(distance>.025)-pace)*Math.min(1,delta*12);
     gait+=delta*pace*(keys.has('Shift')&&!crouched?21:14);
-    const swing=climb?Math.sin(climb.time*45)*.62:Math.sin(gait)*pace*.54;
-    hero.position.y+=Math.abs(Math.sin(gait))*.09*pace;
-    hero.userData.cape.rotation.x=.13+Math.cos(gait)*.13*pace;
+    const mode=climb?'climb':flying?'fly':wallRunning?'wall':dashing?'dash':crouched?'crouch':air>0?'jump':keys.has('Shift')&&distance>.025?'sprint':distance>.025?'walk':'idle';
+    animateIslandAvatar(hero,{time:now/1000,delta,pace,mode,phase:climb?climb.time*45:gait});
     for(const [i,ripple] of ripples.entries())ripple.scale.x=.75+.35*Math.sin(now*.0018+i);
     for(const relic of relics){
       if(!relic.gem.visible)continue;
@@ -621,21 +814,20 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
       if(label!==lastWayfinder){lastWayfinder=label;onWayfinder?.(label);}
       guideBeam.material.opacity=.28+.14*Math.sin(now*.0025);
     }
-    hero.userData.legs.forEach((part,i)=>{part.rotation.x=air>0?(i?-.7:-.4):i?swing:-swing});
-    hero.userData.arms.forEach((part,i)=>{part.rotation.x=climb?-1.6+(i?swing:-swing):air>0?-.72:i?-swing*.5:swing*.5});
+
     nearbyGuide=undefined;
     for(const [i,guide] of actors.entries()){
       const t=now*.0008+i*2;
       const gx=guide.x+Math.sin(t)*1.8,gz=guide.z+Math.cos(t)*1.1;
       guide.model.position.set(gx,elevation(gx,gz)+Math.abs(Math.sin(t*7))*.05,gz);
       guide.model.rotation.y=Math.atan2(Math.cos(t)*1.8,-Math.sin(t)*1.1);
-      guide.model.userData.legs.forEach((part,j)=>{part.rotation.x=Math.sin(t*7)*(j?.34:-.34);});
+      animateIslandAvatar(guide.model,{time:now/1000,delta,pace:.65,mode:'walk',phase:t*7});
       if(Math.hypot(position.x-gx,position.z-gz)<3.15)nearbyGuide=guide;
     }
     let closest,best=2.9;
     for(const item of portals.values()){
       const distance=Math.hypot(position.x-item.x,position.z-(item.z+1.15));
-      if(distance<best&&deck===item.deck&&!climb){best=distance;closest=item.index;}
+      if(distance<best&&deck===item.deck&&!climb&&!flying&&!wallRunning&&air<.8){best=distance;closest=item.index;}
       item.ring.position.y=item.y+1.12+.12*Math.sin(now*.002+item.index);
       item.ring.rotation.z=now*.00065;
       item.ring.material.emissiveIntensity=deck===item.deck&&distance<2.15?.92:.45+.17*Math.sin(now*.003+item.index);
@@ -670,9 +862,10 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   }
   function interact(){
     if(near!==undefined)onEnter(near);
+    else if(activeGate)action('gate');
     else if(nearbyGuide)onDialogue?.(nearbyGuide);
   }
-  return {addZones,visit,travel,frame,setMapMode,adjustCamera,action,setMovementKey,interact,trailState,setWaypoint,
+  return {addZones,visit,travel,frame,setMapMode,adjustCamera,action,setMovementKey,interact,trailState,setWaypoint,adventureState,locateAdventure,
     districtMap:()=>[...portals.values()].map(({index,x,z,upper,deck,topic,storeys})=>({index,x,z,upper,deck,topic,storeys})),
     discoveries:()=>[discovered.size,secrets.length]};
 }

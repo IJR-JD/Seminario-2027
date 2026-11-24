@@ -83,3 +83,20 @@ Design references:
 - Godot Editor: a primary viewport, adjacent docks and distraction-free mode (https://docs.godotengine.org/en/stable/getting_started/introduction/first_look_at_the_editor.html).
 
 The `qa-codequest-room-studio.mjs` Chromium suite checks all 22 room states at laptop resolution, 3D focus, camera switching, code execution and reset, full-HD and narrow-screen layouts. Its screenshots are included in the CodeQuest CI artifacts.
+
+## Adventure Island v3
+Original block-style character rig for the overworld, with joint-centered walking, sprinting, jumping, crouching, climbing, dash, flight and wall-running poses. Room models and the existing lesson interpreter are unchanged.
+
+| Feature | Interaction |
+|---|---|
+| Wind Shrine | Walk to the shrine; X / Dash activates a short burst with cooldown |
+| Sky Shrine | Walk to the shrine; V / Flight toggles flight, with a six-second charge and safe return when exhausted over water |
+| Stone Shrine | Walk to the shrine; B / Wall toggles wall-running beside the violet lane |
+| Four paired travel gates | Approach an arch and press G / Gate |
+| Four adventure circuits | Activate numbered pads in order, demonstrate the required power where specified, then collect the reward |
+| Four pulsing spike traps | Avoid the active spikes or jump over them; a trap returns you to recent safe ground and resets unfinished circuits |
+| Adventure journal | Follow a ground route to a shrine, trial or gate; learned powers and earned rewards persist locally |
+
+Solid village facades now block walking; click routes search around obstacles and use the existing bridges. Larger roof eaves, door proportions, tiered trees and dynamic landmark effects are original assets, not Roblox assets. Adventure progress is stored separately under `cq-island-adventure-v3`; all 22 room IDs, scoring and Python Trail progress remain compatible.
+
+QA: `node scripts/qa-codequest-adventure.mjs` checks data, navigable placements, route collision, portal pairs, trial order, timing and persistence. `qa-codequest-adventure-browser.mjs` exercises actual physical Dash unlock, use, reload persistence and portal travel in Chromium. Full flight, wall and circuit playthroughs need further end-to-end coverage.
