@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {createColumnPhysics,isColumn} from '../projects/codequest-rpg/island-columns.mjs';
+import {depots,frontiers,vehicleTypes} from '../projects/codequest-rpg/island-mobility.mjs';
 import {courses,elevation} from '../projects/codequest-rpg/island-vertical.mjs';
 import {routeAdventure,groundSafe,segmentSafe} from '../projects/codequest-rpg/island-adventure.mjs';
 const physics=createColumnPhysics();
@@ -29,3 +30,10 @@ const start=courses[0].entry,end=courses[0].pads[0];
 let prev=start;const route=routeAdventure(start,end,{segment:(a,b)=>segmentSafe(a,b)&&!supports.hit(a,b,{ground:elevation})});
 for(const point of route){assert(!supports.hit(prev,point,{ground:elevation}));prev=point;}
 console.log('PASS 144 real parkour column dimensions, continuous contact, free gaps, overflight, vehicle radius, gated supports and obstacle-aware route.');
+
+for(const f of frontiers){
+ const c=createColumnPhysics(),base=elevation(f.x,f.z);
+ for(const dx of [-1,1])for(const dz of [-1,1])c.add(f.x+dx*1.15,(base+f.y)/2,f.z+dz*2.85,.24,f.y-base,.24);
+ for(const v of depots[f.zone].vehicles)assert(!c.hit(v,v,{ground:elevation,radius:vehicleTypes[v.type].radius,height:1.3}),'Vehicle clearance '+v.id);
+}
+console.log('PASS all 18 vehicle parking footprints clear of physical lift columns.');
