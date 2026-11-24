@@ -1,4 +1,4 @@
-import {createOverworld} from './overworld.mjs?v=mobility8';
+import {createOverworld} from './overworld.mjs?v=polish81';
 import {createIslandAvatar} from './island-avatar.mjs';
 import {shrines,travelGates,circuits} from './island-adventure.mjs';
 import {gear} from './island-airgear.mjs';
@@ -518,13 +518,13 @@ function openMissions(){
   let mobilitySignature='';
   function renderMobility(state){
     mobilityHUD.dataset.vehicle=state.vehicle??'';mobilityHUD.dataset.speed=String(state.speed);mobilityHUD.dataset.nearest=state.nearest??'';
-    mobilityHUD.dataset.frontier=state.frontier??'';mobilityHUD.dataset.nearFrontier=state.nearFrontier??'';mobilityHUD.dataset.lifting=String(state.lifting);mobilityHUD.dataset.skills=state.skills.join(',');mobilityHUD.dataset.visited=state.visited.join(',');
+    mobilityHUD.dataset.frontier=state.frontier??'';mobilityHUD.dataset.nearFrontier=state.nearFrontier??'';mobilityHUD.dataset.lifting=String(state.lifting);mobilityHUD.dataset.parking=String(state.parking);mobilityHUD.dataset.skills=state.skills.join(',');mobilityHUD.dataset.visited=state.visited.join(',');
     const f=frontiers.find(f=>f.id===(state.frontier??state.nearFrontier));
     mobilityHUD.hidden=!state.vehicle&&!state.nearest&&!f&&!state.lifting;
     $('mobilityName').textContent=state.type?vehicleTypes[state.type].name:f?f.name:'Mobility nearby';
     $('mobilityStatus').textContent=state.type?state.speed+' units/s'+(state.parking?' · Parking brake':' · WASD drive'):state.lifting?'Lift in motion':f?(state.skills.includes(f.skill)?(state.visited.includes(f.id)?'Explored · return to lift':'Skill unlocked · explore the terrace'):'Locked · complete sector'):'Walk or mount a vehicle';
     $('vehicleMount').hidden=!state.vehicle&&!state.nearest;$('vehicleMount').textContent=state.vehicle?'M · Park / exit':'M · Mount';
-    $('vehicleBrake').hidden=!state.vehicle;$('vehicleBrake').textContent=state.parking?'P · Release brake':'P · Brake';
+    $('vehicleBrake').hidden=!state.vehicle;$('vehicleBrake').textContent=state.parking?'P · Release brake':'P · Brake';$('vehicleBrake').setAttribute('aria-pressed',String(state.parking));
     $('frontierLift').hidden=!f||!!state.vehicle;$('frontierLift').disabled=!state.canLift;$('frontierLift').textContent=state.frontier?'U · Descend':'U · Ascend';
     $('mobilitySummary').textContent=state.skills.length+'/6 mechanical skills · '+state.visited.length+'/6 expedition areas explored';
     const sig=JSON.stringify([state.skills,state.visited,state.sectors]);
