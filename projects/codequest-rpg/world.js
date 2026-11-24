@@ -1,9 +1,10 @@
-import {createOverworld} from './overworld.mjs?v=vertical7';
+import {createOverworld} from './overworld.mjs?v=mobility8';
 import {createIslandAvatar} from './island-avatar.mjs';
 import {shrines,travelGates,circuits} from './island-adventure.mjs';
 import {gear} from './island-airgear.mjs';
 import {buildings} from './island-interiors.mjs';
 import {courses} from './island-vertical.mjs';
+import {sectors,sectorProgress,depots,frontiers,vehicleTypes,earnedSkills} from './island-mobility.mjs';
 import {pythonWaystations} from './island-exploration.mjs';
 import {allRoomLocations} from './island-villages.mjs';
 import {starTargets,starsFor,starsText} from './room-stars.mjs';
@@ -513,6 +514,46 @@ function openMissions(){
   const adventurePanel=$('islandAdventurePanel'),adventureToggle=$('islandAdventureToggle');
   const buildingDirectory=$('buildingDirectory'),buildingToggle=$('buildingDirectoryToggle'),interiorHUD=$('interiorHUD'),buildingEntrance=$('buildingEntrance');
   const parkourPanel=$('parkourPanel'),parkourToggle=$('parkourToggle'),parkourHUD=$('parkourHUD');
+  const mobilityPanel=$('mobilityPanel'),mobilityToggle=$('mobilityToggle'),mobilityHUD=$('mobilityHUD');
+  let mobilitySignature='';
+  function renderMobility(state){
+    mobilityHUD.dataset.vehicle=state.vehicle??'';mobilityHUD.dataset.speed=String(state.speed);mobilityHUD.dataset.nearest=state.nearest??'';
+    mobilityHUD.dataset.frontier=state.frontier??'';mobilityHUD.dataset.nearFrontier=state.nearFrontier??'';mobilityHUD.dataset.lifting=String(state.lifting);mobilityHUD.dataset.skills=state.skills.join(',');mobilityHUD.dataset.visited=state.visited.join(',');
+    const f=frontiers.find(f=>f.id===(state.frontier??state.nearFrontier));
+    mobilityHUD.hidden=!state.vehicle&&!state.nearest&&!f&&!state.lifting;
+    $('mobilityName').textContent=state.type?vehicleTypes[state.type].name:f?f.name:'Mobility nearby';
+    $('mobilityStatus').textContent=state.type?state.speed+' units/s'+(state.parking?' · Parking brake':' · WASD drive'):state.lifting?'Lift in motion':f?(state.skills.includes(f.skill)?(state.visited.includes(f.id)?'Explored · return to lift':'Skill unlocked · explore the terrace'):'Locked · complete sector'):'Walk or mount a vehicle';
+    $('vehicleMount').hidden=!state.vehicle&&!state.nearest;$('vehicleMount').textContent=state.vehicle?'M · Park / exit':'M · Mount';
+    $('vehicleBrake').hidden=!state.vehicle;$('vehicleBrake').textContent=state.parking?'P · Release brake':'P · Brake';
+    $('frontierLift').hidden=!f||!!state.vehicle;$('frontierLift').disabled=!state.canLift;$('frontierLift').textContent=state.frontier?'U · Descend':'U · Ascend';
+    $('mobilitySummary').textContent=state.skills.length+'/6 mechanical skills · '+state.visited.length+'/6 expedition areas explored';
+    const sig=JSON.stringify([state.skills,state.visited,state.sectors]);
+    if(!mobilityPanel.hidden&&sig!==mobilitySignature){mobilitySignature=sig;renderMobilityList(state);}
+  }
+  function renderMobilityList(state){
+    const list=$('mobilityList');list.replaceChildren();
+    for(const s of sectors){
+      const p=state.sectors.find(p=>p.id===s.id),d=depots[s.zone],f=frontiers[s.zone],done=p?.unlocked??false;
+      const entry=document.createElement('article');entry.className='islandTrailEntry';entry.dataset.sector=s.id;entry.dataset.found=String(done);
+      const h=document.createElement('h4');h.textContent=s.name+' · '+(p?.count??0)+'/'+s.rooms.length+' rooms';
+      const note=document.createElement('p');note.textContent=(done?'Unlocked: ':'Reward: ')+s.skillName+' — '+s.description;
+      const sub=document.createElement('small');sub.textContent=f.name+' · '+(state.visited.includes(f.id)?'Explored':done?'Open':'Locked');
+      const route=document.createElement('button');route.type='button';route.dataset.depotRoute=d.id;route.textContent='Walk to mobility hub';
+      route.onclick=()=>{if(overworld?.locateDepot(d.id)){setMobilityPanel(false);$('overworldCanvas').focus();}};
+      entry.append(h,note,sub,route);
+      for(const v of d.vehicles){
+        if(v.type==='hover'&&!state.skills.includes('hover'))continue;
+        const button=document.createElement('button');button.type='button';button.dataset.vehicleRoute=v.id;button.textContent='Find '+vehicleTypes[v.type].name;
+        button.onclick=()=>{if(overworld?.locateDepot(v.id)){setMobilityPanel(false);$('overworldCanvas').focus();}};
+        entry.append(button);
+      }
+      list.append(entry);
+    }
+  }
+  function setMobilityPanel(open){
+    mobilityPanel.hidden=!open;mobilityToggle.setAttribute('aria-expanded',String(open));
+    if(open){setParkourPanel(false);setBuildingDirectory(false);setDirectory(false);setTrailPanel(false);setAdventurePanel(false);const state=overworld?.mobilityState();if(state){mobilitySignature='';renderMobility(state);}}
+  }
   let latestParkour=null;
   function renderParkour(state){
     latestParkour=state;
@@ -529,7 +570,7 @@ function openMissions(){
   function setParkourPanel(open){
     parkourPanel.hidden=!open;parkourToggle.setAttribute('aria-expanded',String(open));
     if(open){
-      setBuildingDirectory(false);setDirectory(false);setTrailPanel(false);setAdventurePanel(false);
+      setMobilityPanel(false);setBuildingDirectory(false);setDirectory(false);setTrailPanel(false);setAdventurePanel(false);
       const list=$('parkourList');list.replaceChildren();
       for(const c of courses){
         const article=document.createElement('article');article.className='islandTrailEntry';article.dataset.courseEntry=c.id;article.dataset.found=String(latestParkour?.completed.includes(c.id)??false);
@@ -559,7 +600,7 @@ function openMissions(){
   }
   function setBuildingDirectory(open){
     buildingDirectory.hidden=!open;buildingToggle.setAttribute('aria-expanded',String(open));
-    if(open){setParkourPanel(false);setDirectory(false);setTrailPanel(false);setAdventurePanel(false);renderBuildings();}
+    if(open){setMobilityPanel(false);setParkourPanel(false);setDirectory(false);setTrailPanel(false);setAdventurePanel(false);renderBuildings();}
   }
   function renderBuildingEntrance(building){
     buildingEntrance.hidden=!building;
@@ -570,7 +611,7 @@ function openMissions(){
     interiorHUD.hidden=!state;
     $('missionPicker').classList.toggle('insideBuilding',!!state);
     if(!state){interiorIdentity='';interiorAction=null;return;}
-    setParkourPanel(false);setBuildingDirectory(false);setDirectory(false);setTrailPanel(false);setAdventurePanel(false);
+    setMobilityPanel(false);setParkourPanel(false);setBuildingDirectory(false);setDirectory(false);setTrailPanel(false);setAdventurePanel(false);
     buildingEntrance.hidden=true;enter.hidden=true;
     const identity=state.id+':'+state.floor;
     interiorHUD.dataset.building=state.id;interiorHUD.dataset.floor=String(state.floor);
@@ -620,7 +661,7 @@ function openMissions(){
   }
   function setAdventurePanel(open){
     adventurePanel.hidden=!open;adventureToggle.setAttribute('aria-expanded',String(open));
-    if(open){setParkourPanel(false);setBuildingDirectory(false);setDirectory(false);setTrailPanel(false);if(overworld)renderAdventure(overworld.adventureState());}
+    if(open){setMobilityPanel(false);setParkourPanel(false);setBuildingDirectory(false);setDirectory(false);setTrailPanel(false);if(overworld)renderAdventure(overworld.adventureState());}
   }
   function renderPythonTrail(){
     if(!overworld)return;
@@ -664,17 +705,21 @@ function openMissions(){
   function setDirectory(open){
     directory.hidden=!open;
     directoryToggle.setAttribute('aria-expanded',String(open));
-    if(open){setParkourPanel(false);setBuildingDirectory(false);trailPanel.hidden=true;trailToggle.setAttribute('aria-expanded','false');setAdventurePanel(false);}
+    if(open){setMobilityPanel(false);setParkourPanel(false);setBuildingDirectory(false);trailPanel.hidden=true;trailToggle.setAttribute('aria-expanded','false');setAdventurePanel(false);}
   }
   function setTrailPanel(open){
     trailPanel.hidden=!open;
     trailToggle.setAttribute('aria-expanded',String(open));
-    if(open){setParkourPanel(false);setBuildingDirectory(false);setDirectory(false);setAdventurePanel(false);renderPythonTrail();}
+    if(open){setMobilityPanel(false);setParkourPanel(false);setBuildingDirectory(false);setDirectory(false);setAdventurePanel(false);renderPythonTrail();}
   }
   setDirectory(false);
   setTrailPanel(false);
   setAdventurePanel(false);
-  setBuildingDirectory(false);setParkourPanel(false);
+  setBuildingDirectory(false);setParkourPanel(false);setMobilityPanel(false);
+  mobilityToggle.onclick=()=>setMobilityPanel(mobilityPanel.hidden);
+  $('vehicleMount').onclick=()=>{overworld?.action('vehicle');$('overworldCanvas').focus();};
+  $('vehicleBrake').onclick=()=>{overworld?.action('brake');$('overworldCanvas').focus();};
+  $('frontierLift').onclick=()=>{overworld?.action('frontier');$('overworldCanvas').focus();};
   parkourToggle.onclick=()=>setParkourPanel(parkourPanel.hidden);
   $('parkourAssist').onclick=()=>{overworld?.assistJump();$('overworldCanvas').focus();};
   buildingToggle.onclick=()=>setBuildingDirectory(buildingDirectory.hidden);
@@ -741,7 +786,7 @@ function openMissions(){
         },
         onPrompt:prompt=>portalPrompt(prompt),
         onDialogue:guide=>showIslandToast(guide.name+' · '+guide.line),
-        onAdventure:renderAdventure,onAdventureToast:showIslandToast,onInterior:renderInterior,onInteriorDoor:renderBuildingEntrance,onParkour:renderParkour,
+        onAdventure:renderAdventure,onAdventureToast:showIslandToast,onInterior:renderInterior,onInteriorDoor:renderBuildingEntrance,onParkour:renderParkour,onMobility:renderMobility,
         onTrailChange:()=>renderPythonTrail(),
         onWayfinder:hint=>{$('islandTrailDistance').textContent=hint;},
         onWaystation:(station,found,total)=>{
@@ -766,11 +811,11 @@ function openMissions(){
     $('islandDiscoveries').textContent=found+' / '+total+' discoveries';
     $('islandDiscoveryToast').hidden=true;
     overworld.setMapMode(false);
-    overworld.visit(level,isAvailable,bestSteps);
+    overworld.visit(level,isAvailable,bestSteps,completed);renderMobility(overworld.mobilityState());
     renderPythonTrail();
     $('overworldCanvas').focus();
   }else{
-    cameraToggle.hidden=true;buildingToggle.hidden=true;parkourToggle.hidden=true;
+    cameraToggle.hidden=true;buildingToggle.hidden=true;parkourToggle.hidden=true;mobilityToggle.hidden=true;
     trailToggle.hidden=true;adventureToggle.hidden=true;
     setDirectory(true);
     $('portalStatus').classList.add('visible');
@@ -993,13 +1038,14 @@ async function run(){
     if(stopped||runId!==activeRun)return;
     success=validateSuccess();
     if(success){
-      completed.add(level);
+      const before=earnedSkills(completed);completed.add(level);
+      const earned=sectors.filter(s=>!before.has(s.skill)&&earnedSkills(completed).has(s.skill));
       if(!bestSteps.has(level)||actions<bestSteps.get(level))bestSteps.set(level,actions);
       updateRating(actions);
       store();
       banner('LEVEL COMPLETE!');
       status('MISSION COMPLETE');
-      message(starsText(starsFor(level,actions))+' · '+actions+' steps. All objectives verified.');
+      message(starsText(starsFor(level,actions))+' · '+actions+' steps. All objectives verified.'+(earned.length?' Mechanical skill unlocked: '+earned.map(s=>s.skillName+' · '+s.frontier).join(', ')+'.':''));
       $('nextLevel').hidden=level===levels.length-1;$('returnToIsland').hidden=false;
       updateLevelProgress();
     }else status('TRY AGAIN');
