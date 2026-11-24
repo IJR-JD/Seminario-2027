@@ -1,0 +1,25 @@
+{
+  "name": "ijr-seminario-2027",
+  "version": "8.5.0",
+  "private": true,
+  "description": "Seminario 2027 and CodeQuest RPG local development",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "node scripts/local-server.mjs",
+    "build": "node scripts/local-build.mjs",
+    "start": "node scripts/local-server.mjs --dist",
+    "test": "node scripts/local-qa.mjs",
+    "test:browser": "node scripts/local-qa.mjs --browser",
+    "test:offline": "node scripts/local-qa.mjs --offline",
+    "media:fetch": "node scripts/local-media.mjs",
+    "browser:install": "playwright install chromium"
+  },
+  "dependencies": {
+    "three": "0.170.0"
+  },
+  "devDependencies": {
+    "playwright": "1.56.1"
+  }
+}
