@@ -19,6 +19,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Install pinned Three.js for model runtime tests
+        run: npm install --no-save --no-audit --no-fund three@0.170.0
       - name: Check browser source syntax
         run: |
           node --check projects/codequest-rpg/world.js
@@ -44,6 +46,7 @@ jobs:
           node scripts/qa-codequest-interiors.mjs
           node scripts/qa-codequest-vertical.mjs
           node scripts/qa-codequest-mobility.mjs
+          node scripts/qa-codequest-models.mjs
   browser:
     runs-on: ubuntu-24.04
     timeout-minutes: 12
