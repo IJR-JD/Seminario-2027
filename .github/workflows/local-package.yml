@@ -1,0 +1,51 @@
+name: Local development package
+on:
+  pull_request:
+    paths:
+      - 'scripts/local-*.mjs'
+      - 'scripts/qa-local-offline.mjs'
+      - 'package.json'
+      - 'LOCAL-DEVELOPMENT.md'
+      - '.github/workflows/local-package.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  package:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned dependencies
+        run: npm install --no-audit --no-fund
+      - name: Source and model QA
+        run: npm test
+      - name: Fetch original CAD recordings
+        continue-on-error: true
+        run: npm run media:fetch
+      - name: Build whole static application
+        run: npm run build
+      - name: Install browser for offline WebGL test
+        run: npm run browser:install
+      - name: Verify compiled game with external network blocked
+        run: npm run test:offline
+      - name: Package complete source and compiled distribution
+        run: |
+          mkdir -p package
+          git archive HEAD | tar -x -C package
+          cp -a dist package/dist
+          cp package-lock.json package/
+          if [ -d .local-media ]; then cp -a .local-media package/.local-media; fi
+          echo "Package source commit: $(git rev-parse HEAD)"
+          du -sh package
+      - name: Upload complete local development package
+        uses: actions/upload-artifact@v4
+        with:
+          name: Seminario-2027-CodeQuest-V8.5-local
+          path: package/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 30
