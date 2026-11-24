@@ -127,3 +127,6 @@ Preserves V8 academic progression and gameplay rules. Opaque static architecture
 
 ## V8.3 column contacts
 Vertical posts and columns are registered using the same position and dimensions as rendered boxes and upright instanced anchor parts. Spatially indexed swept contact applies to walking, sprinting, dashing, vehicle motion and aerial traversal; narrow clear gaps remain usable. Accessible column tops participate in landing tests. Existing ladder/lift transitions remain scripted. Automated routes avoid solid posts. QA checks 144 parkour supports and actual porch-column contact in Chromium. Colliders are static; no structural failure or rigid-body destruction is simulated.
+
+## V8.4 equipment wheel
+Hold Tab while the outdoor canvas has focus, point at a radial slot, then release to activate; Esc cancels. The Gear button opens the same selector for touch and keyboard navigation. Five powers, three vehicle classes, and contextual transfer, gate, lift, brake and park actions reuse existing mechanics. Locked powers route to their discovery sites; locked hoverboards remain locked. Selecting a vehicle mounts it when nearby or routes to an available vehicle of that type; it does not spawn or teleport vehicles. Simulation pauses during selection; the room editor retains ordinary Tab behavior. Old shortcuts remain available in the collapsible Shortcuts panel.
