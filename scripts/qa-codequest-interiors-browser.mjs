@@ -37,9 +37,9 @@ async function act(action){
 }
 try{
  await open(0);
- await page.locator('#buildingDirectoryToggle').click();
+ if(!(await page.locator('#exploreMenu').evaluate(el=>el.open)))await page.locator('#exploreMenu summary').click();await page.locator('#buildingDirectoryToggle').click();
  assert.equal(await page.locator('#buildingList article').count(),30);
- await page.locator('#buildingDirectoryToggle').click();
+ if(!(await page.locator('#exploreMenu').evaluate(el=>el.open)))await page.locator('#exploreMenu summary').click();await page.locator('#buildingDirectoryToggle').click();
  await enter('room-01');
  await page.screenshot({path:'qa-codequest/interior-guild.png'});
  await act('talk');
@@ -67,7 +67,7 @@ try{
  await act('stairs');await page.waitForFunction(()=>document.querySelector('#interiorHUD')?.dataset.floor==='1');
  await act('exit');await page.locator('#interiorHUD').waitFor({state:'hidden'});
  console.log('PASS upper-floor stair access, room portal, correct return floor, exit');
- await page.locator('#buildingDirectoryToggle').click();
+ if(!(await page.locator('#exploreMenu').evaluate(el=>el.open)))await page.locator('#exploreMenu summary').click();await page.locator('#buildingDirectoryToggle').click();
  await page.locator('[data-building-route="hall-1"]').click();
  await enter('hall-1');
  await act('talk');
