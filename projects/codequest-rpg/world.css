@@ -763,3 +763,10 @@ body:has(.roomStudio)>.topbar nav a:hover,body:has(.roomStudio)>.topbar nav butt
 #vehicleBrake[aria-pressed="true"]{background:#edc17c;color:#253943}
 #missionPicker .mobilityHUD small{line-height:1.4;font-variant-numeric:tabular-nums}
 @media(max-width:700px){.mobilityHUD{bottom:auto;top:clamp(138px,23%,195px);max-width:min(290px,calc(100% - 20px));}.mobilityHUD button{min-height:36px}.islandTools button{min-height:32px}}
+
+/* Live stabilization: retain controls, avoid permanent wall of text. */
+#overworldCanvas,#gameCanvas{image-rendering:auto}
+#missionPicker .islandHelp{font-size:11px;line-height:1.45;max-width:430px;opacity:.8}
+#missionPicker .islandHelp:not(:hover){max-height:32px;overflow:hidden}
+#missionPicker .adventureHotbar{box-shadow:none}
+#missionPicker .islandTools button{font-size:11px;padding:6px 8px}

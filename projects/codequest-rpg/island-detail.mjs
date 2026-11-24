@@ -31,12 +31,18 @@ export function createIslandDetail(scene,{elevation,groundSafe,blocked,landmarks
  const dummy=new THREE.Object3D();
  const batch=(geometry,mat,items)=>{
   if(!items.length)return null;
-  const mesh=new THREE.InstancedMesh(geometry,mat,items.length);
-  items.forEach((p,i)=>{
-   dummy.position.set(p.x,p.y,p.z);dummy.rotation.set(p.rx||0,p.ry||0,p.rz||0);dummy.scale.set(p.sx||1,p.sy||1,p.sz||1);dummy.updateMatrix();
-   mesh.setMatrixAt(i,dummy.matrix);if(p.color)mesh.setColorAt(i,new THREE.Color(p.color));
-  });
-  mesh.instanceMatrix.needsUpdate=true;mesh.computeBoundingSphere();scene.add(mesh);return mesh;
+  // Spatially local batches: off-camera grass and stones are no longer
+  // submitted merely because another instance exists near the player.
+  const tiles=new Map(),size=30;
+  for(const p of items){const k=Math.floor(p.x/size)+','+Math.floor(p.z/size);if(!tiles.has(k))tiles.set(k,[]);tiles.get(k).push(p);}
+  for(const tile of tiles.values()){
+   const mesh=new THREE.InstancedMesh(geometry,mat,tile.length);
+   tile.forEach((p,i)=>{
+    dummy.position.set(p.x,p.y,p.z);dummy.rotation.set(p.rx||0,p.ry||0,p.rz||0);dummy.scale.set(p.sx||1,p.sy||1,p.sz||1);dummy.updateMatrix();
+    mesh.setMatrixAt(i,dummy.matrix);if(p.color)mesh.setColorAt(i,new THREE.Color(p.color));
+   });
+   mesh.instanceMatrix.needsUpdate=true;mesh.computeBoundingSphere();scene.add(mesh);
+  }
  };
  const grass=[],flowers=[],rocks=[],pebbles=[],tufts=[];
  for(let i=0;i<4700;i++){

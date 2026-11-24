@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {courses,platformList,elevation,motion,makeVertical,verticalStep,horizontalStep,landingSurface,recordPad,restoreParkour} from '../projects/codequest-rpg/island-vertical.mjs';
+import {courses,platformList,elevation,motion,makeVertical,verticalStep,horizontalStep,landingSurface,slabBlocked,slabCeiling,recordPad,restoreParkour} from '../projects/codequest-rpg/island-vertical.mjs';
 import {groundSafe,routeAdventure} from '../projects/codequest-rpg/island-adventure.mjs';
 import {islandDistricts} from '../projects/codequest-rpg/island-villages.mjs';
 assert.equal(courses.length,6);assert.equal(platformList.length,36);assert.equal(new Set(platformList.map(p=>p.id)).size,36);
@@ -40,3 +40,14 @@ let v={x:0,z:0};v=horizontalStep(v,{x:1,z:0},8,true,.05);assert(v.x>0&&v.x<8);
 for(let i=0;i<20;i++)v=horizontalStep(v,{x:0,z:0},8,true,.05);assert.equal(v.x,0);
 assert.equal(landingSurface([{id:'test',x:0,z:0,hx:1,hz:1,y:2}],0,0,1,3),null);
 console.log('PASS six distributed courses, 36 walkable platforms, sequential reward, variable jump, coyote time, frame-rate stability, acceleration and braking.');
+
+for(const p of platformList){
+ const a={x:p.x-p.hx-.6,z:p.z},b={x:p.x,z:p.z};
+ assert(slabBlocked([p],a,b,p.y-.5),'side sweep '+p.id);
+ assert(!slabBlocked([p],a,b,p.y+.06),'clear top '+p.id);
+ assert(!slabBlocked([p],a,b,p.y-3),'clear underpass '+p.id);
+ assert.equal(slabCeiling([p],p.x,p.z,p.y-2,p.y-1,1.55),p.y-.28);
+ assert.equal(landingSurface([p],p.x,p.z,p.y+.8,p.y-.8,p.x-p.hx-4,p.z),null,'no lateral snap '+p.id);
+ assert.equal(landingSurface([p],p.x,p.z,p.y+.8,p.y-.8)?.id,p.id);
+}
+console.log('PASS all 36 swept side contacts, underside contacts, clear underpasses and descending foot trajectories.');
