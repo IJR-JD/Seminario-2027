@@ -8,6 +8,9 @@ import {createInterior} from './interior-scene.mjs';
 import {gear,anchors,jetCapacity,grappleRange,anchorLinks,selectAnchor,swingStart,swingStep,jetStep} from './island-airgear.mjs';
 import {createIslandDetail} from './island-detail.mjs';
 import {batchStaticMeshes} from './island-rendering.mjs';
+import {landmarks,landmarkStorage,restoreLandmarks,landmarkSurfaces,landmarkClear,landmarkSegment,landmarkGround,landmarkRoute} from './island-landmarks.mjs';
+import {createMonuments} from './island-monuments.mjs';
+import {createIslandWater} from './island-water.mjs';
 import {sectors,sectorProgress,earnedSkills,depots,vehicles,vehicleTypes,canDrive,frontiers,frontierSurfaces,frontierStorage,restoreFrontiers,vehicleStep,vehiclePathSafe,movementMode} from './island-mobility.mjs';
 import {createVehicleFleet} from './island-vehicles.mjs';
 import {terrain,elevation,summits,courses,platformList,parkourStorage,restoreParkour,recordPad,makeVertical,verticalStep,horizontalStep,landingSurface,onPlatform} from './island-vertical.mjs';
@@ -36,7 +39,7 @@ const towerFloor=tower=>terrain(tower.x,tower.z)+tower.h;
 const colors=['#528665','#b08656','#528baa','#618850','#71628f','#9b5d47'];
 const controls={ArrowUp:[0,-1],w:[0,-1],ArrowDown:[0,1],s:[0,1],ArrowLeft:[-1,0],a:[-1,0],ArrowRight:[1,0],d:[1,0]};
 
-export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscovery,onTraversal,onPrompt,onDialogue,onWaystation,onTrailChange,onWayfinder,onAdventure,onAdventureToast,onInterior,onInteriorDoor,onParkour,onMobility}){
+export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscovery,onTraversal,onPrompt,onDialogue,onWaystation,onTrailChange,onWayfinder,onAdventure,onAdventureToast,onInterior,onInteriorDoor,onParkour,onMobility,onLandmarks}){
   let interior=null,nearBuilding=null,returnInterior=null,roomAvailable=()=>true,roomMarks=new Map();
   let interiorProgress=loadInteriorProgress(null);
   try{interiorProgress=loadInteriorProgress(JSON.parse(localStorage.getItem(interiorStorage)||'null'));}catch{}
@@ -126,11 +129,8 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     scene.add(mesh);staticBoxes.push(mesh);
     return mesh;
   }
-  const details=createIslandDetail(scene,{elevation,groundSafe,blocked,landmarks:[...shrines,...gear,...travelGates,...circuits,...pythonWaystations,...anchors,...platformList,...depots]});
-  const water=new THREE.Mesh(new THREE.PlaneGeometry(420,420),new THREE.MeshStandardMaterial({color:'#258dac',roughness:.48,map:details.water}));
-  water.rotation.x=-Math.PI/2;
-  water.position.y=-1;
-  scene.add(water);
+  const details=createIslandDetail(scene,{elevation,groundSafe,blocked,landmarks:[...shrines,...gear,...travelGates,...circuits,...pythonWaystations,...anchors,...platformList,...depots,...landmarks]});
+  const waterFX=createIslandWater(scene);
   const ground=new THREE.PlaneGeometry(318,260,212,174);
   ground.rotateX(-Math.PI/2);
   const vertices=ground.attributes.position;
@@ -157,14 +157,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   const roofGeometry=new THREE.ConeGeometry(3.32,1.82,4);
   const glow=new THREE.MeshBasicMaterial({color:'#ffd79a'});
   const lampGeo=new THREE.OctahedronGeometry(.25);
-  const waterFoam=new THREE.MeshBasicMaterial({color:'#bce8e9',transparent:true,opacity:.44,depthWrite:false});
-  const ripples=[];
-  for(let i=0;i<27;i++){
-    const x=-68+i*5.2;
-    if(bridge(x))continue;
-    const foam=box(1.6,.014,.06,waterFoam,x,-.98,(i%5-2)*.68);
-    ripples.push(foam);
-  }
+  const ripples=[]; // Legacy foam meshes replaced by the procedural water shader.
   for(const x of crossings){
     for(let z=-4.5;z<=4.5;z+=.5)box(4.25,.15,.48,wood,x,1.075,z);
     for(const dx of [-2.02,2.02]){
@@ -179,6 +172,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
       }
     }
   }
+  createMonuments(scene,{box,material,elevation,label});
   const cliff=material('#747d83');
   const rail=material('#d9b779');
   for(const tower of towers){
@@ -228,7 +222,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   const trunk=material('#645044');
   const crownGeometryCache=new Map();
   function tree(x,z,scale,tint){
-    if(platformList.some(p=>Math.hypot(x-p.x,z-p.z)<3.5)||depots.some(d=>Math.hypot(x-d.x,z-d.z)<6.5))return;
+    if(platformList.some(p=>Math.hypot(x-p.x,z-p.z)<3.5)||depots.some(d=>Math.hypot(x-d.x,z-d.z)<6.5)||landmarks.some(d=>Math.hypot(x-d.x,z-d.z)<d.radius+1.5))return;
     const y=elevation(x,z);
     box(.31*scale,1.65*scale,.31*scale,trunk,x,y+.8*scale,z);
     if(!crownGeometryCache.has(scale))crownGeometryCache.set(scale,new THREE.ConeGeometry(1.1*scale,2.6*scale,6));
@@ -516,6 +510,13 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
       locomotion:ride?'ride-'+ride.type:slideTime>0?'slide':vertical&&!vertical.grounded?'airborne':Math.hypot(moveVelocity.x,moveVelocity.z)>.2?'running':'grounded'};
   }
   function publishMobility(){const m=mobilityState(),sig=JSON.stringify(m);if(sig!==lastMobility){lastMobility=sig;onMobility?.(m);}}
+  let landmarkVisits=new Set(),lastLandmarkSignature='';
+  try{landmarkVisits=new Set(restoreLandmarks(JSON.parse(localStorage.getItem(landmarkStorage)||'[]')));}catch{}
+  function landmarkState(){return {visited:[...landmarkVisits],total:landmarks.length};}
+  function locateLandmark(id){
+    if(interior||ride||lift||deck!==null||air>.7||climb||flying||jetting||swing||releaseMotion||wallRunning)return false;
+    const p=landmarks.find(l=>l.id===id);if(!p)return false;routeTo(p.approach.x,p.approach.z);return !!target;
+  }
   function locateDepot(id){
     if(interior||ride||lift||deck!==null||air>.7||climb||flying||jetting||swing||releaseMotion||wallRunning)return false;
     const d=depots.find(p=>p.id===id),v=fleet.find(p=>p.id===id&&canDrive(p.type,skills));const point=d??v;if(!point)return false;routeTo(point.x,point.z);return !!target;
@@ -544,7 +545,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
   let vertical=null,moveVelocity={x:0,z:0},jumpRequest=false,jumpRelease=false,landingTime=0,assist=null;
   let parkourDone=new Set(),parkourProgress=Array(courses.length).fill(0),parkourSignature='';
   try{parkourDone=new Set(restoreParkour(JSON.parse(localStorage.getItem(parkourStorage)||'[]')));}catch{}
-  const surfaceList=()=>cachedSurfaces??(cachedSurfaces=[...platformList,...towers.map((t,i)=>({id:'deck-'+i,deck:i,x:t.x,z:t.z,hx:1.72,hz:1.72,y:towerFloor(t)})),...frontierSurfaces(skills)]);
+  const surfaceList=()=>cachedSurfaces??(cachedSurfaces=[...platformList,...towers.map((t,i)=>({id:'deck-'+i,deck:i,x:t.x,z:t.z,hx:1.72,hz:1.72,y:towerFloor(t)})),...frontierSurfaces(skills),...landmarkSurfaces]);
   function parkourState(){
     const pad=platformList.find(p=>p.id===vertical?.support);
     const nearCourse=courses.find(c=>Math.hypot(position.x-c.entry.x,position.z-c.entry.z)<1.65);
@@ -915,7 +916,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     if(ride||lift)return;
     waypoints=[];assist=null;moveVelocity={x:0,z:0};
     try{
-      waypoints=routeAdventure({x:position.x,z:position.z},{x,z}).map(point=>new THREE.Vector3(point.x,0,point.z));
+      waypoints=landmarkRoute({x:position.x,z:position.z},{x,z}).map(point=>new THREE.Vector3(point.x,0,point.z));
       target=waypoints.shift()??null;
     }catch{
       target=null;
@@ -1021,7 +1022,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     }else if(ride){
       const v=vehicleStep(ride,trail,ride.type,skills,delta,{boost:keys.has('Shift'),brake:parking});
       const turn=Math.atan2(Math.sin(v.yaw-ride.yaw),Math.cos(v.yaw-ride.yaw));
-      if(vehiclePathSafe(ride.type,ride,v)&&!lowCeiling(v.x,v.z)&&!fleet.some(other=>other!==ride&&canDrive(other.type,skills)&&Math.hypot(v.x-other.x,v.z-other.z)<vehicleTypes[ride.type].radius+vehicleTypes[other.type].radius)){Object.assign(ride,v);position.set(v.x,0,v.z);safeSpot.copy(position);}
+      if(vehiclePathSafe(ride.type,ride,v)&&landmarkSegment(ride,v,-Infinity,vehicleTypes[ride.type].radius)&&!lowCeiling(v.x,v.z)&&!fleet.some(other=>other!==ride&&canDrive(other.type,skills)&&Math.hypot(v.x-other.x,v.z-other.z)<vehicleTypes[ride.type].radius+vehicleTypes[other.type].radius)){Object.assign(ride,v);position.set(v.x,0,v.z);safeSpot.copy(position);}
       else{ride.vx=ride.vz=ride.speed=0;}
       updateVehicle(ride,delta,turn*5);hero.rotation.y=ride.yaw;air=velocity=0;
     }else if(airborneGear){
@@ -1029,11 +1030,11 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
       const current=swing?swingStep(swing.state,swing.anchor,input,delta):{x:position.x+releaseMotion.vx*delta,y:elevation(position.x,position.z)+air+(releaseMotion.vy-=14*delta)*delta,z:position.z+releaseMotion.vz*delta};
       const groundY=elevation(current.x,current.z);
       const landing=releaseMotion?landingSurface(surfaceList(),current.x,current.z,previousFeet,current.y):null;
-      if(landing&&airClear(current.x,current.z,landing.y,elevation)){
+      if(landing&&airClear(current.x,current.z,landing.y,elevation)&&landmarkClear(current.x,current.z,landing.y,0)){
         position.set(current.x,0,current.z);releaseMotion=null;swing=null;velocity=0;landingTime=.22;
         if(landing.deck!==undefined){deck=landing.deck;air=0;vertical=null;}
         else{air=landing.y-groundY;vertical=makeVertical(landing.y,0,true,landing.id);const pad=platformList.find(p=>p.id===landing.id);if(pad)parkourProgress[pad.course]=recordPad(parkourProgress[pad.course],pad);}
-      }else if(!airClear(current.x,current.z,current.y,elevation)||current.y<groundY+.28||current.y>groundY+30){
+      }else if(!airClear(current.x,current.z,current.y,elevation)||!landmarkClear(current.x,current.z,current.y)||current.y<groundY+.28||current.y>groundY+30){
         if(swing){
           // Keep the rope attached on contact. Resolve the obstructed motion
           // along the vertical axis rather than teleporting through a facade.
@@ -1073,9 +1074,11 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
       const onDeck=deck===null||(Math.abs(nextX-towers[deck].x)<1.72&&Math.abs(nextZ-towers[deck].z)<1.72);
       const highSupport=vertical?.support?.startsWith('frontier-')||normalMotion&&air>15;
       const valid=highSupport?shore(nextX,nextZ)<.91:jetting?airClear(nextX,nextZ,elevation(nextX,nextZ)+air,elevation):flying?airSafe(nextX,nextZ):wallRunning?onWallLane(nextX,nextZ)&&groundSafe(nextX,nextZ):segmentSafe(position,{x:nextX,z:nextZ});
-      if(valid&&onDeck&&(flying||jetting||crouched||!lowCeiling(nextX,nextZ))){
+      const feet=deck!==null?towerFloor(towers[deck]):vertical?.y??previousFeet;
+      const monumentSafe=landmarkSegment(position,{x:nextX,z:nextZ},feet,0.12);
+      if(valid&&monumentSafe&&onDeck&&(flying||jetting||crouched||!lowCeiling(nextX,nextZ))){
         position.set(nextX,0,nextZ);
-        if(groundSafe(nextX,nextZ)&&!flying&&!jetting&&!wallRunning&&!air&&!trapModels.some(t=>Math.hypot(t.x-nextX,t.z-nextZ)<t.r+1.2))safeSpot.copy(position);
+        if(landmarkGround(nextX,nextZ)&&!flying&&!jetting&&!wallRunning&&!air&&!trapModels.some(t=>Math.hypot(t.x-nextX,t.z-nextZ)<t.r+1.2))safeSpot.copy(position);
       }
       else if(target&&!crouched&&lowCeiling(nextX,nextZ)&&!lowCeiling(target.x,target.z)){
         const side=passage.x+(position.x<passage.x?-2.8:2.8);
@@ -1107,8 +1110,8 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
           }
         }
       }
-      if(vertical?.grounded&&!vertical.support&&!groundSafe(position.x,position.z)){position.copy(safeSpot);vertical=makeVertical(elevation(position.x,position.z));air=velocity=0;}
-      if(vertical?.grounded&&!vertical.support&&groundSafe(position.x,position.z)&&!trapModels.some(t=>Math.hypot(t.x-position.x,t.z-position.z)<t.r+1.2))safeSpot.copy(position);
+      if(vertical?.grounded&&!vertical.support&&!landmarkGround(position.x,position.z)){position.copy(safeSpot);vertical=makeVertical(elevation(position.x,position.z));air=velocity=0;}
+      if(vertical?.grounded&&!vertical.support&&landmarkGround(position.x,position.z)&&!trapModels.some(t=>Math.hypot(t.x-position.x,t.z-position.z)<t.r+1.2))safeSpot.copy(position);
     }
     landingTime=Math.max(0,landingTime-delta);
     hero.position.copy(position);
@@ -1204,6 +1207,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     if(nextAnchor){targetRing.position.copy(nextAnchor.ring.position);targetRing.quaternion.copy(follow.quaternion);targetRing.scale.setScalar(1+.12*Math.sin(time*5));}
     networkLines.visible=mapMode&&unlocked.has('grapple');
     details.update(time,delta,mapMode);
+    waterFX.update(time,delta,{x:position.x,z:position.z,y:hero.position.y,jetting,mapMode,pixelRatio:renderer.getPixelRatio()});
     light.intensity=2.05+.20*Math.sin(time*.035);
     onTraversal?.(ride?vehicleTypes[ride.type].name+' · '+Math.round(ride.speed)+' units/s'+(parking?' · BRAKE':''):lift?'Mechanical lift':swing?'Tether swing · Y transfer · T release':releaseMotion?'Aerial release':jetting?'Jetpack · '+jetFuel.toFixed(1)+'s · '+air.toFixed(1)+'m':climb?'Climbing':flying?'Flying · '+flightLeft.toFixed(1)+'s':wallRunning?'Wall running':dashing?'Dash':activeGate?'Travel gate · G':ladder()>=0?'Ladder nearby · F':lowCeiling(position.x,position.z)?'Low passage · C':crouched?'Crouching':vertical?.support?'Elevated platform':vertical&&!vertical.grounded?(velocity<0?'Falling':'Jumping'):air>0?'Jumping':'');
     publishAdventure();publishParkour();publishMobility();
@@ -1233,7 +1237,13 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     gait+=delta*Math.min(24,actualSpeed*1.45);
     const mode=swing?'grapple':jetting?'jetpack':releaseMotion?'jump':climb?'climb':flying?'fly':wallRunning?'wall':dashing?'dash':crouched?'crouch':lift?'idle':mountPose>0?'mount':exitPose>0?'dismount':rollTime>0?'roll':movementMode({speed:ride?.speed??(target&&moving?8:Math.hypot(moveVelocity.x,moveVelocity.z)),sprint:keys.has('Shift'),grounded:vertical?.grounded??!air,vy:velocity,landing:landingTime,slide:slideTime,vehicle:ride?.type,turn:turnAmount});
     animateIslandAvatar(hero,{time:now/1000,delta,pace,mode,phase:climb?climb.time*45:gait,gear:[...unlocked],landing:landingTime,turn:turnAmount,roll:rollTime});
-    for(const [i,ripple] of ripples.entries())ripple.scale.x=.75+.35*Math.sin(now*.0018+i);
+    for(const l of landmarks){
+      if(!landmarkVisits.has(l.id)&&Math.hypot(position.x-l.approach.x,position.z-l.approach.z)<2.6&&air<1.1&&!lift){
+        landmarkVisits.add(l.id);try{localStorage.setItem(landmarkStorage,JSON.stringify([...landmarkVisits]));}catch{}notify(l.name+' · landmark discovered!');
+      }
+    }
+    const ls=landmarkState(),sig=ls.visited.join(',');if(sig!==lastLandmarkSignature){lastLandmarkSignature=sig;onLandmarks?.(ls);}
+    if(now-(frame.waterMetricsAt??-1000)>500){frame.waterMetricsAt=now;const w=waterFX.stats();canvas.dataset.waterTime=String(w.time);canvas.dataset.waterParticles=String(w.active);canvas.dataset.waterCapacity=String(w.capacity);canvas.dataset.landmarks=String(landmarks.length);}
     for(const relic of relics){
       if(!relic.gem.visible)continue;
       relic.gem.rotation.y=now*.0016;
@@ -1325,7 +1335,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     else if(activeGate)action('gate');
     else if(nearbyGuide)onDialogue?.(nearbyGuide);
   }
-  return {addZones,visit,travel,frame,setMapMode,adjustCamera,action,setMovementKey,interact,trailState,setWaypoint,adventureState,locateAdventure,locateBuilding,enterBuilding,interiorWalk:id=>interior?.walkTo(id),interiorInteract:id=>interior?.interact(id),interiorState:()=>interior?.state()??null,interiorProgress:()=>({...interiorProgress}),parkourState,locateCourse,assistJump,mobilityState,locateDepot,mountVehicle,activateFrontier,setSectorProgress,
+  return {addZones,visit,travel,frame,setMapMode,adjustCamera,action,setMovementKey,interact,trailState,setWaypoint,adventureState,locateAdventure,locateBuilding,enterBuilding,interiorWalk:id=>interior?.walkTo(id),interiorInteract:id=>interior?.interact(id),interiorState:()=>interior?.state()??null,interiorProgress:()=>({...interiorProgress}),parkourState,locateCourse,assistJump,mobilityState,locateDepot,mountVehicle,activateFrontier,setSectorProgress,landmarkState,locateLandmark,
     districtMap:()=>[...portals.values()].map(({index,x,z,upper,deck,topic,storeys})=>({index,x,z,upper,deck,topic,storeys})),
     discoveries:()=>[discovered.size,secrets.length]};
 }
