@@ -35,6 +35,7 @@ jobs:
           node --check projects/codequest-rpg/island-vertical.mjs
           node --check projects/codequest-rpg/island-mobility.mjs
           node --check projects/codequest-rpg/island-vehicles.mjs
+          node --check projects/codequest-rpg/island-rendering.mjs
       - name: Test all CodeQuest room and island mechanics
         run: |
           node scripts/qa-codequest.mjs
