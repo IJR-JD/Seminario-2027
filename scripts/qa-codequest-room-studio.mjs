@@ -27,6 +27,26 @@ async function room(index){
   await page.evaluate(()=>document.querySelector('#intro').hidden=true);
   await page.waitForFunction(()=>document.querySelector('#gameCanvas')?.width>0);
 }
+async function interactionCheck(index){
+  const editor=page.locator('#editor'),run=page.locator('#runCode'),status=page.locator('#executionStatus');
+  const command=page.locator('#commandPalette button').first();
+  await editor.fill('');await command.hover();
+  assert(await page.locator('#roomInteractionCue').isVisible(),'Direction preview room '+index);
+  assert(await page.locator('.roomCompass [data-axis="up"]').evaluate(el=>el.classList.contains('directionPreview')));
+  await command.click();assert((await editor.inputValue()).includes('up = 1'));
+  await editor.fill('unknown_command()');await run.click();
+  await page.waitForFunction(()=>document.querySelector('#executionStatus').textContent==='FIX YOUR CODE');
+  assert.equal(await editor.inputValue(),'unknown_command()');assert(await run.isEnabled());
+  assert(await page.locator('#worldMessage').textContent());
+  await page.locator('#resetWorld').click();assert.equal(await status.textContent(),'READY');
+  assert.equal(await editor.inputValue(),'unknown_command()');
+  assert(await page.locator('#stopCode').isDisabled());
+  await editor.fill('right = 0');await run.click();
+  await page.waitForFunction(()=>['TRY AGAIN','FIX YOUR CODE','MISSION COMPLETE'].includes(document.querySelector('#executionStatus').textContent));
+  assert(await run.isEnabled());await page.locator('#resetWorld').click();
+  assert.equal(await status.textContent(),'READY');assert.equal(await editor.inputValue(),'right = 0');
+  console.log('PASS room '+(index+1)+' command preview, insert, syntax error, retained code, execution and reset');
+}
 async function measure(){
   return await page.evaluate(()=>{
     const b=id=>{const r=document.getElementById(id).getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height,right:r.right,bottom:r.bottom};};
@@ -49,6 +69,13 @@ try{
   if(start===0){
   await room(0);
   let m=await desktopCheck(0);
+  await interactionCheck(0);
+  await page.locator('#graphicsQuality').selectOption('sharp');
+  await page.waitForFunction(()=>document.querySelector('#gameCanvas').dataset.quality==='sharp');
+  assert(Number(await page.locator('#gameCanvas').getAttribute('data-render-ratio'))>=1.5);
+  await page.locator('#graphicsQuality').selectOption('performance');
+  await page.waitForFunction(()=>document.querySelector('#gameCanvas').dataset.quality==='performance');
+  await page.locator('#graphicsQuality').selectOption('auto');
   console.log('Room 01 at 1366x768:',JSON.stringify(m));
   await page.screenshot({path:'qa-codequest/room-studio-beginner.png'});
   const normal=m.canvas.w;
@@ -73,6 +100,7 @@ try{
   for(let i=Math.max(1,start);i<end;i++){
     await room(i);
     const dims=await desktopCheck(i);
+    await interactionCheck(i);
     console.log('PASS room layout '+(i+1)+' '+Math.round(dims.canvas.w)+'x'+Math.round(dims.canvas.h));
     if(i===12||i===21)await page.screenshot({path:'qa-codequest/room-studio-'+(i+1)+'.png'});
   }
