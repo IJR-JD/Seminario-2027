@@ -49,6 +49,7 @@ jobs:
           trap 'kill "$server_pid" || true' EXIT
           sleep 2
           node scripts/qa-codequest-browser.mjs
+          node scripts/qa-codequest-room-studio.mjs
       - name: Save desktop and mobile visual evidence
         if: always()
         uses: actions/upload-artifact@v4
