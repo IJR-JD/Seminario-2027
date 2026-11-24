@@ -3,7 +3,7 @@ import {animateIslandAvatar} from './island-avatar.mjs';
 import {bounds,landmarks,floorKey,floorPlan,indoorSafe,indoorRoute,nearestInteriorAction} from './island-interiors.mjs';
 // Cutaway interior scenes are created only when visited. The exterior world is
 // retained untouched, and the same WebGL renderer is reused.
-export function createInterior({building,makeHero,available,marks,textures,onState,onTalk,onRoom,onExit,onVisit}){
+export function createInterior({building,makeHero,available,marks,textures,initialFloor=1,onState,onTalk,onRoom,onExit,onVisit}){
  let scene,camera,hero,npc,plan,position,route=[],floor=1,gait=0,pace=0,lastState='',disposed=false;
  const materialCache=new Map(),geometryCache=new Map();
  const mats=(color,map=null,emissive=false)=>{
@@ -131,6 +131,6 @@ export function createInterior({building,makeHero,available,marks,textures,onSta
   const aspect=width/height,extent=Math.max(8.0,6.5/aspect);camera.left=-extent*aspect;camera.right=extent*aspect;camera.top=extent;camera.bottom=-extent;camera.updateProjectionMatrix();
   publish();renderer.render(scene,camera);
  }
- build(1);
+ build(initialFloor,initialFloor===2);
  return {frame,click,state,walkTo,interact,dispose(){disposed=true;destroyFloor();}};
 }
