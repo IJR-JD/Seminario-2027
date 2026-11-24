@@ -366,8 +366,9 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
       if(climb||deck!==null||crouched||swing||releaseMotion||flying||wallRunning||jetFuel<.5)return;
       jetting=true;jetHeight=Math.max(2,air);velocity=0;dashLeft=0;target=null;waypoints=[];notify('Jetpack active · Space ascend / C descend / J land.');return;
     }
-    if((swing||releaseMotion||jetting)&&!['jump','crouch'].includes(key))return;
+    if((swing||releaseMotion||jetting)&&!['jump','crouch','jetStop'].includes(key))return;
     if(jetting&&(key==='jump'||key==='crouch')){jetInput=key==='jump'?1:-1;return;}
+    if(key==='jetStop'){jetInput=0;return;}
     if(swing||releaseMotion)return;
     if(key==='gate'){
       if(activeGate&&gateLock<=0&&!climb&&deck===null&&!flying){
@@ -799,7 +800,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     for(const p of padModels){
       const c=p.circuit,state=trialState.get(c.id);
       p.top.material.emissiveIntensity=solved.has(c.id)||p.index<state.next?.7:.12;
-      if(!solved.has(c.id)&&deck===null&&!climb&&!flying&&Math.hypot(position.x-p.x,position.z-p.z)<1.05&&(air<.65||wallRunning))touched=p;
+      if(!solved.has(c.id)&&deck===null&&!climb&&!flying&&!jetting&&!swing&&!releaseMotion&&Math.hypot(position.x-p.x,position.z-p.z)<1.05&&(air<.65||wallRunning))touched=p;
     }
     if(touched!==activePad&&touched){
       const c=touched.circuit,state=trialState.get(c.id);
@@ -815,7 +816,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     for(const p of rewards){
       p.gem.rotation.y=time*1.5;p.gem.position.y=p.y+1.15+.14*Math.sin(time*3);
       const state=trialState.get(p.circuit.id);
-      if(!solved.has(p.circuit.id)&&state.next===p.circuit.steps.length&&state.used&&!flying&&deck===null&&Math.hypot(position.x-p.x,position.z-p.z)<1.5){
+      if(!solved.has(p.circuit.id)&&state.next===p.circuit.steps.length&&state.used&&!flying&&!jetting&&!swing&&!releaseMotion&&air<.7&&deck===null&&Math.hypot(position.x-p.x,position.z-p.z)<1.5){
         solved.add(p.circuit.id);p.gem.visible=false;saveAdventure();notify(p.circuit.name+' complete · Adventure crystal earned!');
       }
       p.gem.material.emissiveIntensity=state.next===p.circuit.steps.length&&state.used?1:.13;
