@@ -17,11 +17,14 @@ export function createInterior({building,makeHero,available,marks,textures,initi
   const m=new THREE.Mesh(geometryCache.get(k),mats(color,map,emissive));m.position.set(x,y,z);scene.add(m);return m;
  }
  let portalRing,ground,stairMarker;
+ const ownedTextures=new Set();
+ function sign(text,x,y,z){const c=document.createElement('canvas');c.width=512;c.height=96;const ctx=c.getContext('2d');ctx.fillStyle='#142c35e8';ctx.roundRect(4,4,504,88,14);ctx.fill();ctx.strokeStyle='#d2b77b';ctx.lineWidth=3;ctx.stroke();ctx.fillStyle='#f6e8c8';ctx.font='bold 35px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(text,256,48,478);const t=new THREE.CanvasTexture(c);ownedTextures.add(t);const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:t,depthTest:false}));sprite.scale.set(3.2,.60,1);sprite.position.set(x,y,z);scene.add(sprite);return sprite;}
+
  function destroyFloor(){
   if(!scene)return;
   const geo=new Set(),mat=new Set();
   scene.traverse(o=>{if(o.geometry)geo.add(o.geometry);if(o.material)mat.add(o.material);});
-  geo.forEach(g=>g.dispose());mat.forEach(m=>m.dispose());geometryCache.clear();materialCache.clear();
+  geo.forEach(g=>g.dispose());mat.forEach(m=>m.dispose());ownedTextures.forEach(t=>t.dispose());ownedTextures.clear();geometryCache.clear();materialCache.clear();
  }
  function build(next,fromStairs=false){
   destroyFloor();floor=next;plan=floorPlan(building,floor);scene=new THREE.Scene();scene.background=new THREE.Color('#293b43');
@@ -59,10 +62,10 @@ export function createInterior({building,makeHero,available,marks,textures,initi
     if(o.type==='workbench'){
      for(let i=0;i<4;i++){const z=o.z-1.05+i*.65;box(.48,.21,.45,o.x,.1+1,z,theme.color);box(.26,.10,.27,o.x,1.28,z,gold);}
     }else{box(.7,.06,.55,o.x,1.03,o.z,'#eee1c1');box(.05,.07,.5,o.x,1.07,o.z,dark);}
-   }else{box(1.2,1.0,1.2,o.x,.5,o.z,wood,textures.wood);box(1.22,.10,1.22,o.x,.84,o.z,gold);}
+   }else if(o.type==='crate'){box(1.2,1.0,1.2,o.x,.5,o.z,wood,textures.wood);box(1.22,.10,1.22,o.x,.84,o.z,gold);}
   }
   // Six distinct prop families, placed against walls, away from the movement lane.
-  const px=2.85,pz=-5.65;
+  const px=2.2,pz=-5.65;
   if(theme.props==='garden'){
    for(let i=0;i<3;i++){box(.45,.48,.45,px+i*.75,.24,pz,'#8d6549');box(.65,.7,.65,px+i*.75,.85,pz,'#588856');}
   }else if(theme.props==='forge'){
@@ -77,15 +80,15 @@ export function createInterior({building,makeHero,available,marks,textures,initi
   if(plan.room!==null){
    const color=marks.has(plan.room)?'#f7cb67':available(plan.room)?'#7beacb':'#829097';
    box(2.7,.23,1.6,0,.12,-4.9,'#63757a');box(.37,2.7,.5,-1.22,1.35,-5.4,gold);box(.37,2.7,.5,1.22,1.35,-5.4,gold);box(2.8,.33,.55,0,2.74,-5.4,gold);
-   portalRing=new THREE.Mesh(new THREE.TorusGeometry(.95,.11,12,40),new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:.8}));portalRing.position.set(0,1.45,-5.18);scene.add(portalRing);
+   portalRing=new THREE.Mesh(new THREE.TorusGeometry(.95,.11,12,40),new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:.8}));portalRing.position.set(0,1.45,-5.18);scene.add(portalRing);sign('ROOM '+String(plan.room+1).padStart(2,'0'),0,3.16,-5.15);
   }
   if(plan.stairs){
    for(let i=0;i<6;i++)box(1.4,.12+i*.15,.32,4.15,(.12+i*.15)/2,-4.15-i*.27,dark,textures.wood);
-   stairMarker=box(1.65,.045,1.4,4.15,.04,-3.65,'#d7ba77',null,true);
+   stairMarker=box(1.65,.045,1.4,4.15,.04,-3.65,'#d7ba77',null,true);sign(floor===1?'UPSTAIRS':'DOWNSTAIRS',4.15,1.95,-4.05);
   }
   if(plan.exit){box(2.1,.05,1.0,0,.05,5.5,'#81b5a4',null,true);box(.17,2.5,.20,-1.1,1.25,6.32,gold);box(.17,2.5,.20,1.1,1.25,6.32,gold);box(2.38,.18,.22,0,2.5,6.32,gold);}
   hero=makeHero();scene.add(hero);
-  npc=makeHero({style:'guardian',skin:'#c29a78',armor:theme.color,hair:'#3c3430',cape:'#b4a27f',accessory:'satchel',height:96,build:94});npc.position.set(plan.npc.x,0,plan.npc.z);scene.add(npc);
+  npc=makeHero({style:'guardian',skin:'#c29a78',armor:theme.color,hair:'#3c3430',cape:'#b4a27f',accessory:'satchel',height:96,build:94});npc.position.set(plan.npc.x,0,plan.npc.z);scene.add(npc);sign(plan.npc.name,plan.npc.x,2.65,plan.npc.z);
   position=new THREE.Vector3(fromStairs?landmarks.stairs.x:0,0,fromStairs?landmarks.stairs.z:landmarks.entry.z);
   hero.position.copy(position);hero.rotation.y=Math.PI;route=[];gait=pace=0;lastState='';onVisit?.(floorKey(building.id,floor));publish();
  }
