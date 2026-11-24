@@ -427,7 +427,8 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     for(const p of c.pads){
       const base=elevation(p.x,p.z),h=p.y-base;
       for(const dx of [-1,1])for(const dz of [-1,1]){
-        box(.20,Math.max(.2,h-.25),.20,dark,p.x+dx*1.20,base+(h-.25)/2,p.z+dz*1.20);
+        const supportHeight=Math.max(.2,h-.25),sx=p.x+dx*1.20,sz=p.z+dz*1.20,sy=base+(h-.25)/2;
+        box(.20,supportHeight,.20,dark,sx,sy,sz);if(!isColumn(.20,supportHeight,.20))columns.add(sx,sy,sz,.20,supportHeight,.20);
       }
       // Distinct solid deck, inset edge plates and support feet.
       for(const dx of [-1,1])for(const dz of [-1,1]){
@@ -1051,7 +1052,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
       const current=swing?swingStep(swing.state,swing.anchor,input,delta):{x:position.x+releaseMotion.vx*delta,y:elevation(position.x,position.z)+air+(releaseMotion.vy-=14*delta)*delta,z:position.z+releaseMotion.vz*delta};
       const groundY=elevation(current.x,current.z);
       const landing=releaseMotion?landingSurface(surfaceList(current.x,current.z),current.x,current.z,previousFeet,current.y,position.x,position.z):null;
-      if(landing&&airClear(current.x,current.z,landing.y,elevation)){
+      if(landing&&airClear(current.x,current.z,landing.y,elevation)&&!columns.hit({x:current.x,z:current.z,y:landing.y},{x:current.x,z:current.z,y:landing.y})){
         position.set(current.x,0,current.z);releaseMotion=null;swing=null;velocity=0;landingTime=.22;
         if(landing.deck!==undefined){deck=landing.deck;air=0;vertical=null;}
         else{air=landing.y-groundY;vertical=makeVertical(landing.y,0,true,landing.id);const pad=platformList.find(p=>p.id===landing.id);if(pad)parkourProgress[pad.course]=recordPad(parkourProgress[pad.course],pad);}
@@ -1112,7 +1113,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
       }else if((blockedByDeck||columnHit)&&assist){/* preserve upward jump intent until support clears */}
       else if(columnHit&&!target){
         // Slide along the support instead of freezing both movement axes.
-        const clearAxis=(x,z)=>segmentSafe(position,{x,z})&&!columns.hit({x:position.x,y:physicalFeet,z:position.z},{x,y:physicalFeet,z},{height:bodyHeight})&&(deck===null||onPlatform(deckSurfaces().find(p=>p.deck===deck),x,z,0));
+        const clearAxis=(x,z)=>segmentSafe(position,{x,z})&&!slabBlocked(deckSurfaces(),position,{x,z},physicalFeet,bodyHeight)&&!columns.hit({x:position.x,y:physicalFeet,z:position.z},{x,y:physicalFeet,z},{height:bodyHeight})&&(deck===null||onPlatform(deckSurfaces().find(p=>p.deck===deck),x,z,0));
         if(Math.abs(dx)>.001&&clearAxis(nextX,position.z))position.x=nextX;else moveVelocity.x=0;
         if(Math.abs(dz)>.001&&clearAxis(position.x,nextZ))position.z=nextZ;else moveVelocity.z=0;
       }else if(blockedByDeck&&!target){moveVelocity={x:0,z:0};}
@@ -1218,7 +1219,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
         adventure.setbacks++;saveAdventure();notify('Trap triggered · returned to safe ground. Circuit reset.');
       }
     }
-    const supportTop=surfaceList().find(p=>p.id===vertical?.support)?.y;
+    const supportTop=vertical?.support?surfaceList().find(p=>p.id===vertical.support)?.y:undefined;
     shadow.position.set(position.x,(supportTop??elevation(position.x,position.z))+.035,position.z);
     shadow.visible=deck===null&&!river(position.z);
     shadow.scale.setScalar(flying?.65:1);shadow.material.opacity=flying?.18:.32;
