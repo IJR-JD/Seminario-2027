@@ -766,3 +766,19 @@ body:has(.roomStudio)>.topbar nav a:hover,body:has(.roomStudio)>.topbar nav butt
 
 /* World landmark directory shares the established island panel layout. */
 #landmarksPanel[hidden]{display:none!important}#landmarkList article[data-found="true"] h4::after{content:" · Discovered";color:#8fd5ba;font-size:.8em}#landmarkSummary{font-variant-numeric:tabular-nums;color:#b7dfcd}#landmarkList article p{font-size:12px;line-height:1.45}
+
+/* Playability 9.1: quiet HUD, contextual actions, and explicit graphics control. */
+#gameCanvas,#overworldCanvas{image-rendering:auto}
+.qualityControl{display:inline-flex;align-items:center;gap:6px;font-size:12px;white-space:nowrap}
+.qualityControl select{font:inherit;background:#fff;color:#243943;border:1px solid #879990;border-radius:5px;padding:4px}
+#missionPicker .islandHelp[hidden],#contextAction[hidden],#roomInteractionCue[hidden],#contextKey[hidden]{display:none!important}
+#missionPicker .islandHelp{pointer-events:auto;z-index:5;top:110px;max-width:min(420px,calc(100% - 24px));line-height:1.7}
+.islandControlsToggle{position:absolute;top:77px;left:12px;z-index:4;background:#193843e8;color:#f6ead1;border:1px solid #b49a6b;border-radius:6px;padding:7px 10px}
+.contextAction{position:absolute;z-index:3;left:50%;top:74%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:8px;background:#142634e8;color:#f5f0df;padding:8px 13px;border:1px solid #adad8a;border-radius:8px;max-width:min(450px,85%);font-size:13px;pointer-events:none;box-shadow:0 3px 9px #0003}
+.contextAction kbd{font:600 12px system-ui;background:#f0dfb3;color:#253943;border-radius:4px;padding:3px 6px}
+#missionPicker:has(.islandTrailPanel:not([hidden])) .contextAction,#missionPicker.insideBuilding .contextAction,#missionPicker.insideBuilding .islandControlsToggle,#missionPicker:has(#enterPortal:not([hidden])) .contextAction{display:none}
+#missionPicker .islandStatus:empty,#islandTraversalStatus:empty{display:none}
+.roomInteractionCue{margin:5px 0;padding:6px 9px;border-left:2px solid #9ebcaa;background:#203b34;color:#e7f2e8;font-size:12px;line-height:1.4}
+.roomCompass [data-axis].directionPreview{background:#f1d89d!important;color:#26382f!important;outline:2px solid #e7be65}
+@media(max-width:700px){.qualityControl{font-size:11px}.islandControlsToggle{top:120px}.contextAction{top:64%;font-size:12px}.roomInteractionCue{font-size:11px}#missionPicker .islandHelp{top:154px}}
+@media(prefers-reduced-motion:reduce){.contextAction,.roomInteractionCue,.roomCompass *{animation:none!important;transition:none!important}}
