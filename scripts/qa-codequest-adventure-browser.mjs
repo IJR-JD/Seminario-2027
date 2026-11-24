@@ -26,7 +26,7 @@ async function openIsland(room){
  assert(await page.locator('#overworldStage').isVisible(),'3D renderer must initialize');
 }
 async function navigate(id){
- await page.locator('#islandAdventureToggle').click();
+ if(!(await page.locator('#exploreMenu').evaluate(el=>el.open)))await page.locator('#exploreMenu summary').click();await page.locator('#islandAdventureToggle').click();
  assert.equal(await page.locator('#adventureList article').count(),13,'Journal lists 5 powers, 4 trials and 4 gates');
  await page.locator('[data-adventure-route="'+id+'"]').click();
  assert(await page.locator('#islandAdventurePanel').isHidden(),'Route selection returns to the scene');
@@ -38,24 +38,24 @@ try{
  await openIsland(4);
  await page.screenshot({path:'qa-codequest/adventure-village.png'});
  assert.equal(await page.locator('[data-power="dash"]').getAttribute('data-unlocked'),'false');
- await page.locator('[data-power="dash"]').click();
+ await page.locator('#powerMenu').evaluate(el=>{if(!el.open)el.querySelector('summary').click();});await page.locator('[data-power="dash"]').click();
  await waitToast('Wind Shrine');
  await navigate('dash');
  await page.waitForFunction(()=>document.querySelector('[data-power="dash"]')?.dataset.unlocked==='true',null,{timeout:45000});
  await page.screenshot({path:'qa-codequest/adventure-shrine.png'});
  assert((await page.locator('#adventureProgress').textContent()).includes('1/5 powers'));
- await page.locator('[data-power="dash"]').click();
+ await page.locator('#powerMenu').evaluate(el=>{if(!el.open)el.querySelector('summary').click();});await page.locator('[data-power="dash"]').click();
  await page.waitForFunction(()=>document.querySelector('#islandTraversalStatus')?.textContent==='Dash',null,{timeout:12000});
  console.log('PASS physical Dash shrine unlock and animated activation');
  await openIsland(16);
  assert.equal(await page.locator('[data-power="dash"]').getAttribute('data-unlocked'),'true','Power survives reload');
  await navigate('signal');
  await page.waitForFunction(()=>document.querySelector('#adventureGate')?.dataset.unlocked==='true',null,{timeout:50000});
- await page.locator('#adventureGate').click();
+ await page.locator('#powerMenu').evaluate(el=>{if(!el.open)el.querySelector('summary').click();});await page.locator('#adventureGate').click();
  await waitToast('Portal travel · Meadow Gate');
  await page.screenshot({path:'qa-codequest/adventure-gate.png'});
  console.log('PASS actual gate travel and saved power');
- await page.locator('#islandAdventureToggle').click();
+ if(!(await page.locator('#exploreMenu').evaluate(el=>el.open)))await page.locator('#exploreMenu summary').click();await page.locator('#islandAdventureToggle').click();
  await page.screenshot({path:'qa-codequest/adventure-journal.png'});
  await page.setViewportSize({width:390,height:844});
  await page.screenshot({path:'qa-codequest/adventure-mobile.png'});
