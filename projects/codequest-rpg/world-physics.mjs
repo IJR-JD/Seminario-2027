@@ -26,7 +26,7 @@ export function createPhysics(cell=5){
  function move(a,b,feet,{radius=BODY.radius,height=BODY.height,step=0,ground=null}={}){
   const n=Math.max(1,Math.ceil(Math.hypot(b.x-a.x,b.z-a.z)/.16));let px=a.x,pz=a.z;
   for(let i=1;i<=n;i++){
-   const t=i/n,x=a.x+(b.x-a.x)*t,z=a.z+(b.z-a.z)*t,y=ground?Math.max(feet,ground(x,z)):feet;
+   const t=i/n,x=a.x+(b.x-a.x)*t,z=a.z+(b.z-a.z)*t,y=ground?ground(x,z):feet;
    for(const p of near(x,z,radius)){
     if(p.maxY<=y+step+EPS||!overlap(p,x,z,y,height,radius))continue;
     // Permit exit from a legacy overlapping spawn, but never deeper penetration.
