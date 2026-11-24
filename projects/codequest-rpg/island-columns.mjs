@@ -1,6 +1,6 @@
 // Collision geometry is registered from the same dimensions as rendered columns.
 // A spatial hash and continuous segment intersection avoid per-frame mesh scans.
-export function isColumn(w,h,d){return h>=.65&&w>=.10&&d>=.10&&Math.max(w,d)<=1.5&&h>=1.3*Math.max(w,d);}
+export function isColumn(w,h,d){return h>=.30&&w>=.10&&d>=.10&&Math.max(w,d)<=1.5&&h>=1.3*Math.max(w,d);}
 export function createColumnPhysics(cell=6){
  const buckets=new Map(),columns=[];
  function add(x,y,z,w,h,d,enabled=()=>true){
