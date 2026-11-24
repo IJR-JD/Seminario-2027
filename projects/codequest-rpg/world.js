@@ -1,4 +1,4 @@
-import {createOverworld} from './overworld.mjs?v=polish81';
+import {createOverworld} from './overworld.mjs?v=live82';
 import {createIslandAvatar} from './island-avatar.mjs';
 import {shrines,travelGates,circuits} from './island-adventure.mjs';
 import {gear} from './island-airgear.mjs';
