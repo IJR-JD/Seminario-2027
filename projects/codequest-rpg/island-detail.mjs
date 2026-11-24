@@ -24,6 +24,10 @@ export function createIslandDetail(scene,{elevation,groundSafe,blocked,landmarks
  }
  const ground=texture('ground');ground.repeat.set(95,78);
  const stone=texture('stone'),wood=texture('wood'),roof=texture('roof');
+ const waterCanvas=document.createElement('canvas');waterCanvas.width=waterCanvas.height=128;
+ const wc=waterCanvas.getContext('2d');wc.fillStyle='#b6dce3';wc.fillRect(0,0,128,128);
+ for(let i=0;i<75;i++){const x=rand()*128,y=rand()*128;wc.strokeStyle=i%3?'#e5f7f599':'#789dae88';wc.lineWidth=.7+rand()*1.4;wc.beginPath();wc.moveTo(x,y);wc.quadraticCurveTo(x+7,y-3,x+15+rand()*16,y);wc.stroke();}
+ const water=new THREE.CanvasTexture(waterCanvas);water.wrapS=water.wrapT=THREE.RepeatWrapping;water.repeat.set(76,76);water.colorSpace=THREE.SRGBColorSpace;
  const dummy=new THREE.Object3D();
  const batch=(geometry,mat,items)=>{
   if(!items.length)return null;
@@ -73,11 +77,12 @@ export function createIslandDetail(scene,{elevation,groundSafe,blocked,landmarks
  const fireGeo=new THREE.BufferGeometry();fireGeo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(fireflies.length*3),3));
  const fire=new THREE.Points(fireGeo,new THREE.PointsMaterial({color:'#ffdf91',size:.18,transparent:true,opacity:.8}));scene.add(fire);
  function update(time,delta,mapMode){
+  water.offset.set(time*.009,time*.004);
   clouds.forEach((g,i)=>{g.visible=!mapMode;g.position.x+=delta*(.6+i%3*.17);if(g.position.x>185)g.position.x=-185;});
   birds.forEach((m,i)=>{const t=time*.27+i*.78;m.visible=!mapMode;m.position.set(55*Math.cos(t),16+i%3*3+Math.sin(t*2),45*Math.sin(t));m.rotation.y=-t;m.rotation.z=Math.sin(time*9+i)*.24;});
   const a=fireGeo.attributes.position;
   fireflies.forEach((p,i)=>{a.setXYZ(i,p.x+Math.sin(time*.8+p.phase)*1.8,elevation(p.x,p.z)+1+Math.sin(time*2+p.phase)*.35,p.z+Math.cos(time*.7+p.phase)*1.4);});a.needsUpdate=true;
   fire.visible=!mapMode;
  }
- return {ground,stone,wood,roof,update};
+ return {ground,stone,wood,roof,water,update};
 }
