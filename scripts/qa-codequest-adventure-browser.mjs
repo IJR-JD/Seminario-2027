@@ -44,9 +44,11 @@ try{
  await page.waitForFunction(()=>document.querySelector('[data-power="dash"]')?.dataset.unlocked==='true',null,{timeout:45000});
  await page.screenshot({path:'qa-codequest/adventure-shrine.png'});
  assert((await page.locator('#adventureProgress').textContent()).includes('1/5 powers'));
- await page.locator('.adventureHotbar').evaluate(el=>el.open=true);await page.locator('[data-power="dash"]').click();
+ await page.locator('#overworldCanvas').focus();await page.keyboard.down('Tab');
+ await page.locator('#gearWheel').waitFor({state:'visible'});assert.equal(await page.locator('[data-gear="dash"]').getAttribute('data-state'),'ready');
+ await page.locator('[data-gear="dash"]').hover();await page.keyboard.up('Tab');
  await page.waitForFunction(()=>document.querySelector('#islandTraversalStatus')?.textContent==='Dash',null,{timeout:12000});
- console.log('PASS physical Dash shrine unlock and animated activation');
+ console.log('PASS physical Dash shrine unlock and animated activation through Tab wheel');
  await openIsland(16);
  assert.equal(await page.locator('[data-power="dash"]').getAttribute('data-unlocked'),'true','Power survives reload');
  await navigate('signal');
