@@ -25,7 +25,8 @@ assert.equal(selectAnchor(origin,[anchor],{x:1,z:0},anchor.id),null);
 assert(s.time>3.99);assert(s.x!==origin.x);assert(s.length>=5);
 let j=jetStep(jetCapacity,2,1,1);assert(j.height===7&&j.fuel<jetCapacity);
 j=jetStep(j.fuel,j.height,1,10);assert.equal(j.height,13);assert.equal(j.fuel,0);
-j=jetStep(3,7,-1,2);assert.equal(j.height,2);assert(j.fuel>0);
+j=jetStep(3,7,-1,2);assert.equal(j.height,0);assert.equal(j.fuel,3);
+const glide=jetStep(3,7,0,1);assert(glide.height<7&&glide.height>0&&glide.fuel===3);assert.equal(jetStep(0,7,1,1).height,glide.height);
 for(const b of buildingFootprints){
  assert(!airClear(b.x,b.z,1,()=>0));assert(airClear(b.x,b.z,12,()=>0));
 }

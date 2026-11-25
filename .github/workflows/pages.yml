@@ -61,6 +61,18 @@ jobs:
           node scripts/qa-codequest-columns.mjs
           node scripts/qa-codequest-gear-wheel.mjs
           node scripts/qa-codequest-mobility.mjs
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Real Chromium WebGL release gate
+        run: |
+          npm install --no-save --no-package-lock --no-audit --no-fund playwright@1.56.1 three@0.170.0
+          npx playwright install chromium
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/codequest-release.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" || true; rm -rf node_modules' EXIT
+          sleep 2
+          node scripts/qa-codequest-release.mjs
       - name: Probe original ManimCE MP4 URLs (external availability)
         continue-on-error: true
         run: node scripts/qa-video-urls.mjs
@@ -93,7 +105,7 @@ jobs:
         run: |
           set -eu
           root="https://ijr-jd.github.io/Seminario-2027/projects/codequest-rpg"
-          for file in index.html world.css world.js overworld.mjs island-adventure.mjs island-avatar.mjs island-airgear.mjs island-detail.mjs island-interiors.mjs interior-scene.mjs island-vertical.mjs island-mobility.mjs island-vehicles.mjs island-rendering.mjs island-columns.mjs gear-wheel.mjs; do
+          for file in index.html world.css world.js overworld.mjs island-adventure.mjs island-avatar.mjs island-airgear.mjs island-detail.mjs island-interiors.mjs interior-scene.mjs island-vertical.mjs island-mobility.mjs island-vehicles.mjs island-rendering.mjs island-columns.mjs gear-wheel.mjs island-villages.mjs logic.mjs expedition.mjs; do
             verified=false
             for attempt in {1..12}; do
               if curl -fsSL --max-time 20 "$root/$file?release=$GITHUB_SHA-$attempt" -o "/tmp/codequest-live-$file" && cmp -s "projects/codequest-rpg/$file" "/tmp/codequest-live-$file"; then

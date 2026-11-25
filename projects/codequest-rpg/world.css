@@ -829,3 +829,8 @@ body:has(.roomStudio)>.topbar nav a:hover,body:has(.roomStudio)>.topbar nav butt
 .directAtlas .regionRooms{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:12px}
 .directAtlas .missionCard{min-height:100px;text-align:left;border-radius:10px}
 .directAtlas .missionCard:focus-visible,.directAtlas .regionLinks button:focus-visible{outline:3px solid #aee4da;outline-offset:3px}
+
+.directAtlas .overworld > :not(#islandDirectory){visibility:hidden;pointer-events:none}
+.directAtlas #islandDirectory{visibility:visible;pointer-events:auto}
+.jetBattery{position:absolute;z-index:8;top:90px;left:18px;width:min(240px,65vw);padding:12px 14px;border-radius:10px;background:#102431e8;color:#f2faf8;border:1px solid #6fc3ba;display:grid;gap:5px;pointer-events:none}
+.jetBattery[hidden]{display:none}.jetBattery meter{width:100%;height:13px;accent-color:#53d4b5}.jetBattery span,.jetBattery small{font-size:11px;letter-spacing:.03em}.jetBattery strong{font-size:13px}

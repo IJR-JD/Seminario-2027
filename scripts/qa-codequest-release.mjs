@@ -1,0 +1,32 @@
+import assert from 'node:assert/strict';
+import {chromium} from 'playwright';
+import {resolve} from 'node:path';
+const browser=await chromium.launch({headless:true,args:['--no-sandbox','--enable-webgl','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
+try{
+ const page=await browser.newPage({viewport:{width:1440,height:900}});
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.route('https://cdn.jsdelivr.net/npm/three@0.170.0/**',route=>route.fulfill({path:resolve('node_modules/three',route.request().url().split('/three@0.170.0/')[1]),contentType:'application/javascript'}));
+ await page.goto((process.env.QA_BASE||'http://127.0.0.1:8765')+'/projects/codequest-rpg/',{waitUntil:'domcontentloaded'});
+ await page.waitForFunction(()=>document.querySelector('#commandPalette')?.children.length>0);
+ await page.locator('#continueAdventure').click();
+ await page.waitForFunction(()=>document.querySelector('#overworldCanvas')?.dataset.mapReady==='true',null,{timeout:45000});
+ assert(await page.locator('#overworldStage').isVisible());
+ await page.waitForFunction(()=>Number(document.querySelector('#overworldCanvas')?.dataset.triangles)>0);
+ await page.locator('#islandCamera').click();assert.equal(await page.locator('#islandCamera').getAttribute('aria-pressed'),'true');
+ await page.locator('#islandCamera').click();assert.equal(await page.locator('#islandCamera').getAttribute('aria-pressed'),'false');
+ await page.locator('#missionPicker form button').click();
+ await page.locator('#navAtlas').click();
+ assert.equal(await page.locator('#regionLinks button').count(),8);
+ assert.equal(await page.locator('#levelList .missionCard').count(),22);
+ await page.locator('#regionLinks button').nth(1).click();
+ await page.locator('#levelList .missionCard').filter({hasText:'Crystals of the Glade'}).click();
+ await page.locator('#editor').fill('right = 1\nup = 4\nright = 4\nright = 50');
+ await page.locator('#runCode').click();
+ await page.waitForFunction(()=>document.querySelector('#executionStatus')?.textContent==='MISSION COMPLETE',null,{timeout:45000});
+ assert(await page.evaluate(()=>JSON.parse(localStorage.getItem('ijr-codequest-world-v2')).completed.includes(5)));
+ await page.locator('#returnToIsland').click();
+ assert(await page.locator('#overworldStage').isVisible());
+ assert.equal(await page.locator('#overworldCanvas').getAttribute('data-map-ready'),'true');
+ assert.deepEqual(errors,[]);
+ console.log('PASS Chromium: live WebGL render, map camera, direct Atlas, last crystal stops remaining code, saved completion, return to island');
+}finally{await browser.close();}

@@ -51,3 +51,5 @@ for(const p of platformList){
  assert.equal(landingSurface([p],p.x,p.z,p.y+.8,p.y-.8)?.id,p.id);
 }
 console.log('PASS all 36 swept side contacts, underside contacts, clear underpasses and descending foot trajectories.');
+
+let double=makeVertical(0);const dstep=(jump=false)=>{double=verticalStep(double,{x:0,z:0,ground:0,dt:.016,jump,doubleJump:true});};dstep(true);for(let i=0;i<25;i++)dstep();const before=double.vy;dstep(true);assert(double.vy>before&&double.airJumps===1);dstep(true);assert(double.vy<9&&double.airJumps===1);for(let i=0;i<180&&!double.grounded;i++)dstep();assert(double.grounded&&double.airJumps===0);console.log('PASS one double jump per airborne cycle');

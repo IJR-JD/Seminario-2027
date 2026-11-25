@@ -84,8 +84,10 @@ export function swingStep(state,anchor,input,dt){
  return s;
 }
 export function jetStep(fuel,height,vertical,dt){
- const burn=vertical>0?1.45:vertical<0?.65:1;
- return {fuel:Math.max(0,fuel-dt*burn),height:Math.max(2,Math.min(13,height+dt*(vertical*5)))};
+ const thrust=vertical>0&&fuel>0;
+ const burn=thrust?1.45:0;
+ const speed=thrust?5:vertical<0?-5:-1.8;
+ return {fuel:Math.max(0,fuel-dt*burn),height:Math.max(0,Math.min(13,height+dt*speed))};
 }
 export const validGearSite=p=>groundSafe(p.x,p.z);
 export const validAirPoint=p=>airSafe(p.x,p.z)&&Number.isFinite(p.y);

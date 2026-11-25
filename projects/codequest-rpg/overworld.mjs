@@ -5,13 +5,13 @@ import {adventureKey,shrines,travelGates,circuits,traps,wallLane,flightLimit,das
 import {animateIslandAvatar} from './island-avatar.mjs';
 import {buildings,interiorStorage,loadInteriorProgress} from './island-interiors.mjs';
 import {createInterior} from './interior-scene.mjs';
-import {gear,anchors,jetCapacity,grappleRange,anchorLinks,selectAnchor,swingStart,swingStep,jetStep} from './island-airgear.mjs';
+import {gear,anchors,jetCapacity,grappleRange,anchorLinks,selectAnchor,swingStart,swingStep,jetStep} from './island-airgear.mjs?v=mobility862';
 import {createIslandDetail} from './island-detail.mjs';
 import {batchStaticMeshes} from './island-rendering.mjs';
 import {createColumnPhysics,isColumn} from './island-columns.mjs';
 import {sectors,sectorProgress,earnedSkills,depots,vehicles,vehicleTypes,canDrive,frontiers,frontierSurfaces,frontierStorage,restoreFrontiers,vehicleStep,vehiclePathSafe,movementMode} from './island-mobility.mjs';
 import {createVehicleFleet} from './island-vehicles.mjs';
-import {terrain,elevation,summits,courses,platformList,parkourStorage,restoreParkour,recordPad,makeVertical,verticalStep,horizontalStep,landingSurface,onPlatform,slabBlocked} from './island-vertical.mjs';
+import {terrain,elevation,summits,courses,platformList,parkourStorage,restoreParkour,recordPad,makeVertical,verticalStep,horizontalStep,landingSurface,onPlatform,slabBlocked} from './island-vertical.mjs?v=mobility862';
 
 const river=z=>Math.abs(z)<3.3;
 const bridge=x=>crossings.some(center=>Math.abs(x-center)<2.1);
@@ -633,7 +633,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
       
       if(jetting){jetting=false;jetInput=0;if(!groundSafe(position.x,position.z)){position.copy(safeSpot);air=0;notify('Safe landing · returned to last grounded position.');}else velocity=0;return;}
       if(climb||deck!==null||crouched||swing||releaseMotion||flying||wallRunning||jetFuel<.5)return;
-      jetting=true;jetHeight=Math.max(2,air);velocity=0;dashLeft=0;target=null;waypoints=[];notify('Jetpack active · Space ascend / C descend / J land.');return;
+      jetting=true;jetHeight=Math.max(0,air);velocity=0;dashLeft=0;target=null;waypoints=[];notify('Jetpack active · Space ascend / C descend / J land.');return;
     }
     if((swing||releaseMotion||jetting)&&!['jump','crouch','jetStop'].includes(key))return;
     if(jetting&&(key==='jump'||key==='crouch')){jetInput=key==='jump'?1:-1;return;}
@@ -649,7 +649,9 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     if(key==='dash'){
       
       if(dashWait>0||climb||deck!==null||flying||wallRunning||crouched)return;
-      dashVector.set(Math.sin(hero.rotation.y),0,Math.cos(hero.rotation.y));
+      dashVector.set(0,0,0);
+      for(const k of keys){if(!controls[k])continue;const [x,z]=controls[k];dashVector.x+=x*Math.cos(yaw)+z*Math.sin(yaw);dashVector.z+=z*Math.cos(yaw)-x*Math.sin(yaw);}
+      if(dashVector.lengthSq()>.001)dashVector.normalize();else dashVector.set(Math.sin(hero.rotation.y),0,Math.cos(hero.rotation.y));
       dashLeft=dashDuration;dashWait=dashCooldown;target=null;waypoints=[];return;
     }
     if(key==='fly'){
@@ -922,6 +924,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
       else action({' ':'jump',c:'crouch',f:'climb',x:'dash',v:'fly',b:'wall',g:'gate',t:'grapple',y:'transfer',j:'jetpack',h:'building',k:'parkour',m:'vehicle',p:'brake',u:'frontier'}[key]);
       return;
     }
+    if(key==='Control'){if(air>.1||jumpRequest||vertical&&!vertical.grounded){event.preventDefault();if(!event.repeat)action('dash');}return;}
     if(key==='Shift'){keys.add(key);return;}
     if(controls[key]){
       event.preventDefault();
@@ -1039,7 +1042,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
     if(target)trail.subVectors(target,position);
     if(assist)trail.set(assist.x-position.x,0,assist.z-position.z);
     const dashing=dashLeft>0;
-    if(jetting){const j=jetStep(jetFuel,jetHeight,jetInput,delta);if(skills.has('thruster'))j.fuel=Math.min(jetCapacity,j.fuel+(jetFuel-j.fuel)*.35);jetFuel=j.fuel;jetHeight=j.height;air=jetHeight;if(!jetFuel){jetting=false;jetInput=0;if(!groundSafe(position.x,position.z)){position.copy(safeSpot);air=0;}velocity=0;}}
+    if(jetting){const j=jetStep(jetFuel,jetHeight,jetInput,delta);if(skills.has('thruster'))j.fuel=Math.min(jetCapacity,j.fuel+(jetFuel-j.fuel)*.35);jetFuel=j.fuel;jetHeight=j.height;air=jetHeight;if(!jetFuel)jetInput=0;if(air<=0&&jetInput<=0){if(!groundSafe(position.x,position.z))position.copy(safeSpot);jetFuel=Math.min(jetCapacity,jetFuel+delta*1.25);velocity=0;}}
     else if(!air&&!swing&&!releaseMotion&&groundSafe(position.x,position.z))jetFuel=Math.min(jetCapacity,jetFuel+delta*1.25);
     const airborneGear=!!(swing||releaseMotion);
     if(dashing){trail.copy(dashVector);dashLeft=Math.max(0,dashLeft-delta);}
@@ -1105,7 +1108,7 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
       if(normalMotion&&!target&&!dashing&&!assist){
         moveVelocity=horizontalStep(moveVelocity,slideTime>0?{x:Math.sin(hero.rotation.y),z:Math.cos(hero.rotation.y)}:trail,speed,vertical.grounded,delta,skills.has('stabilizer')?1.65:1);
         dx=moveVelocity.x*delta;dz=moveVelocity.z*delta;
-      }else if(normalMotion){moveVelocity={x:0,z:0};}
+      }else if(normalMotion){moveVelocity=dashing?{x:trail.x*speed*.55,z:trail.z*speed*.55}:{x:0,z:0};}
       const nextX=position.x+dx,nextZ=position.z+dz;
       const onDeck=deck===null||onPlatform(surfaceList().find(p=>p.deck===deck),nextX,nextZ,0);
       const highSupport=vertical?.support?.startsWith('frontier-')||normalMotion&&air>15;
@@ -1131,11 +1134,11 @@ export function createOverworld({canvas,stage,makeHero,onNear,onEnter,onDiscover
         if(Math.abs(dx)>.001&&clearAxis(nextX,position.z))position.x=nextX;else moveVelocity.x=0;
         if(Math.abs(dz)>.001&&clearAxis(position.x,nextZ))position.z=nextZ;else moveVelocity.z=0;
       }else if(blockedByDeck&&!target){moveVelocity={x:0,z:0};}
-      else {target=null;waypoints=[];moveVelocity={x:0,z:0};assist=null;}
+      else {target=null;waypoints=[];moveVelocity={x:0,z:0};assist=null;if(dashing)dashLeft=0;}
     }else if(target)target=waypoints.shift()??null;
     if(normalMotion){
       const before=vertical.support,impact=vertical.vy;
-      vertical=verticalStep(vertical,{x:position.x,z:position.z,ground:elevation(position.x,position.z),surfaces:surfaceList(),dt:delta,fromX,fromZ,bodyHeight:crouched?.82:1.55,jump:jumpRequest,release:jumpRelease&&!assist,jumpScale:!assist&&skills.has('spring')?1.20:1});
+      vertical=verticalStep(vertical,{x:position.x,z:position.z,ground:elevation(position.x,position.z),surfaces:surfaceList(),dt:delta,fromX,fromZ,bodyHeight:crouched?.82:1.55,jump:jumpRequest,release:jumpRelease&&!assist,doubleJump:!assist,jumpScale:!assist&&skills.has('spring')?1.20:1});
       jumpRequest=jumpRelease=false;
       air=Math.max(0,vertical.y-elevation(position.x,position.z));velocity=vertical.vy;
       if(vertical.landed){

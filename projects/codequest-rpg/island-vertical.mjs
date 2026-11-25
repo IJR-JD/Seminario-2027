@@ -77,8 +77,8 @@ export function horizontalStep(v,input,speed,grounded,dt,airFactor=1){
  const tx=input.x*scale*speed,tz=input.z*scale*speed;
  return {x:approachVelocity(v.x,tx,a,dt),z:approachVelocity(v.z,tz,a,dt)};
 }
-export function makeVertical(y,vy=0,grounded=true,support=null){return {y,vy,grounded,support,coyote:grounded?motion.coyote:0,buffer:0,landed:false};}
-export function verticalStep(prev,{x,z,ground,surfaces=[],dt,jump=false,release=false,jumpScale=1,fromX=x,fromZ=z,bodyHeight=1.55}){
+export function makeVertical(y,vy=0,grounded=true,support=null){return {y,vy,grounded,support,coyote:grounded?motion.coyote:0,buffer:0,landed:false,airJumps:0};}
+export function verticalStep(prev,{x,z,ground,surfaces=[],dt,jump=false,release=false,jumpScale=1,fromX=x,fromZ=z,bodyHeight=1.55,doubleJump=false}){
  const s={...prev,landed:false};
  s.buffer=jump?motion.buffer:Math.max(0,s.buffer-dt);
  s.coyote=s.grounded?motion.coyote:Math.max(0,s.coyote-dt);
@@ -87,10 +87,12 @@ export function verticalStep(prev,{x,z,ground,surfaces=[],dt,jump=false,release=
  if(s.grounded&&s.support&&!support){const adjacent=surfaces.find(p=>onPlatform(p,x,z)&&Math.abs(p.y-s.y)<.035);if(adjacent){s.support=adjacent.id;s.y=adjacent.y;}else{s.grounded=false;s.support=null;}}
  if(s.grounded&&support)s.y=support.y;
  if(s.buffer>0&&(s.grounded||s.coyote>0)){
-  s.vy=motion.jump*jumpScale;s.grounded=false;s.support=null;s.coyote=0;s.buffer=0;
+  s.vy=motion.jump*jumpScale;s.grounded=false;s.support=null;s.coyote=0;s.buffer=0;s.airJumps=0;
+ }else if(doubleJump&&jump&&!s.grounded&&(s.airJumps??0)<1){
+  s.vy=motion.jump*.88*jumpScale;s.airJumps=1;s.buffer=0;s.coyote=0;
  }
  if(release&&s.vy>6.8)s.vy=6.8;
- if(s.grounded){s.vy=0;return s;}
+ if(s.grounded){s.vy=0;s.airJumps=0;return s;}
  const from=s.y;
  s.vy=Math.max(-motion.fallCap,s.vy-motion.gravity*dt);
  s.y+=s.vy*dt;
@@ -98,6 +100,7 @@ export function verticalStep(prev,{x,z,ground,surfaces=[],dt,jump=false,release=
  const hit=landingSurface(surfaces,x,z,from,s.y,fromX,fromZ);
  if(hit&&s.vy<=0){s.y=hit.y;s.vy=0;s.grounded=true;s.support=hit.id;s.landed=true;}
  else if(s.y<=ground){s.y=ground;s.vy=0;s.grounded=true;s.support=null;s.landed=true;}
+ if(s.landed)s.airJumps=0;
  return s;
 }
 export function restoreParkour(value){

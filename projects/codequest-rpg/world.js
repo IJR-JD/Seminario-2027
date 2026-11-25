@@ -1,5 +1,5 @@
 import {createGearWheel} from './gear-wheel.mjs?v=equipment85';
-import {createOverworld} from './overworld.mjs?v=equipment85';
+import {createOverworld} from './overworld.mjs?v=mobility862';
 import {createIslandAvatar} from './island-avatar.mjs';
 import {shrines,travelGates,circuits} from './island-adventure.mjs';
 import {gear} from './island-airgear.mjs';
@@ -643,6 +643,9 @@ function openMissions(direct=false){
   let journalSignature='';
   function renderAdventure(state){
     $('adventureProgress').textContent=state.powers.length+'/5 powers available · '+(state.discoveredPowers??[]).length+'/5 sites · '+state.circuits.length+'/4 trials';
+    $('jetBattery').hidden=!state.jetting;
+    $('jetBatteryMeter').value=state.jetFuel;
+    $('jetBatteryValue').textContent=state.jetFuel.toFixed(1)+' / '+$('jetBatteryMeter').max+' s';
     $('adventureFuel').textContent=[state.powers.includes('fly')?'Flight '+state.flight.toFixed(1)+'s':'',state.powers.includes('jetpack')?'Jet '+state.jetFuel.toFixed(1)+'s':''].filter(Boolean).join(' · ');
     document.querySelectorAll('[data-power]').forEach(button=>{
       const id=button.dataset.power;button.dataset.unlocked=String(state.powers.includes(id));
@@ -785,6 +788,7 @@ function openMissions(direct=false){
     cameraToggle.textContent=map?'Follow camera':'Island map';
     $('overworldCanvas').focus();
   };
+  if(direct){setDirectory(true);(activeZone??zones[0]).button.focus();return;}
   if(!overworld){
     try{
       $('overworldStage').hidden=false;
@@ -1283,6 +1287,7 @@ function resize(){
 recenterCamera();
 new ResizeObserver(resize).observe($('cameraStage'));
 const clock=new THREE.Clock();function animate(){requestAnimationFrame(animate);const t=clock.getElapsedTime();
+if($('missionPicker').open&&$('missionPicker').classList.contains('directAtlas'))return;
 if($('missionPicker').open&&overworld){if(!gearWheel.isOpen())overworld.frame(performance.now());return;}
 for(const device of devices){
   device.rotor.rotation.y=t*(device.kind==='sentry'?2:.8);
