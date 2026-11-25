@@ -821,3 +821,11 @@ body:has(.roomStudio)>.topbar nav a:hover,body:has(.roomStudio)>.topbar nav butt
 @keyframes gearSlotIn{from{opacity:0}to{opacity:1}}
 @media(max-width:700px){.gearRing{width:min(96vw,50vh)}.gearSlot{gap:0}.gearCenter p{font-size:9px}.gearSecondary button{font-size:10px;padding:6px}}
 @media(prefers-reduced-motion:reduce){.gearRing,.gearSlot{animation:none!important}.gearSlot,.gearWedge,.gearSecondary button,#gearEnergy span{transition:none!important}}
+
+/* Mission Atlas: dedicated direct-access mode; the physical island remains available separately. */
+.directAtlas #islandDirectory:not([hidden]){z-index:30;position:absolute;inset:12px;max-width:none;width:auto;max-height:none;overflow:auto;background:linear-gradient(140deg,#152b35 0%,#1a3943 48%,#122126 100%);border:1px solid #64938c;border-radius:16px;padding:clamp(14px,3vw,32px);box-shadow:0 16px 60px #071318b3;color:#f1f5ee}
+.directAtlas .regionLinks{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:8px}
+.directAtlas .regionLinks button{min-height:64px;border-radius:8px;padding:10px}
+.directAtlas .regionRooms{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:12px}
+.directAtlas .missionCard{min-height:100px;text-align:left;border-radius:10px}
+.directAtlas .missionCard:focus-visible,.directAtlas .regionLinks button:focus-visible{outline:3px solid #aee4da;outline-offset:3px}

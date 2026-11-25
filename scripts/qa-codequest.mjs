@@ -167,3 +167,18 @@ for(let i=0;i<levels.length+expedition.length+logicRooms.length;i++){
 }
 assert.equal(starsText(starsFor(0,6)),'★☆☆');
 console.log('PASS room ratings: thresholds for all 22 rooms and all three ratings.');
+
+// Regression: crystal completion is independent of a beacon but never bypasses academic objectives.
+const completionSource=source.slice(source.indexOf('function missionMissing('),source.indexOf('function currentMissing('));
+const missing=runInNewContext(completionSource+';missionMissing');
+const baseMission={goal:[7,2],crystals:[[2,5],[6,3]],checkpoints:[]};
+const baseState={x:6,z:3,items:2,waypoints:0,hasArithmetic:false,conditionUsed:false};
+assert.equal(missing(baseMission,baseState).length,0,'Last crystal should complete without beacon');
+assert.equal(missing(baseMission,{...baseState,items:1}).length,1,'Missing crystal must block completion');
+assert.equal(missing({...baseMission,checkpoints:[[1,2]]},baseState).length,1,'Missing relay must block completion');
+assert.equal(missing({...baseMission,arithmetic:true,conditional:true},baseState).length,2,'Academic objectives must block completion');
+assert.equal(missing({...baseMission,crystals:[]},{...baseState,items:0}).length,1,'Non-crystal rooms still require beacon');
+assert.equal(missing({...baseMission,crystals:[]},{...baseState,x:7,z:2,items:0}).length,0);
+assert(source.includes('runId===activeRun&&!crystalMissionReady()'),'Remaining steps must stop on completion');
+assert(source.includes('if(direct){portalEntered(i);return;}'),'Direct room selection missing');
+console.log('PASS crystal completion regression and Mission Atlas integration');
