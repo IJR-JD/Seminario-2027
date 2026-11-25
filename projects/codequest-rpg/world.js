@@ -7,7 +7,7 @@ import {buildings} from './island-interiors.mjs';
 import {courses} from './island-vertical.mjs';
 import {sectors,sectorProgress,depots,frontiers,vehicleTypes,earnedSkills} from './island-mobility.mjs';
 import {pythonWaystations} from './island-exploration.mjs';
-import {allRoomLocations} from './island-villages.mjs';
+import {allRoomLocations,physicalRoomZones} from './island-villages.mjs?v=mapfix861';
 import {starTargets,starsFor,starsText} from './room-stars.mjs';
 import {insertCommand} from './command-editor.mjs';
 import {logicRooms,compileLogic,sense,pulse,logicMove,cellKey,RouteHazard} from './logic.mjs?v=edgefall1';
@@ -787,6 +787,7 @@ function openMissions(direct=false){
   };
   if(!overworld){
     try{
+      $('overworldStage').hidden=false;
       overworld=createOverworld({canvas:$('overworldCanvas'),stage:$('overworldStage'),makeHero:settings=>createIslandAvatar(settings??hero),
         onNear:i=>portalChanged(i),onEnter:i=>portalEntered(i),
         onTraversal:state=>{
@@ -806,8 +807,12 @@ function openMissions(direct=false){
           $('islandDiscoveries').textContent=found+' / '+total+' discoveries';
           showIslandToast(relic.name+' · '+relic.note);
         }});
-      overworld.addZones(zones);
+      overworld.addZones(physicalRoomZones());
+      $('overworldStage').hidden=false;
+      $('overworldCanvas').dataset.mapReady='true';
     }catch(error){
+      console.error('CodeQuest island initialization failed:',error);
+      $('overworldCanvas').dataset.mapReady='false';
       overworld=null;
       $('overworldStage').hidden=true;
     }
@@ -834,6 +839,7 @@ function openMissions(direct=false){
   }
 }
 $('missionPicker').addEventListener('close',()=>{
+  $('missionPicker').classList.remove('directAtlas');
   if($('missionPicker').returnValue==='play'||!document.activeElement.closest('button')){
     $('openMissions').focus();
   }

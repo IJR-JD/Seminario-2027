@@ -47,3 +47,12 @@ export const roomLocation=(zoneIndex,localIndex)=>{
 };
 export const allRoomLocations=()=>islandDistricts.flatMap((zone,zoneIndex)=>
   zone.lots.map((lot,localIndex)=>({...lot,zoneIndex,localIndex})));
+
+// Physical districts are independent of presentation-only Mission Atlas groupings.
+export function physicalRoomZones(){
+  let index=0;
+  return islandDistricts.map(district=>({
+    name:district.name,
+    rooms:district.lots.map(()=>index++)
+  }));
+}

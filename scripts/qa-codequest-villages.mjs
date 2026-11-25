@@ -3,7 +3,7 @@ import {readFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {isIslandWalkable,pythonWaystations} from '../projects/codequest-rpg/island-exploration.mjs';
 import {islandDistricts,villageHouses,secondFloorHeight,islandRoomCount,
-  allRoomLocations,roomLocation} from '../projects/codequest-rpg/island-villages.mjs';
+  allRoomLocations,roomLocation,physicalRoomZones} from '../projects/codequest-rpg/island-villages.mjs';
 
 const rooms=allRoomLocations();
 assert.equal(islandDistricts.length,6,'Preserve the six original districts');
@@ -68,3 +68,19 @@ assert(game.includes('(now-climb.started)/1800'),'Climbing must use wall-clock t
 assert(game.includes('item.numberLabel.visible=mapMode;'),
   'Foreground room numbers should hide unless relevant or in map mode');
 console.log('PASS CodeQuest villages: 22 rooms, six topic clusters, eight extra houses, eleven accessible upper floors, safe placements.');
+
+// A UI-only atlas may have eight groups, but 3D construction must always receive
+// six physical districts with the original 12/2/2/2/2/2 portal mapping.
+const physical=physicalRoomZones();
+assert.deepEqual(physical.map(zone=>zone.rooms.length),[12,2,2,2,2,2]);
+assert.deepEqual(physical.flatMap(zone=>zone.rooms),Array.from({length:22},(_,i)=>i));
+assert.deepEqual(physical.map(zone=>zone.name),islandDistricts.map(zone=>zone.name));
+for(const [zoneIndex,zone] of physical.entries()){
+  for(const [localIndex,id] of zone.rooms.entries()){
+    assert.equal(rooms[id].zoneIndex,zoneIndex);
+    assert.equal(rooms[id].localIndex,localIndex);
+  }
+}
+assert(logic.includes('overworld.addZones(physicalRoomZones())'),'Renderer must not receive Mission Atlas UI groups');
+assert(!logic.includes('overworld.addZones(zones)'),'Regression: atlas groups passed to physical world');
+console.log('PASS Mission Atlas and physical island separation: stable 22 portals in six districts');

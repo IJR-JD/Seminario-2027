@@ -30,6 +30,7 @@ async function openIsland(page){
   await page.waitForFunction(()=>document.querySelector('#islandTrailProgress')?.textContent.includes('5 Python Trail'),null,{timeout:15000});
   assert(await page.locator('#overworldStage').isVisible(),'WebGL island must render, not fall back to text list');
   assert((await page.locator('#overworldCanvas').evaluate(canvas=>canvas.width))>0,'WebGL canvas has no width');
+  assert.equal(await page.locator('#overworldCanvas').getAttribute('data-map-ready'),'true','Physical world initialization must complete');
 }
 try{
   const desktop=await browser.newPage({viewport:{width:1440,height:900}});
@@ -111,6 +112,18 @@ try{
   await desktop.locator('#missionPicker').waitFor({state:'hidden',timeout:8000});
   assert((await desktop.locator('#worldTitle').textContent()).includes('A Name for Distance'),
     'Room 02 must be accessible from the upstairs balcony');
+  // Open the eight-group atlas and select a room, then re-open the 3D map.
+  await desktop.locator('#navAtlas').click();
+  assert.equal(await desktop.locator('#regionLinks button').count(),8);
+  assert.equal(await desktop.locator('#levelList .missionCard').count(),22);
+  await desktop.locator('#levelList .missionCard:visible').first().click();
+  await desktop.locator('#missionPicker').waitFor({state:'hidden'});
+  await desktop.locator('#navLevels').click();
+  assert(await desktop.locator('#overworldStage').isVisible(),'3D island must reopen after direct mission selection');
+  assert.equal(await desktop.locator('#overworldCanvas').getAttribute('data-map-ready'),'true');
+  await desktop.locator('#islandCamera').click();
+  assert.equal(await desktop.locator('#islandCamera').getAttribute('aria-pressed'),'true');
+  console.log('PASS direct atlas selection and reopened 3D world map');
   await desktop.close();
 
   console.log('QA mobile: touch controls and district atlas');
